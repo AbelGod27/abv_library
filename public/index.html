@@ -3,52 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Personas</title>
+    <title>Abv Library</title>
     <link rel="stylesheet" href="principal.css">
 </head>
 <body>
 
-    <h1>Lista de Personas</h1>
+    <h1>Abv Library</h1>
 
-    <table id="tablaPersonas">
-    <thead>
-        <tr id="encabezado"></tr>
-    </thead>
-    <tbody></tbody>
-    </table>
+    <div class="contenedor">
+        <a href="cliente.html">
+            <button>Cliente</button>
+        </a>
 
-    <script>
-    fetch("http://localhost:3000/personas")
-        .then(res => res.json())
-        .then(data => {
-        const tabla = document.querySelector("#tablaPersonas tbody");
-        const encabezado = document.querySelector("#encabezado");
-
-        if (data.length > 0) {
-          // Crear encabezados dinámicos
-            Object.keys(data[0]).forEach(col => {
-            let th = document.createElement("th");
-            th.textContent = col;
-            encabezado.appendChild(th);
-            });
-
-          // Llenar filas
-            data.forEach(persona => {
-            let fila = document.createElement("tr");
-
-            Object.values(persona).forEach(valor => {
-                let td = document.createElement("td");
-                td.textContent = valor;
-                fila.appendChild(td);
-            });
-
-            tabla.appendChild(fila);
-            });
-        } else {
-            tabla.innerHTML = "<tr><td>No hay datos</td></tr>";
-        }
-    });
-    </script>
+        <a href="admin.html">
+            <button>Administrador</button>
+        </a>
+    </div>
 
 </body>
 </html>

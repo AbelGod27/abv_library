@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cliente</title>
+    <link rel="stylesheet" href="principal.css">
+</head>
+<body>
+
+    <h1>Consulta de Libros</h1>
+
+    <input
+        type="text"
+        id="buscarLibro"
+        placeholder="Buscar libro..."
+    >
+
+    <br><br>
+
+    <table border="1">
+
+        <thead>
+            <tr>
+                <th>ISBN</th>
+                <th>Título</th>
+                <th>Autor</th>
+                <th>Editorial</th>
+                <th>Versión</th>
+                <th>Año</th>
+            </tr>
+        </thead>
+
+        <tbody id="tablaLibros"></tbody>
+
+    </table>
+
+    <br>
+
+    <a href="index.html">
+        <button>Regresar</button>
+    </a>
+
+<script>
+
+const inputBusqueda = document.getElementById("buscarLibro");
+
+inputBusqueda.addEventListener("keyup", () => {
+
+    cargarLibros(inputBusqueda.value);
+
+});
+
+window.onload = () => {
+
+    cargarLibros("");
+
+};
+
+function cargarLibros(busqueda) {
+
+    fetch(`http://localhost:3000/libros?buscar=${busqueda}`)
+
+    .then(res => res.json())
+
+    .then(data => {
+
+        const tabla = document.getElementById("tablaLibros");
+
+        tabla.innerHTML = "";
+
+        if (data.length === 0) {
+
+            tabla.innerHTML = `
+                <tr>
+                    <td colspan="6">
+                        No se encontraron libros
+                    </td>
+                </tr>
+            `;
+
+            return;
+
+        }
+
+        data.forEach(libro => {
+
+            tabla.innerHTML += `
+                <tr>
+                    <td>${libro.isbn}</td>
+                    <td>${libro.titulo}</td>
+                    <td>${libro.autor}</td>
+                    <td>${libro.editorial ?? ""}</td>
+                    <td>${libro.version ?? ""}</td>
+                    <td>${libro.anio_publicacion ?? ""}</td>
+                </tr>
+            `;
+
+        });
+
+    })
+
+    .catch(error => {
+
+        console.error(error);
+
+    });
+
+}
+
+</script>
+
+</body>
+</html>
