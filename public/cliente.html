@@ -10,8 +10,24 @@
 
     <h1>Consulta de Libros</h1>
 
-    <button onclick="cambiarFuente('db')">Ver libros de mi BD</button>
-    <button onclick="cambiarFuente('api')">Ver libros de API</button>
+    <div class="switch-container">
+
+        <button
+            id="btnDB"
+            class="switch-activo"
+            onclick="cambiarFuente('db')"
+        >
+            Mi Biblioteca
+        </button>
+
+        <button
+            id="btnAPI"
+            onclick="cambiarFuente('api')"
+        >
+            Biblioteca Global
+        </button>
+
+    </div>
 
     <br><br>
 
