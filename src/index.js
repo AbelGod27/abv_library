@@ -1,3 +1,4 @@
+const axios = require("axios");
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
@@ -7,75 +8,210 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+
 app.use(express.static(path.join(__dirname, "../public")));
 
-app.get("/personas", (req, res) => {
-    db.query("SELECT * FROM Persona", (err, results) => {
-        if (err) {
-            console.error("Error en consulta:", err);
-            return res.status(500).json(err);
-        }
 
-        res.json(results);
-    });
+// =========================
+// CONSULTAR LIBROS LOCALES
+// =========================
+
+app.get("/libros", async (req, res) => {
+
+    try {
+
+        const buscar = req.query.buscar || "";
+
+        const sql = `
+            SELECT
+                isbn,
+                titulo,
+                autor,
+                editorial,
+                version,
+                anio_publicacion
+            FROM libro
+            WHERE
+                isbn ILIKE $1
+                OR titulo ILIKE $1
+                OR autor ILIKE $1
+                OR editorial ILIKE $1
+        `;
+
+        const values = [`%${buscar}%`];
+
+        const result = await db.query(sql, values);
+
+        res.json(result.rows);
+
+    }
+
+    catch (error) {
+
+        console.error("Error al consultar libros:", error);
+
+        res.status(500).json({
+            error: "Error al consultar libros."
+        });
+
+    }
+
 });
 
-app.get("/libros", (req, res) => {
-    const buscar = req.query.buscar || "";
 
-    const sql = `
-        SELECT isbn, titulo, autor, editorial, version, anio_publicacion
-        FROM Libro
-        WHERE isbn LIKE ?
-        OR titulo LIKE ?
-        OR autor LIKE ?
-        OR editorial LIKE ?
-    `;
+// =========================
+// CONSULTAR API
+// =========================
 
-    const valor = `%${buscar}%`;
+app.get("/api/libros-externos", async (req, res) => {
+    try {
+        const buscar = req.query.buscar || "programming";
 
-    db.query(sql, [valor, valor, valor, valor], (err, results) => {
-        if (err) {
-            console.error("Error en consulta:", err);
-            return res.status(500).json(err);
-        }
+        const url = "https://openlibrary.org/search.json";
 
-        res.json(results);
-    });
-});
-
-app.post("/libros", (req, res) => {
-    const {
-        isbn,
-        titulo,
-        autor,
-        editorial,
-        version,
-        anio_publicacion
-    } = req.body;
-
-    const sql = `
-        INSERT INTO Libro
-        (isbn, titulo, autor, editorial, version, anio_publicacion)
-        VALUES (?, ?, ?, ?, ?, ?)
-    `;
-
-    db.query(
-        sql,
-        [isbn, titulo, autor, editorial, version, anio_publicacion],
-        (err, result) => {
-            if (err) {
-                console.error("Error al insertar:", err);
-                return res.status(500).json(err);
+        const response = await axios.get(url, {
+            params: {
+                q: buscar,
+                limit: 20,
+                fields: "title,author_name,first_publish_year,isbn,publisher"
             }
+        });
 
-            res.json({
-                mensaje: "Libro agregado correctamente"
-            });
-        }
-    );
+        const libros = response.data.docs.map(libro => ({
+            isbn: libro.isbn ? libro.isbn[0] : "Sin ISBN",
+            titulo: libro.title || "Sin título",
+            autor: libro.author_name ? libro.author_name.join(", ") : "Autor desconocido",
+            editorial: libro.publisher ? libro.publisher[0] : "Sin editorial",
+            version: "",
+            anio_publicacion: libro.first_publish_year || ""
+        }));
+
+        res.json(libros);
+
+    } catch (error) {
+        console.error("Error API externa:", error.message);
+        res.status(500).json({
+            error: "Error al consultar API externa."
+        });
+    }
 });
 
-app.listen(3000, () => {
-    console.log("Servidor en http://localhost:3000");
+
+// =========================
+// AGREGAR LIBRO
+// =========================
+
+app.post("/libros", async (req, res) => {
+
+    try {
+
+        const {
+
+            isbn,
+            titulo,
+            autor,
+            editorial,
+            version,
+            anio_publicacion
+
+        } = req.body;
+
+        // =========================
+        // VALIDACIONES
+        // =========================
+
+        if (!isbn || !titulo || !autor) {
+
+            return res.status(400).json({
+                error:
+                    "ISBN, título y autor son obligatorios."
+            });
+
+        }
+
+        // =========================
+        // VERIFICAR DUPLICIDAD
+        // =========================
+
+        const verificarSql = `
+            SELECT isbn
+            FROM libro
+            WHERE isbn = $1
+        `;
+
+        const verificar =
+            await db.query(verificarSql, [isbn]);
+
+        if (verificar.rows.length > 0) {
+
+            return res.status(409).json({
+                error:
+                    "No se puede agregar el libro porque el ISBN ya existe."
+            });
+
+        }
+
+        // =========================
+        // INSERTAR LIBRO
+        // =========================
+
+        const insertarSql = `
+            INSERT INTO libro
+            (
+                isbn,
+                titulo,
+                autor,
+                editorial,
+                version,
+                anio_publicacion
+            )
+            VALUES ($1, $2, $3, $4, $5, $6)
+        `;
+
+        const values = [
+
+            isbn,
+            titulo,
+            autor,
+            editorial || null,
+            version || null,
+            anio_publicacion || null
+
+        ];
+
+        await db.query(insertarSql, values);
+
+        res.json({
+            mensaje:
+                "Libro agregado correctamente."
+        });
+
+    }
+
+    catch (error) {
+
+        console.error("Error al agregar libro:", error);
+
+        res.status(500).json({
+            error:
+                "Error interno del servidor."
+        });
+
+    }
+
+});
+
+
+// =========================
+// SERVIDOR
+// =========================
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+
+    console.log(
+        `Servidor en http://localhost:${PORT}`
+    );
+
 });

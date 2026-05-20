@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cliente</title>
     <link rel="stylesheet" href="principal.css">
 </head>
+
 <body>
 
     <h1>Consulta de Libros</h1>
@@ -42,49 +44,47 @@
     </a>
 
 <script>
-
 const inputBusqueda = document.getElementById("buscarLibro");
+let temporizador;
 
-inputBusqueda.addEventListener("keyup", () => {
+inputBusqueda.addEventListener("input", () => {
+    clearTimeout(temporizador);
 
-    cargarLibros(inputBusqueda.value);
-
+    temporizador = setTimeout(() => {
+        cargarLibros(inputBusqueda.value);
+    }, 250); <!--Se genera esté temporizador con la intención de que las busquedas se hagan después de teclear una letra -->
 });
 
 window.onload = () => {
-
     cargarLibros("");
-
 };
 
-function cargarLibros(busqueda) {
+async function cargarLibros(busqueda) {
+    try {
+        const response = await fetch(
+            `http://localhost:3000/api/libros-externos?buscar=${encodeURIComponent(busqueda)}`
+        );
 
-    fetch(`http://localhost:3000/libros?buscar=${busqueda}`)
+        const data = await response.json();
 
-    .then(res => res.json())
-
-    .then(data => {
+        if (data.error) {
+            console.error(data.error);
+            return;
+        }
 
         const tabla = document.getElementById("tablaLibros");
-
         tabla.innerHTML = "";
 
         if (data.length === 0) {
-
             tabla.innerHTML = `
                 <tr>
-                    <td colspan="6">
-                        No se encontraron libros
-                    </td>
+                    <td colspan="6">No se encontraron libros</td>
                 </tr>
             `;
-
             return;
-
         }
 
         data.forEach(libro => {
-
             tabla.innerHTML += `
                 <tr>
                     <td>${libro.isbn}</td>
@@ -95,19 +95,12 @@ function cargarLibros(busqueda) {
                     <td>${libro.anio_publicacion ?? ""}</td>
                 </tr>
             `;
-
         });
 
-    })
-
-    .catch(error => {
-
-        console.error(error);
-
-    });
-
+    } catch (error) {
+        console.error("Error al consultar libros:", error);
+    }
 }
-
 </script>
 
 </body>
