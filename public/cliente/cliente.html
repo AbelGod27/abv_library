@@ -7,25 +7,16 @@
     <link rel="stylesheet" href="principal.css">
 </head>
 <body>
-
     <h1>Consulta de Libros</h1>
-
     <div class="contenedor-switch">
-
+    
     <span>
         Local
     </span>
 
     <label class="switch">
-
-        <input
-            type="checkbox"
-            id="switchLibros"
-            aria-label="Cambiar biblioteca"
-        >
-
+        <input type="checkbox" id="switchLibros" aria-label="Cambiar biblioteca">
         <span class="slider"></span>
-
     </label>
 
     <span>
@@ -141,16 +132,10 @@ const switchLibros =
 switchLibros.addEventListener("change", () => {
 
     if (switchLibros.checked) {
-
         fuenteActual = "api";
-
     }
 
-    else {
-
-        fuenteActual = "db";
-
-    }
+    else {fuenteActual = "db";}
 
     inputBusqueda.value = "";
 
@@ -158,6 +143,5 @@ switchLibros.addEventListener("change", () => {
 
 });
 </script>
-
 </body>
 </html>

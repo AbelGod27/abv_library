@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        Gestión de Empleados
+    </title>
+    <link rel="stylesheet" href="/principal.css">
+</head>
+
+<body>
+
+<script>
+    if (sessionStorage.getItem("adminActivo") !== "true") {
+    window.location.href = "/admin/login.html";
+    }
+</script>
+    <h1>
+        Gestión de Empleados
+    </h1>
+
+    <a href="/admin/panel.html">
+
+    <button>
+        Regresar al panel
+    </button>
+
+    </a>
+
+    <hr>
+
+    <h2>
+        Agregar Empleado
+    </h2>
+
+    <input type="email" id="correo_electronico" placeholder="Correo electrónico">
+
+    <input type="text" id="nombre" placeholder="Nombre">
+
+    <input type="text" id="ap_paterno"placeholder="Apellido paterno">
+
+    <input type="text" id="ap_materno" placeholder="Apellido materno">
+
+<br><br>
+
+    <label for="fecha_de_nacimiento">
+    Fecha de nacimiento
+    </label>
+
+    <input type="date" id="fecha_de_nacimiento">
+
+    <input type="text" id="telefono" placeholder="Teléfono">
+
+<br><br>
+
+    <label for="rol">
+        Rol del empleado
+    </label>
+
+|   <select id="rol">
+
+    <option value="">
+        Selecciona un rol
+    </option>
+
+    <option value="Vendedor">
+        Vendedor
+    </option>
+
+    <option value="Administrador">
+        Administrador
+    </option>
+
+    <option value="Dueno">
+        Dueño
+    </option>
+
+    </select>
+
+<br><br>
+
+    <button onclick="agregarEmpleado()">
+        Agregar Empleado
+    </button>
+
+<hr>
+
+    <h2>
+        Lista de Empleados
+    </h2>
+
+    <table border="1">
+
+    <thead>
+
+        <tr>
+            <th>
+                Correo
+            </th>
+
+            <th>
+                Nombre
+            </th>
+
+            <th>
+                Apellido paterno
+            </th>
+
+            <th>
+                Apellido materno
+            </th>
+
+            <th>
+                Teléfono
+            </th>
+
+            <th>
+                Rol
+            </th>
+        </tr>
+
+    </thead>
+
+        <tbody id="tablaEmpleados"></tbody>
+
+    </table>
+
+<script>
+
+    window.onload = () => {cargarEmpleados();};
+
+
+// =========================
+// CONSULTAR EMPLEADOS
+// =========================
+
+async function cargarEmpleados() {
+    try {
+        const response =
+            await fetch("/empleados");
+        const data = await response.json();
+        const tabla =
+            document.getElementById(
+                "tablaEmpleados"
+            );
+
+        tabla.innerHTML = "";
+
+        if (data.length === 0) {
+            tabla.innerHTML = `
+                <tr>
+                    <td colspan="6">
+                        No hay empleados registrados
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        data.forEach(empleado => {
+            tabla.innerHTML += `
+                <tr>
+                    <td>${empleado.correo_electronico}</td>
+                    <td>${empleado.nombre}</td>
+                    <td>${empleado.ap_paterno}</td>
+                    <td>${empleado.ap_materno ?? ""}</td>
+                    <td>${empleado.telefono ?? ""}</td>
+                    <td>${empleado.rol}</td>
+                </tr>
+            `;
+        });
+    }
+
+    catch (error) {
+        console.error(error);
+        alert(
+            "Error al consultar empleados."
+        );
+    }
+}
+
+// =========================
+// AGREGAR EMPLEADO
+// =========================
+
+async function agregarEmpleado() {
+    try {
+        const empleado = {
+            correo_electronico:
+                document.getElementById(
+                    "correo_electronico"
+                ).value,
+            nombre:
+                document.getElementById(
+                    "nombre"
+                ).value,
+            ap_paterno:
+                document.getElementById(
+                    "ap_paterno"
+                ).value,
+            ap_materno:
+                document.getElementById(
+                    "ap_materno"
+                ).value,
+            fecha_de_nacimiento:
+                document.getElementById(
+                    "fecha_de_nacimiento"
+                ).value,
+            telefono:
+                document.getElementById(
+                    "telefono"
+                ).value,
+            rol:
+                document.getElementById(
+                    "rol"
+                ).value
+        };
+
+        const response = await fetch("/empleados",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+                body:
+                    JSON.stringify(
+                        empleado
+                    )
+            }
+        );
+
+        const data =
+            await response.json();
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        alert(data.mensaje);
+
+        document.getElementById(
+            "correo_electronico"
+        ).value = "";
+
+        document.getElementById(
+            "nombre"
+        ).value = "";
+
+        document.getElementById(
+            "ap_paterno"
+        ).value = "";
+
+        document.getElementById(
+            "ap_materno"
+        ).value = "";
+
+        document.getElementById(
+            "fecha_de_nacimiento"
+        ).value = "";
+
+        document.getElementById(
+            "telefono"
+        ).value = "";
+
+        document.getElementById(
+            "rol"
+        ).value = "";
+
+        cargarEmpleados();
+
+    }
+
+    catch (error) {
+        console.error(error);
+        alert("Error al agregar empleado.");
+    }
+
+}
+</script>
+</body>
+</html>

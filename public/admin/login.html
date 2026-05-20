@@ -2,28 +2,20 @@
 <html lang="es">
 
 <head>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>
         Login Administrador
     </title>
-
     <link rel="stylesheet" href="principal.css">
-
 </head>
 
 <body>
-
     <h1>
         Acceso Administrador
     </h1>
 
-    <input
-        type="password"
-        id="passwordAdmin"
-        placeholder="Contraseña"
-    >
+    <input type="password" id="passwordAdmin"placeholder="Contraseña">
 
     <button onclick="loginAdmin()">
         Entrar
@@ -40,71 +32,45 @@
 <script>
 
 async function loginAdmin() {
-
     try {
-
         const password =
             document.getElementById(
                 "passwordAdmin"
             ).value;
-
         const response = await fetch(
-
             "/login-admin",
-
             {
-
                 method: "POST",
-
                 headers: {
                     "Content-Type":
                         "application/json"
                 },
-
                 body: JSON.stringify({
                     password
                 })
-
             }
-
         );
 
         const data =
             await response.json();
 
         if (data.acceso) {
-
             sessionStorage.setItem(
                 "adminActivo",
                 "true"
             );
 
-            window.location.href =
-                "admin-panel.html";
-
+            window.location.href = "/admin/panel.html";
         }
 
-        else {
-
-            alert(data.error);
-
-        }
-
+        else {alert(data.error);}
     }
-
     catch (error) {
-
         console.error(error);
-
-        alert(
-            "Error al iniciar sesión"
-        );
-
+        alert("Error al iniciar sesión");
     }
-
 }
 
 </script>
-
 </body>
 </html>

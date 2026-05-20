@@ -2,41 +2,26 @@
 <html lang="es">
 
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>
         Gestión de Libros
     </title>
-
-    <link rel="stylesheet" href="principal.css">
-
+    <link rel="stylesheet" href="/principal.css">
 </head>
 
 <body>
-
     <script>
-
-        if (
-            sessionStorage.getItem(
-                "adminActivo"
-            ) !== "true"
-        ) {
-
-            window.location.href =
-                "admin-login.html";
-
+        if (sessionStorage.getItem("adminActivo") !== "true") {
+            window.location.href = "/admin/login.html";
         }
-
     </script>
 
     <h1>
         Gestión de Libros
     </h1>
 
-    <a href="admin-panel.html">
+    <a href="/admin/panel.html">
 
         <button>
             Regresar al panel
@@ -50,35 +35,15 @@
         Agregar Libro
     </h2>
 
-    <input
-        type="text"
-        id="isbn"
-        placeholder="ISBN"
-    >
+    <input type="text" id="isbn" placeholder="ISBN">
 
-    <input
-        type="text"
-        id="titulo"
-        placeholder="Título"
-    >
+    <input type="text" id="titulo" placeholder="Título">
 
-    <input
-        type="text"
-        id="autor"
-        placeholder="Autor"
-    >
+    <input type="text" id="autor" placeholder="Autor">
 
-    <input
-        type="text"
-        id="editorial"
-        placeholder="Editorial"
-    >
+    <input type="text" id="editorial" placeholder="Editorial">
 
-    <input
-        type="text"
-        id="version"
-        placeholder="Versión"
-    >
+    <input type="text" id="version" placeholder="Versión">
 
     <label for="anio_publicacion">
         Año de publicación
@@ -89,9 +54,7 @@
     <br><br>
 
     <button onclick="agregarLibro()">
-
         Agregar Libro
-
     </button>
 
     <hr>
@@ -100,29 +63,21 @@
         Lista de Libros
     </h2>
 
-    <input
-        type="text"
-        id="buscarLibro"
-        placeholder="Buscar libro..."
-    >
+    <input type="text" id="buscarLibro" placeholder="Buscar libro...">
 
     <br><br>
 
     <table border="1">
 
         <thead>
-
             <tr>
-
                 <th>ISBN</th>
                 <th>Título</th>
                 <th>Autor</th>
                 <th>Editorial</th>
                 <th>Versión</th>
                 <th>Año</th>
-
             </tr>
-
         </thead>
 
         <tbody id="tablaLibros"></tbody>
@@ -137,21 +92,16 @@ const inputBusqueda =
 let temporizador;
 
 window.onload = () => {
-
     cargarLibros("");
-
 };
 
 inputBusqueda.addEventListener("input", () => {
 
     clearTimeout(temporizador);
-
     temporizador = setTimeout(() => {
-
         cargarLibros(
             inputBusqueda.value
         );
-
     }, 500);
 
 });
@@ -162,13 +112,9 @@ inputBusqueda.addEventListener("input", () => {
 // =========================
 
 async function cargarLibros(busqueda) {
-
     try {
-
         const response = await fetch(
-
             `/libros?buscar=${encodeURIComponent(busqueda)}`
-
         );
 
         const data =
@@ -182,7 +128,6 @@ async function cargarLibros(busqueda) {
         tabla.innerHTML = "";
 
         if (data.length === 0) {
-
             tabla.innerHTML = `
                 <tr>
                     <td colspan="6">
@@ -192,7 +137,6 @@ async function cargarLibros(busqueda) {
             `;
 
             return;
-
         }
 
         data.forEach(libro => {
@@ -207,21 +151,13 @@ async function cargarLibros(busqueda) {
                     <td>${libro.anio_publicacion ?? ""}</td>
                 </tr>
             `;
-
         });
-
     }
 
     catch (error) {
-
         console.error(error);
-
-        alert(
-            "Error al consultar libros."
-        );
-
+        alert("Error al consultar libros.");
     }
-
 }
 
 
@@ -230,11 +166,8 @@ async function cargarLibros(busqueda) {
 // =========================
 
 async function agregarLibro() {
-
     try {
-
         const libro = {
-
             isbn:
                 document.getElementById(
                     "isbn"
@@ -268,35 +201,22 @@ async function agregarLibro() {
         };
 
         const response = await fetch(
-
             "/libros",
-
             {
-
                 method: "POST",
-
                 headers: {
-
                     "Content-Type":
                         "application/json"
-
                 },
-
                 body:
                     JSON.stringify(libro)
-
             }
-
         );
-
-        const data =
-            await response.json();
+        const data = await response.json();
 
         if (data.error) {
-
             alert(data.error);
             return;
-
         }
 
         alert(data.mensaje);
@@ -326,22 +246,13 @@ async function agregarLibro() {
         ).value = "";
 
         cargarLibros("");
-
     }
 
     catch (error) {
-
         console.error(error);
-
-        alert(
-            "Error al agregar libro."
-        );
-
+        alert("Error al agregar libro.");
     }
-
 }
-
 </script>
-
 </body>
 </html>
