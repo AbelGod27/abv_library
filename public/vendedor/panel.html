@@ -43,5 +43,10 @@
             Regresar
         </button>
     </a>
+    <script>
+        if (sessionStorage.getItem("vendedorActivo") !== "true") {
+            window.location.href = "/vendedor/login.html";
+    }
+    </script>
 </body>
 </html>
