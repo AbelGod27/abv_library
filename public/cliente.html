@@ -10,24 +10,29 @@
 
     <h1>Consulta de Libros</h1>
 
-    <div class="switch-container">
+    <div class="contenedor-switch">
 
-        <button
-            id="btnDB"
-            class="switch-activo"
-            onclick="cambiarFuente('db')"
+    <span>
+        Local
+    </span>
+
+    <label class="switch">
+
+        <input
+            type="checkbox"
+            id="switchLibros"
+            aria-label="Cambiar biblioteca"
         >
-            Mi Biblioteca
-        </button>
 
-        <button
-            id="btnAPI"
-            onclick="cambiarFuente('api')"
-        >
-            Biblioteca Global
-        </button>
+        <span class="slider"></span>
 
-    </div>
+    </label>
+
+    <span>
+        Global
+    </span>
+
+</div>
 
     <br><br>
 
@@ -130,6 +135,28 @@ async function cargarLibros(busqueda) {
         console.error(error);
     }
 }
+const switchLibros =
+    document.getElementById("switchLibros");
+
+switchLibros.addEventListener("change", () => {
+
+    if (switchLibros.checked) {
+
+        fuenteActual = "api";
+
+    }
+
+    else {
+
+        fuenteActual = "db";
+
+    }
+
+    inputBusqueda.value = "";
+
+    cargarLibros("");
+
+});
 </script>
 
 </body>
