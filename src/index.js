@@ -377,6 +377,195 @@ app.post("/empleados", async (req, res) => {
 });
 
 // =========================
+// LOGIN VENDEDOR
+// =========================
+
+app.post("/login-vendedor", async (req, res) => {
+    try {
+        const { correo_electronico } = req.body;
+        if (!correo_electronico) {
+            return res.status(400).json({
+                acceso: false,
+                error: "El correo es obligatorio."
+            });
+        }
+        const result = await db.query(
+            `
+            SELECT
+                p.correo_electronico,
+                p.nombre,
+                p.ap_paterno,
+                e.rol
+            FROM persona p
+            JOIN empleado e
+            ON p.correo_electronico = e.correo_electronico
+            WHERE p.correo_electronico = $1
+            AND e.rol IN ('Vendedor', 'Administrador', 'Dueno')
+            `,
+            [correo_electronico]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(401).json({
+                acceso: false,
+                error: "No tienes permiso para entrar al módulo de vendedor."
+            });
+        }
+        res.json({
+            acceso: true,
+            empleado: result.rows[0]
+        });
+
+    } catch (error) {
+        console.error("Error en login vendedor:", error);
+
+        res.status(500).json({
+            acceso: false,
+            error: "Error interno del servidor."
+        });
+    }
+});
+
+// =========================
+// CONSULTAR VENTAS
+// =========================
+
+app.get("/ventas", async (req, res) => {
+    try {
+        const result = await db.query(
+            `
+            SELECT
+                id_venta,
+                fecha,
+                hora,
+                total_pagado,
+                metodo_de_pago,
+                correo_electronico
+            FROM venta
+            ORDER BY id_venta DESC
+        `);
+        res.json(result.rows);
+    }
+
+    catch (error) {console.error("Error al consultar ventas:",error);
+        res.status(500).json({
+            error:
+                "Error al consultar ventas."
+        });
+    }
+});
+
+
+// =========================
+// REGISTRAR VENTA
+// =========================
+
+app.post("/ventas", async (req, res) => {
+    try {
+        const {
+            total_pagado,
+            metodo_de_pago,
+            correo_electronico,
+            isbn,
+            cantidad
+        } = req.body;
+        if (
+            !total_pagado ||
+            !metodo_de_pago ||
+            !correo_electronico ||
+            !isbn ||
+            !cantidad
+        ) {
+            return res.status(400).json({
+                error:
+                    "Todos los campos son obligatorios."
+            });
+        }
+        await db.query("BEGIN");
+
+
+        // =========================
+        // INSERTAR VENTA
+        // =========================
+
+        const ventaResult = await db.query(
+            `
+            INSERT INTO venta (
+                fecha,
+                hora,
+                total_pagado,
+                metodo_de_pago,
+                correo_electronico
+            )
+            VALUES (
+                CURRENT_DATE,
+                CURRENT_TIME,
+                $1,
+                $2,
+                $3
+            )
+            RETURNING id_venta
+            `,
+            [
+                total_pagado,
+                metodo_de_pago,
+                correo_electronico
+            ]
+        );
+
+        const idVenta =
+            ventaResult.rows[0].id_venta;
+
+
+        // =========================
+        // INSERTAR LIBRO VENDIDO
+        // =========================
+
+        await db.query(
+            `
+            INSERT INTO lib_venta (
+                cantidad,
+                id_venta,
+                isbn
+            )
+            VALUES (
+                $1,
+                $2,
+                $3
+            )
+            `,
+            [
+                cantidad,
+                idVenta,
+                isbn
+            ]
+        );
+
+        await db.query("COMMIT");
+
+        res.json({
+            mensaje:
+                "Venta registrada correctamente.",
+            id_venta:
+                idVenta
+        });
+    }
+
+    catch (error) {
+        await db.query("ROLLBACK");
+        console.error(
+            "Error al registrar venta:",
+            error
+        );
+
+        res.status(500).json({
+            error:
+                "Error interno al registrar la venta."
+        });
+    }
+});
+
+// =========================
 // SERVIDOR
 // =========================
 

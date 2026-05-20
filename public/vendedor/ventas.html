@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar Venta</title>
+    <link rel="stylesheet" href="/principal.css">
+</head>
+
+<body>
+
+<script>
+if (sessionStorage.getItem("vendedorActivo") !== "true") {
+    window.location.href = "/vendedor/login.html";
+}
+</script>
+
+<h1>Registrar Venta</h1>
+
+<h2 id="infoVendedor"></h2>
+
+<a href="/vendedor/panel.html">
+    <button>Regresar al panel</button>
+</a>
+
+<hr>
+
+<h2>Datos de la venta</h2>
+
+<label for="isbn">
+    Libro
+</label>
+
+<select id="isbn">
+    <option value="">Selecciona un libro</option>
+</select>
+
+<br><br>
+
+<label for="cantidad">
+    Cantidad
+</label>
+
+<input type="number"id="cantidad"min="1"value="1">
+
+<br><br>
+
+<label for="total_pagado">
+    Total pagado
+</label>
+
+<input type="number"id="total_pagado"step="0.01"min="0"placeholder="Total pagado">
+
+<br><br>
+
+<label for="metodo_de_pago">
+    Método de pago
+</label>
+
+<select id="metodo_de_pago">
+    <option value="">Selecciona método</option>
+    <option value="Efectivo">Efectivo</option>
+    <option value="Tarjeta">Tarjeta</option>
+    <option value="Transferencia">Transferencia</option>
+</select>
+
+<br><br>
+
+<button onclick="registrarVenta()">
+    Registrar Venta
+</button>
+
+<hr>
+
+<h2>Ventas registradas</h2>
+
+<table border="1">
+    <thead>
+        <tr>
+            <th>ID Venta</th>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Total</th>
+            <th>Método</th>
+            <th>Vendedor</th>
+        </tr>
+    </thead>
+
+    <tbody id="tablaVentas"></tbody>
+</table>
+
+<script>
+const correoVendedor =
+    sessionStorage.getItem("correoVendedor");
+
+const nombreVendedor =
+    sessionStorage.getItem("nombreVendedor");
+
+const rolVendedor =
+    sessionStorage.getItem("rolVendedor");
+
+document.getElementById("infoVendedor").textContent =
+    `Vendedor: ${nombreVendedor} (${rolVendedor})`;
+
+window.onload = () => {
+    cargarLibros();
+    cargarVentas();
+};
+
+// =========================
+// CARGAR LIBROS
+// =========================
+
+async function cargarLibros() {
+    try {
+        const response = await fetch("/libros");
+        const data = await response.json();
+
+        const select =
+            document.getElementById("isbn");
+
+        data.forEach(libro => {
+            select.innerHTML += `
+                <option value="${libro.isbn}">
+                    ${libro.titulo} - ${libro.autor}
+                </option>
+            `;
+        });
+
+    } catch (error) {
+        console.error(error);
+        alert("Error al cargar libros.");
+    }
+}
+
+// =========================
+// CARGAR VENTAS
+// =========================
+
+async function cargarVentas() {
+    try {
+        const response = await fetch("/ventas");
+        const data = await response.json();
+
+        const tabla =
+            document.getElementById("tablaVentas");
+
+        tabla.innerHTML = "";
+
+        if (data.length === 0) {
+            tabla.innerHTML = `
+                <tr>
+                    <td colspan="6">No hay ventas registradas</td>
+                </tr>
+            `;
+            return;
+        }
+
+        data.forEach(venta => {
+            tabla.innerHTML += `
+                <tr>
+                    <td>${venta.id_venta}</td>
+                    <td>${venta.fecha ?? ""}</td>
+                    <td>${venta.hora ?? ""}</td>
+                    <td>${venta.total_pagado}</td>
+                    <td>${venta.metodo_de_pago}</td>
+                    <td>${venta.correo_electronico ?? ""}</td>
+                </tr>
+            `;
+        });
+
+    } catch (error) {
+        console.error(error);
+        alert("Error al cargar ventas.");
+    }
+}
+
+// =========================
+// REGISTRAR VENTA
+// =========================
+
+async function registrarVenta() {
+    try {
+        const venta = {
+            correo_electronico: correoVendedor,
+            isbn: document.getElementById("isbn").value,
+            cantidad: document.getElementById("cantidad").value,
+            total_pagado: document.getElementById("total_pagado").value,
+            metodo_de_pago: document.getElementById("metodo_de_pago").value
+        };
+
+        const response = await fetch("/ventas", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(venta)
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        alert(data.mensaje);
+
+        document.getElementById("isbn").value = "";
+        document.getElementById("cantidad").value = "1";
+        document.getElementById("total_pagado").value = "";
+        document.getElementById("metodo_de_pago").value = "";
+
+        cargarVentas();
+
+    } catch (error) {
+        console.error(error);
+        alert("Error al registrar venta.");
+    }
+}
+</script>
+
+</body>
+</html>
