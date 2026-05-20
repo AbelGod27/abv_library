@@ -1,0 +1,128 @@
+<!-- public/admin-proveedores.html -->
+
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Proveedores</title>
+    <link rel="stylesheet" href="principal.css">
+</head>
+
+<body>
+
+<script>
+if (sessionStorage.getItem("adminActivo") !== "true") {
+    window.location.href = "admin-login.html";
+}
+</script>
+
+<h1>Gestión de Proveedores</h1>
+
+<a href="admin-panel.html">
+    <button>Regresar al panel</button>
+</a>
+
+<hr>
+
+<h2>Agregar Proveedor</h2>
+
+<input
+    type="text"
+    id="nombreProveedor"
+    placeholder="Nombre del proveedor"
+>
+
+<button onclick="agregarProveedor()">
+    Agregar Proveedor
+</button>
+
+<hr>
+
+<h2>Lista de Proveedores</h2>
+
+<table border="1">
+    <thead>
+        <tr>
+            <th>ID Proveedor</th>
+            <th>Nombre</th>
+        </tr>
+    </thead>
+
+    <tbody id="tablaProveedores"></tbody>
+</table>
+
+<script>
+window.onload = () => {
+    cargarProveedores();
+};
+
+async function cargarProveedores() {
+    try {
+        const response = await fetch("/proveedores");
+        const data = await response.json();
+
+        const tabla = document.getElementById("tablaProveedores");
+        tabla.innerHTML = "";
+
+        if (data.length === 0) {
+            tabla.innerHTML = `
+                <tr>
+                    <td colspan="2">No hay proveedores registrados</td>
+                </tr>
+            `;
+            return;
+        }
+
+        data.forEach(proveedor => {
+            tabla.innerHTML += `
+                <tr>
+                    <td>${proveedor.id_proveedor}</td>
+                    <td>${proveedor.nombre}</td>
+                </tr>
+            `;
+        });
+
+    } catch (error) {
+        console.error(error);
+        alert("Error al consultar proveedores.");
+    }
+}
+
+async function agregarProveedor() {
+    try {
+        const proveedor = {
+            nombre: document.getElementById("nombreProveedor").value
+        };
+
+        const response = await fetch("/proveedores", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(proveedor)
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        alert(data.mensaje);
+
+        document.getElementById("nombreProveedor").value = "";
+
+        cargarProveedores();
+
+    } catch (error) {
+        console.error(error);
+        alert("Error al agregar proveedor.");
+    }
+}
+</script>
+
+</body>
+</html>

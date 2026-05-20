@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Administrador</title>
+    <link rel="stylesheet" href="principal.css">
+</head>
+<body>
+
+    <h1>Panel de Administrador</h1>
+
+    <a href="admin-libros.html">
+        <button>Gestionar Libros</button>
+    </a>
+
+    <a href="admin-proveedores.html">
+        <button>Gestionar Proveedores</button>
+    </a>
+
+    <a href="admin-empleados.html">
+        <button>Gestionar Empleados</button>
+    </a>
+
+    <br><br>
+
+    <button onclick="cerrarSesion()">Cerrar sesión</button>
+
+<script>
+if (sessionStorage.getItem("adminActivo") !== "true") {
+    window.location.href = "admin-login.html";
+}
+
+function cerrarSesion() {
+    sessionStorage.removeItem("adminActivo");
+    window.location.href = "index.html";
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>
+        Gestión de Libros
+    </title>
+
+    <link rel="stylesheet" href="principal.css">
+
+</head>
+
+<body>
+
+    <script>
+
+        if (
+            sessionStorage.getItem(
+                "adminActivo"
+            ) !== "true"
+        ) {
+
+            window.location.href =
+                "admin-login.html";
+
+        }
+
+    </script>
+
+    <h1>
+        Gestión de Libros
+    </h1>
+
+    <a href="admin-panel.html">
+
+        <button>
+            Regresar al panel
+        </button>
+
+    </a>
+
+    <hr>
+
+    <h2>
+        Agregar Libro
+    </h2>
+
+    <input
+        type="text"
+        id="isbn"
+        placeholder="ISBN"
+    >
+
+    <input
+        type="text"
+        id="titulo"
+        placeholder="Título"
+    >
+
+    <input
+        type="text"
+        id="autor"
+        placeholder="Autor"
+    >
+
+    <input
+        type="text"
+        id="editorial"
+        placeholder="Editorial"
+    >
+
+    <input
+        type="text"
+        id="version"
+        placeholder="Versión"
+    >
+
+    <label for="anio_publicacion">
+        Año de publicación
+    </label>
+
+    <input type="date" id="anio_publicacion">
+
+    <br><br>
+
+    <button onclick="agregarLibro()">
+
+        Agregar Libro
+
+    </button>
+
+    <hr>
+
+    <h2>
+        Lista de Libros
+    </h2>
+
+    <input
+        type="text"
+        id="buscarLibro"
+        placeholder="Buscar libro..."
+    >
+
+    <br><br>
+
+    <table border="1">
+
+        <thead>
+
+            <tr>
+
+                <th>ISBN</th>
+                <th>Título</th>
+                <th>Autor</th>
+                <th>Editorial</th>
+                <th>Versión</th>
+                <th>Año</th>
+
+            </tr>
+
+        </thead>
+
+        <tbody id="tablaLibros"></tbody>
+
+    </table>
+
+<script>
+
+const inputBusqueda =
+    document.getElementById("buscarLibro");
+
+let temporizador;
+
+window.onload = () => {
+
+    cargarLibros("");
+
+};
+
+inputBusqueda.addEventListener("input", () => {
+
+    clearTimeout(temporizador);
+
+    temporizador = setTimeout(() => {
+
+        cargarLibros(
+            inputBusqueda.value
+        );
+
+    }, 500);
+
+});
+
+
+// =========================
+// CONSULTAR LIBROS
+// =========================
+
+async function cargarLibros(busqueda) {
+
+    try {
+
+        const response = await fetch(
+
+            `/libros?buscar=${encodeURIComponent(busqueda)}`
+
+        );
+
+        const data =
+            await response.json();
+
+        const tabla =
+            document.getElementById(
+                "tablaLibros"
+            );
+
+        tabla.innerHTML = "";
+
+        if (data.length === 0) {
+
+            tabla.innerHTML = `
+                <tr>
+                    <td colspan="6">
+                        No se encontraron libros
+                    </td>
+                </tr>
+            `;
+
+            return;
+
+        }
+
+        data.forEach(libro => {
+
+            tabla.innerHTML += `
+                <tr>
+                    <td>${libro.isbn}</td>
+                    <td>${libro.titulo}</td>
+                    <td>${libro.autor}</td>
+                    <td>${libro.editorial ?? ""}</td>
+                    <td>${libro.version ?? ""}</td>
+                    <td>${libro.anio_publicacion ?? ""}</td>
+                </tr>
+            `;
+
+        });
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Error al consultar libros."
+        );
+
+    }
+
+}
+
+
+// =========================
+// AGREGAR LIBRO
+// =========================
+
+async function agregarLibro() {
+
+    try {
+
+        const libro = {
+
+            isbn:
+                document.getElementById(
+                    "isbn"
+                ).value,
+
+            titulo:
+                document.getElementById(
+                    "titulo"
+                ).value,
+
+            autor:
+                document.getElementById(
+                    "autor"
+                ).value,
+
+            editorial:
+                document.getElementById(
+                    "editorial"
+                ).value,
+
+            version:
+                document.getElementById(
+                    "version"
+                ).value,
+
+            anio_publicacion:
+                document.getElementById(
+                    "anio_publicacion"
+                ).value
+
+        };
+
+        const response = await fetch(
+
+            "/libros",
+
+            {
+
+                method: "POST",
+
+                headers: {
+
+                    "Content-Type":
+                        "application/json"
+
+                },
+
+                body:
+                    JSON.stringify(libro)
+
+            }
+
+        );
+
+        const data =
+            await response.json();
+
+        if (data.error) {
+
+            alert(data.error);
+            return;
+
+        }
+
+        alert(data.mensaje);
+
+        document.getElementById(
+            "isbn"
+        ).value = "";
+
+        document.getElementById(
+            "titulo"
+        ).value = "";
+
+        document.getElementById(
+            "autor"
+        ).value = "";
+
+        document.getElementById(
+            "editorial"
+        ).value = "";
+
+        document.getElementById(
+            "version"
+        ).value = "";
+
+        document.getElementById(
+            "anio_publicacion"
+        ).value = "";
+
+        cargarLibros("");
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Error al agregar libro."
+        );
+
+    }
+
+}
+
+</script>
+
+</body>
+</html>
