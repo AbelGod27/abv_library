@@ -66,11 +66,7 @@ async function agregarLibro() {
 
         };
 
-        const response = await fetch(
-
-            "http://localhost:3000/libros",
-
-            {
+        const response = await fetch("/libros", {
 
                 method: "POST",
 

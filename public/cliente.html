@@ -61,9 +61,7 @@ window.onload = () => {
 
 async function cargarLibros(busqueda) {
     try {
-        const response = await fetch(
-            `http://localhost:3000/api/libros-externos?buscar=${encodeURIComponent(busqueda)}`
-        );
+        const response = await fetch(`/api/libros-externos?buscar=${busqueda}`);
 
         const data = await response.json();
 
