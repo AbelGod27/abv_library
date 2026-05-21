@@ -8,64 +8,103 @@
 </head>
 
 <body>
+
 <script>
-if (sessionStorage.getItem("vendedorActivo") !== "true") {
-    window.location.href = "/vendedor/login.html";
+if (
+    sessionStorage.getItem(
+        "bibliotecarioActivo"
+    ) !== "true"
+) {
+    window.location.href =
+        "/bibliotecario/login.html";
 }
 </script>
 
 <h1>Historial de Ventas</h1>
-<h2 id="infoVendedor"></h2>
-    <a href="/vendedor/panel.html">
-        <button type="button">Regresar al panel</button>
-    </a>
+
+<h2 id="infoBibliotecario"></h2>
+
+<a href="/bibliotecario/panel.html">
+    <button type="button">
+        Regresar al panel
+    </button>
+</a>
 
 <hr>
 
 <table border="1">
+
     <thead>
+
         <tr>
             <th>ID Venta</th>
             <th>Fecha</th>
             <th>Hora</th>
             <th>Total</th>
             <th>Método</th>
-            <th>Vendedor</th>
+            <th>Bibliotecario</th>
         </tr>
+
     </thead>
 
     <tbody id="tablaVentas"></tbody>
+
 </table>
 
 <script>
-const nombreVendedor = sessionStorage.getItem("nombreVendedor");
-const rolVendedor = sessionStorage.getItem("rolVendedor");
 
-document.getElementById("infoVendedor").textContent =
-    `Sesión: ${nombreVendedor} (${rolVendedor})`;
+const nombreBibliotecario =
+    sessionStorage.getItem(
+        "nombreBibliotecario"
+    );
+
+const rolBibliotecario =
+    sessionStorage.getItem(
+        "rolBibliotecario"
+    );
+
+document.getElementById(
+    "infoBibliotecario"
+).textContent =
+    `Sesión: ${nombreBibliotecario} (${rolBibliotecario})`;
 
 window.onload = () => {
     cargarVentas();
 };
 
 async function cargarVentas() {
-    try {
-        const response = await fetch("/ventas");
-        const data = await response.json();
 
-        const tabla = document.getElementById("tablaVentas");
+    try {
+
+        const response =
+            await fetch("/ventas");
+
+        const data =
+            await response.json();
+
+        const tabla =
+            document.getElementById(
+                "tablaVentas"
+            );
+
         tabla.innerHTML = "";
 
         if (data.length === 0) {
+
             tabla.innerHTML = `
                 <tr>
-                    <td colspan="6">No hay ventas registradas</td>
+                    <td colspan="6">
+                        No hay ventas registradas
+                    </td>
                 </tr>
             `;
+
             return;
+
         }
 
         data.forEach(venta => {
+
             tabla.innerHTML += `
                 <tr>
                     <td>${venta.id_venta}</td>
@@ -76,13 +115,23 @@ async function cargarVentas() {
                     <td>${venta.vendedor ?? ""}</td>
                 </tr>
             `;
+
         });
 
-    } catch (error) {
-        console.error(error);
-        alert("Error al cargar ventas.");
     }
+
+    catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Error al cargar ventas."
+        );
+
+    }
+
 }
+
 </script>
 
 </body>

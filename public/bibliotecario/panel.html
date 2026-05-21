@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Bibliotecario</title>
+    <link rel="stylesheet" href="/principal.css">
+</head>
+
+<body>
+
+<script>
+if (
+    sessionStorage.getItem(
+        "bibliotecarioActivo"
+    ) !== "true"
+) {
+    window.location.href =
+        "/bibliotecario/login.html";
+}
+</script>
+
+<h1>Panel Bibliotecario</h1>
+
+<h2 id="infoBibliotecario"></h2>
+
+<a href="/bibliotecario/ventas.html">
+    <button>Registrar Venta</button>
+</a>
+
+<a href="/bibliotecario/historial.html">
+    <button>Historial de Ventas</button>
+</a>
+
+<br><br>
+
+<button type="button" onclick="cerrarSesion()">
+    Cerrar sesión
+</button>
+
+<script>
+
+const nombre =
+    sessionStorage.getItem(
+        "nombreBibliotecario"
+    );
+
+const rol =
+    sessionStorage.getItem(
+        "rolBibliotecario"
+    );
+
+document.getElementById(
+    "infoBibliotecario"
+).textContent =
+    `Bienvenido ${nombre} (${rol})`;
+
+function cerrarSesion() {
+
+    sessionStorage.removeItem(
+        "bibliotecarioActivo"
+    );
+
+    sessionStorage.removeItem(
+        "correoBibliotecario"
+    );
+
+    sessionStorage.removeItem(
+        "nombreBibliotecario"
+    );
+
+    sessionStorage.removeItem(
+        "rolBibliotecario"
+    );
+
+    window.location.href =
+        "/index.html";
+
+}
+
+</script>
+
+</body>
+</html>
