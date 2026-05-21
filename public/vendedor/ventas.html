@@ -71,25 +71,6 @@ if (sessionStorage.getItem("vendedorActivo") !== "true") {
     Registrar Venta
 </button>
 
-<hr>
-
-<h2>Ventas registradas</h2>
-
-<table border="1">
-    <thead>
-        <tr>
-            <th>ID Venta</th>
-            <th>Fecha</th>
-            <th>Hora</th>
-            <th>Total</th>
-            <th>Método</th>
-            <th>Vendedor</th>
-        </tr>
-    </thead>
-
-    <tbody id="tablaVentas"></tbody>
-</table>
-
 <script>
 const correoVendedor =
     sessionStorage.getItem("correoVendedor");
@@ -105,7 +86,6 @@ document.getElementById("infoVendedor").textContent =
 
 window.onload = () => {
     cargarLibros();
-    cargarVentas();
 };
 
 // =========================
@@ -133,49 +113,6 @@ async function cargarLibros() {
         alert("Error al cargar libros.");
     }
 }
-
-// =========================
-// CARGAR VENTAS
-// =========================
-
-async function cargarVentas() {
-    try {
-        const response = await fetch("/ventas");
-        const data = await response.json();
-
-        const tabla =
-            document.getElementById("tablaVentas");
-
-        tabla.innerHTML = "";
-
-        if (data.length === 0) {
-            tabla.innerHTML = `
-                <tr>
-                    <td colspan="6">No hay ventas registradas</td>
-                </tr>
-            `;
-            return;
-        }
-
-        data.forEach(venta => {
-            tabla.innerHTML += `
-                <tr>
-                    <td>${venta.id_venta}</td>
-                    <td>${venta.fecha ?? ""}</td>
-                    <td>${venta.hora ?? ""}</td>
-                    <td>${venta.total_pagado}</td>
-                    <td>${venta.metodo_de_pago}</td>
-                    <td>${venta.correo_electronico ?? ""}</td>
-                </tr>
-            `;
-        });
-
-    } catch (error) {
-        console.error(error);
-        alert("Error al cargar ventas.");
-    }
-}
-
 // =========================
 // REGISTRAR VENTA
 // =========================
@@ -211,8 +148,6 @@ async function registrarVenta() {
         document.getElementById("cantidad").value = "1";
         document.getElementById("total_pagado").value = "";
         document.getElementById("metodo_de_pago").value = "";
-
-        cargarVentas();
 
     } catch (error) {
         console.error(error);
