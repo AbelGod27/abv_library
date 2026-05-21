@@ -432,18 +432,31 @@ app.post("/login-vendedor", async (req, res) => {
 
 app.get("/ventas", async (req, res) => {
     try {
-        const result = await db.query(
-            `
-            SELECT
-                id_venta,
-                fecha,
-                hora,
-                total_pagado,
-                metodo_de_pago,
-                correo_electronico
-            FROM venta
-            ORDER BY id_venta DESC
-        `);
+        const result = await db.query(`
+
+        SELECT
+            v.id_venta,
+            v.fecha,
+            v.hora,
+            v.total_pagado,
+            v.metodo_de_pago,
+        CONCAT(
+                p.nombre,
+                ' ',
+                p.ap_paterno,
+                ' (',
+                e.rol,
+                ')'
+            ) AS vendedor
+            FROM venta v
+        JOIN persona p
+        ON v.correo_electronico =
+            p.correo_electronico
+        JOIN empleado e
+        ON p.correo_electronico =
+            e.correo_electronico
+        ORDER BY v.id_venta DESC
+    `);
         res.json(result.rows);
     }
 
