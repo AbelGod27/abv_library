@@ -680,6 +680,256 @@ app.post("/prestamos", async (req, res) => {
     }
 });
 
+// CONSULTAR PRÉSTAMOS
+app.get("/prestamos", async (req, res) => {
+
+    try {
+
+        const result = await db.query(`
+
+            SELECT
+
+                pr.id_prestamo,
+                pr.multa,
+                pr.dia_de_inicio,
+                pr.dia_de_vencimiento,
+                pr.dia_de_entrega,
+                pr.cantidad_de_libros,
+
+                CONCAT(
+                    pc.nombre,
+                    ' ',
+                    pc.ap_paterno
+                ) AS cliente,
+
+                CONCAT(
+                    pe.nombre,
+                    ' ',
+                    pe.ap_paterno,
+                    ' (',
+                    e.rol,
+                    ')'
+                ) AS bibliotecario
+
+            FROM prestamo pr
+
+            JOIN persona pc
+            ON pr.correo_cliente =
+                pc.correo_electronico
+
+            JOIN persona pe
+            ON pr.correo_empleado =
+                pe.correo_electronico
+
+            JOIN empleado e
+            ON pe.correo_electronico =
+                e.correo_electronico
+
+            ORDER BY pr.id_prestamo DESC
+
+        `);
+
+        res.json(result.rows);
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Error al consultar préstamos:",
+            error
+        );
+
+        res.status(500).json({
+
+            error:
+                "Error al consultar préstamos."
+
+        });
+
+    }
+
+});
+
+// =========================
+// DEVOLVER PRÉSTAMO
+// =========================
+
+app.put("/prestamos/:id/devolver", async (req, res) => {
+    try {
+        const id_prestamo = req.params.id;
+
+        const verificar = await db.query(
+            `
+            SELECT
+                id_prestamo,
+                dia_de_entrega,
+                dia_de_vencimiento
+            FROM prestamo
+            WHERE id_prestamo = $1
+            `,
+            [id_prestamo]
+        );
+
+        if (verificar.rows.length === 0) {
+            return res.status(404).json({
+                error: "El préstamo no existe."
+            });
+        }
+
+        if (verificar.rows[0].dia_de_entrega !== null) {
+            return res.status(400).json({
+                error: "Este préstamo ya fue devuelto."
+            });
+        }
+
+        const result = await db.query(
+            `
+            UPDATE prestamo
+            SET
+                dia_de_entrega = CURRENT_DATE,
+                multa =
+                    CASE
+                        WHEN CURRENT_DATE > dia_de_vencimiento
+                        THEN (CURRENT_DATE - dia_de_vencimiento) * 10
+                        ELSE 0
+                    END
+            WHERE id_prestamo = $1
+            RETURNING *
+            `,
+            [id_prestamo]
+        );
+
+        res.json({
+            mensaje: "Préstamo devuelto correctamente.",
+            prestamo: result.rows[0]
+        });
+
+    } catch (error) {
+        console.error("Error al devolver préstamo:", error);
+
+        res.status(500).json({
+            error: "Error interno al devolver préstamo."
+        });
+    }
+});
+
+// =========================
+// REPORTE FACTURAS
+// =========================
+
+app.get("/facturas", async (req, res) => {
+
+    try {
+
+        const {
+            fecha_inicio,
+            fecha_fin
+        } = req.query;
+
+        if (!fecha_inicio || !fecha_fin) {
+
+            return res.status(400).json({
+
+                error:
+                    "Fechas obligatorias."
+
+            });
+
+        }
+
+
+        // =========================
+        // VENTAS
+        // =========================
+
+        const ventas = await db.query(`
+
+            SELECT
+
+                'Venta' AS tipo,
+                id_venta AS id,
+                fecha,
+                total_pagado AS monto,
+                metodo_de_pago
+
+            FROM venta
+
+            WHERE fecha
+            BETWEEN $1 AND $2
+
+        `, [
+
+            fecha_inicio,
+            fecha_fin
+
+        ]);
+
+
+        // =========================
+        // PRÉSTAMOS
+        // =========================
+
+        const prestamos = await db.query(`
+
+            SELECT
+
+                'Prestamo' AS tipo,
+                id_prestamo AS id,
+                dia_de_inicio AS fecha,
+                multa AS monto,
+                CASE
+
+                    WHEN dia_de_entrega IS NULL
+                    THEN 'Pendiente'
+
+                    ELSE 'Devuelto'
+
+                END AS estado
+
+            FROM prestamo
+
+            WHERE dia_de_inicio
+            BETWEEN $1 AND $2
+
+        `, [
+
+            fecha_inicio,
+            fecha_fin
+
+        ]);
+
+
+        res.json({
+
+            ventas:
+                ventas.rows,
+
+            prestamos:
+                prestamos.rows
+
+        });
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Error al generar reporte:",
+            error
+        );
+
+        res.status(500).json({
+
+            error:
+                "Error al generar reporte."
+
+        });
+
+    }
+
+});
+
 // =========================
 // SERVIDOR
 // =========================

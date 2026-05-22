@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>
+        Historial de Préstamos
+    </title>
+
+    <link rel="stylesheet"
+        href="/principal.css">
+</head>
+
+<body>
+
+<script>
+if (
+    sessionStorage.getItem(
+        "bibliotecarioActivo"
+    ) !== "true"
+) {
+
+    window.location.href =
+        "/bibliotecario/login.html";
+
+}
+</script>
+
+<h1>
+    Historial de Préstamos
+</h1>
+
+<a href="/bibliotecario/panel.html">
+
+    <button type="button">
+        Regresar al panel
+    </button>
+
+</a>
+
+<hr>
+
+<table border="1">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Cliente</th>
+            <th>Bibliotecario</th>
+            <th>Inicio</th>
+            <th>Vencimiento</th>
+            <th>Entrega</th>
+            <th>Cantidad</th>
+            <th>Multa</th>
+            <th>Acción</th>
+        </tr>
+    </thead>
+
+    <tbody id="tablaPrestamos"></tbody>
+</table>
+
+<script>
+window.onload = () => {
+    cargarPrestamos();
+};
+
+async function cargarPrestamos() {
+    try {
+        const response = await fetch("/prestamos");
+        const data = await response.json();
+
+        const tabla = document.getElementById("tablaPrestamos");
+        tabla.innerHTML = "";
+
+        if (data.length === 0) {
+            tabla.innerHTML = `
+                <tr>
+                    <td colspan="9">No hay préstamos registrados</td>
+                </tr>
+            `;
+            return;
+        }
+
+        data.forEach(prestamo => {
+            tabla.innerHTML += `
+                <tr>
+                    <td>${prestamo.id_prestamo}</td>
+                    <td>${prestamo.cliente}</td>
+                    <td>${prestamo.bibliotecario}</td>
+                    <td>${prestamo.dia_de_inicio ?? ""}</td>
+                    <td>${prestamo.dia_de_vencimiento ?? ""}</td>
+                    <td>${prestamo.dia_de_entrega ?? "Pendiente"}</td>
+                    <td>${prestamo.cantidad_de_libros}</td>
+                    <td>${prestamo.multa}</td>
+                    <td>
+                        ${
+                            prestamo.dia_de_entrega
+                            ? "Devuelto"
+                            : `<button type="button" onclick="devolverPrestamo(${prestamo.id_prestamo})">
+                                Devolver
+                              </button>`
+                        }
+                    </td>
+                </tr>
+            `;
+        });
+
+    } catch (error) {
+        console.error(error);
+        alert("Error al cargar préstamos.");
+    }
+}
+
+async function devolverPrestamo(id_prestamo) {
+    try {
+        const confirmar = confirm(
+            "¿Confirmas la devolución de este préstamo?"
+        );
+
+        if (!confirmar) {
+            return;
+        }
+
+        const response = await fetch(
+            `/prestamos/${id_prestamo}/devolver`,
+            {
+                method: "PUT"
+            }
+        );
+
+        const data = await response.json();
+
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        alert(data.mensaje);
+
+        cargarPrestamos();
+
+    } catch (error) {
+        console.error(error);
+        alert("Error al devolver préstamo.");
+    }
+}
+</script>
+
+<script>
+
+window.onload = () => {
+
+    cargarPrestamos();
+
+};
+
+async function cargarPrestamos() {
+
+    try {
+
+        const response =
+            await fetch("/prestamos");
+
+        const data =
+            await response.json();
+
+        const tabla =
+            document.getElementById(
+                "tablaPrestamos"
+            );
+
+        tabla.innerHTML = "";
+
+        if (data.length === 0) {
+
+            tabla.innerHTML = `
+                <tr>
+                    <td colspan="8">
+                        No hay préstamos registrados
+                    </td>
+                </tr>
+            `;
+
+            return;
+
+        }
+
+        data.forEach(prestamo => {
+
+            tabla.innerHTML += `
+                <tr>
+
+                    <td>${prestamo.id_prestamo}</td>
+
+                    <td>${prestamo.cliente}</td>
+
+                    <td>${prestamo.bibliotecario}</td>
+
+                    <td>${prestamo.dia_de_inicio ?? ""}</td>
+
+                    <td>${prestamo.dia_de_vencimiento ?? ""}</td>
+
+                    <td>${prestamo.dia_de_entrega ?? "Pendiente"}</td>
+
+                    <td>${prestamo.cantidad_de_libros}</td>
+
+                    <td>${prestamo.multa}</td>
+
+                </tr>
+            `;
+
+        });
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Error al cargar préstamos."
+        );
+
+    }
+
+}
+
+</script>
+
+</body>
+</html>
