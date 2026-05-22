@@ -34,6 +34,7 @@
     <table border="1">
         <thead>
             <tr>
+                <th>Portada</th>
                 <th>ISBN</th>
                 <th>Título</th>
                 <th>Autor</th>
@@ -110,17 +111,29 @@ async function cargarLibros(busqueda) {
         }
 
         data.forEach(libro => {
-            tabla.innerHTML += `
-                <tr>
-                    <td>${libro.isbn ?? ""}</td>
-                    <td>${libro.titulo ?? ""}</td>
-                    <td>${libro.autor ?? ""}</td>
-                    <td>${libro.editorial ?? ""}</td>
-                    <td>${libro.version ?? ""}</td>
-                    <td>${libro.anio_publicacion ?? ""}</td>
-                </tr>
-            `;
-        });
+    const portada = libro.isbn && libro.isbn !== "Sin ISBN"
+        ? `https://covers.openlibrary.org/b/isbn/${libro.isbn}-M.jpg`
+        : "https://via.placeholder.com/80x120?text=Sin+imagen";
+
+    tabla.innerHTML += `
+        <tr>
+            <td>
+                <img
+                    src="${portada}"
+                    alt="Portada de ${libro.titulo}"
+                    width="80"
+                    onerror="this.src='https://via.placeholder.com/80x120?text=Sin+imagen'"
+                >
+            </td>
+            <td>${libro.isbn ?? ""}</td>
+            <td>${libro.titulo ?? ""}</td>
+            <td>${libro.autor ?? ""}</td>
+            <td>${libro.editorial ?? ""}</td>
+            <td>${libro.version ?? ""}</td>
+            <td>${libro.anio_publicacion ?? ""}</td>
+        </tr>
+    `;
+});
 
     } catch (error) {
         console.error(error);

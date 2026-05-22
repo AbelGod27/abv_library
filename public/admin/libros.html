@@ -77,6 +77,7 @@
                 <th>Editorial</th>
                 <th>Versión</th>
                 <th>Año</th>
+                <th>Acción</th>
             </tr>
         </thead>
 
@@ -142,15 +143,20 @@ async function cargarLibros(busqueda) {
         data.forEach(libro => {
 
             tabla.innerHTML += `
-                <tr>
-                    <td>${libro.isbn}</td>
-                    <td>${libro.titulo}</td>
-                    <td>${libro.autor}</td>
-                    <td>${libro.editorial ?? ""}</td>
-                    <td>${libro.version ?? ""}</td>
-                    <td>${libro.anio_publicacion ?? ""}</td>
-                </tr>
-            `;
+        <tr>
+            <td>${libro.isbn}</td>
+            <td>${libro.titulo}</td>
+            <td>${libro.autor}</td>
+            <td>${libro.editorial ?? ""}</td>
+            <td>${libro.version ?? ""}</td>
+            <td>${libro.anio_publicacion ?? ""}</td>
+            <td>
+                <button type="button" onclick="eliminarLibro('${libro.isbn}')">
+                    Eliminar
+                </button>
+            </td>
+        </tr>
+    `;
         });
     }
 
@@ -251,6 +257,37 @@ async function agregarLibro() {
     catch (error) {
         console.error(error);
         alert("Error al agregar libro.");
+    }
+}
+
+async function eliminarLibro(isbn) {
+    try {
+        const confirmar = confirm(
+            "¿Seguro que quieres eliminar este libro?"
+        );
+
+        if (!confirmar) {
+            return;
+        }
+
+        const response = await fetch(`/libros/${isbn}`, {
+            method: "DELETE"
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        alert(data.mensaje);
+
+        cargarLibros("");
+
+    } catch (error) {
+        console.error(error);
+        alert("Error al eliminar libro.");
     }
 }
 </script>

@@ -931,6 +931,122 @@ app.get("/facturas", async (req, res) => {
 });
 
 // =========================
+// CONSULTAR CLIENTES
+// =========================
+
+app.get("/clientes", async (req, res) => {
+    try {
+        const result = await db.query(`
+            SELECT
+                p.correo_electronico,
+                p.nombre,
+                p.ap_paterno,
+                p.ap_materno,
+                p.telefono,
+                c.fecha_de_registro
+            FROM persona p
+            JOIN cliente c
+            ON p.correo_electronico = c.correo_electronico
+            ORDER BY p.nombre
+        `);
+
+        res.json(result.rows);
+
+    } catch (error) {
+        console.error("Error al consultar clientes:", error);
+
+        res.status(500).json({
+            error: "Error al consultar clientes."
+        });
+    }
+});
+
+
+// =========================
+// AGREGAR CLIENTE
+// =========================
+
+app.post("/clientes", async (req, res) => {
+    try {
+        const {
+            correo_electronico,
+            nombre,
+            ap_paterno,
+            ap_materno,
+            fecha_de_nacimiento,
+            telefono
+        } = req.body;
+
+        if (!correo_electronico || !nombre || !ap_paterno || !fecha_de_nacimiento) {
+            return res.status(400).json({
+                error: "Correo, nombre, apellido paterno y fecha de nacimiento son obligatorios."
+            });
+        }
+
+        const existePersona = await db.query(
+            "SELECT correo_electronico FROM persona WHERE correo_electronico = $1",
+            [correo_electronico]
+        );
+
+        if (existePersona.rows.length > 0) {
+            return res.status(409).json({
+                error: "Ya existe una persona con ese correo."
+            });
+        }
+
+        await db.query("BEGIN");
+
+        await db.query(
+            `
+            INSERT INTO persona (
+                correo_electronico,
+                nombre,
+                ap_paterno,
+                ap_materno,
+                fecha_de_nacimiento,
+                telefono
+            )
+            VALUES ($1, $2, $3, $4, $5, $6)
+            `,
+            [
+                correo_electronico,
+                nombre,
+                ap_paterno,
+                ap_materno || null,
+                fecha_de_nacimiento,
+                telefono || null
+            ]
+        );
+
+        await db.query(
+            `
+            INSERT INTO cliente (
+                correo_electronico,
+                fecha_de_registro
+            )
+            VALUES ($1, CURRENT_DATE)
+            `,
+            [correo_electronico]
+        );
+
+        await db.query("COMMIT");
+
+        res.json({
+            mensaje: "Cliente agregado correctamente."
+        });
+
+    } catch (error) {
+        await db.query("ROLLBACK");
+
+        console.error("Error al agregar cliente:", error);
+
+        res.status(500).json({
+            error: "Error interno al agregar cliente."
+        });
+    }
+});
+
+// =========================
 // SERVIDOR
 // =========================
 

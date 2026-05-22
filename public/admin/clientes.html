@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Clientes</title>
+    <link rel="stylesheet" href="/principal.css">
+</head>
+<body>
+
+<script>
+if (sessionStorage.getItem("adminActivo") !== "true") {
+    window.location.href = "/admin/login.html";
+}
+</script>
+
+<h1>Gestión de Clientes</h1>
+
+<a href="/admin/panel.html">
+    <button type="button">Regresar al panel</button>
+</a>
+
+<hr>
+
+<h2>Agregar Cliente</h2>
+
+<input type="email" id="correo_electronico" placeholder="Correo electrónico">
+<input type="text" id="nombre" placeholder="Nombre">
+<input type="text" id="ap_paterno" placeholder="Apellido paterno">
+<input type="text" id="ap_materno" placeholder="Apellido materno">
+
+<label for="fecha_de_nacimiento">Fecha de nacimiento</label>
+<input type="date" id="fecha_de_nacimiento">
+
+<input type="text" id="telefono" placeholder="Teléfono">
+
+<br><br>
+
+<button type="button" onclick="agregarCliente()">
+    Agregar Cliente
+</button>
+
+<hr>
+
+<h2>Lista de Clientes</h2>
+
+<table border="1">
+    <thead>
+        <tr>
+            <th>Correo</th>
+            <th>Nombre</th>
+            <th>Apellido paterno</th>
+            <th>Apellido materno</th>
+            <th>Teléfono</th>
+            <th>Fecha registro</th>
+        </tr>
+    </thead>
+    <tbody id="tablaClientes"></tbody>
+</table>
+
+<script>
+window.onload = () => {
+    cargarClientes();
+};
+
+async function cargarClientes() {
+    try {
+        const response = await fetch("/clientes");
+        const data = await response.json();
+
+        const tabla = document.getElementById("tablaClientes");
+        tabla.innerHTML = "";
+
+        if (data.length === 0) {
+            tabla.innerHTML = `
+                <tr>
+                    <td colspan="6">No hay clientes registrados</td>
+                </tr>
+            `;
+            return;
+        }
+
+        data.forEach(cliente => {
+            tabla.innerHTML += `
+                <tr>
+                    <td>${cliente.correo_electronico}</td>
+                    <td>${cliente.nombre}</td>
+                    <td>${cliente.ap_paterno}</td>
+                    <td>${cliente.ap_materno ?? ""}</td>
+                    <td>${cliente.telefono ?? ""}</td>
+                    <td>${cliente.fecha_de_registro ?? ""}</td>
+                </tr>
+            `;
+        });
+
+    } catch (error) {
+        console.error(error);
+        alert("Error al consultar clientes.");
+    }
+}
+
+async function agregarCliente() {
+    try {
+        const cliente = {
+            correo_electronico: document.getElementById("correo_electronico").value,
+            nombre: document.getElementById("nombre").value,
+            ap_paterno: document.getElementById("ap_paterno").value,
+            ap_materno: document.getElementById("ap_materno").value,
+            fecha_de_nacimiento: document.getElementById("fecha_de_nacimiento").value,
+            telefono: document.getElementById("telefono").value
+        };
+
+        const response = await fetch("/clientes", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(cliente)
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        alert(data.mensaje);
+
+        document.getElementById("correo_electronico").value = "";
+        document.getElementById("nombre").value = "";
+        document.getElementById("ap_paterno").value = "";
+        document.getElementById("ap_materno").value = "";
+        document.getElementById("fecha_de_nacimiento").value = "";
+        document.getElementById("telefono").value = "";
+
+        cargarClientes();
+
+    } catch (error) {
+        console.error(error);
+        alert("Error al agregar cliente.");
+    }
+}
+</script>
+
+</body>
+</html>
