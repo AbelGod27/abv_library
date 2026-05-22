@@ -18,6 +18,7 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
 </script>
 
 <h1>Facturas</h1>
+<p id="mensaje" class="mensaje"></p>
 
 <a href="/admin/panel.html">
     <button type="button">Regresar al panel</button>
@@ -93,7 +94,7 @@ async function generarReporte() {
         const data = await response.json();
 
         if (data.error) {
-            alert(data.error);
+            mostrarMensaje(data.error);
             return;
         }
 
@@ -103,7 +104,7 @@ async function generarReporte() {
 
     } catch (error) {
         console.error(error);
-        alert("Error al generar reporte.");
+        mostrarMensaje("Error al generar reporte.");
     }
 }
 
@@ -183,6 +184,12 @@ function mostrarResumen(ventas, prestamos) {
         Préstamos devueltos: ${prestamosDevueltos}<br>
         Total general: $${totalVentas + totalMultas}
     `;
+}
+
+function mostrarMensaje(texto, tipo = "error") {
+    const mensaje = document.getElementById("mensaje");
+    mensaje.textContent = texto;
+    mensaje.className = `mensaje ${tipo}`;
 }
 </script>
 

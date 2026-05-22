@@ -17,6 +17,7 @@
     </script>
 
     <h1>Gestión de Proveedores</h1>
+    <p id="mensaje" class="mensaje"></p>
 
     <a href="/admin/panel.html">
         <button>Regresar al panel</button>
@@ -80,7 +81,7 @@ async function cargarProveedores() {
 
     } catch (error) {
         console.error(error);
-        alert("Error al consultar proveedores.");
+        mostrarMensaje("Error al consultar proveedores.");
     }
 }
 
@@ -101,16 +102,22 @@ async function agregarProveedor() {
         const data = await response.json();
 
         if (data.error) {
-            alert(data.error);
+            mostrarMensaje(data.error);
             return;
         }
-        alert(data.mensaje);
+        mostrarMensaje(data.mensaje, "success");
         document.getElementById("nombreProveedor").value = "";
         cargarProveedores();
     } catch (error) {
         console.error(error);
-        alert("Error al agregar proveedor.");
+        mostrarMensaje("Error al agregar proveedor.");
     }
+}
+
+function mostrarMensaje(texto, tipo = "error") {
+    const mensaje = document.getElementById("mensaje");
+    mensaje.textContent = texto;
+    mensaje.className = `mensaje ${tipo}`;
 }
 </script>
 </body>

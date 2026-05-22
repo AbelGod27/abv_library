@@ -20,6 +20,7 @@
     <h1>
         Gestión de Empleados
     </h1>
+    <p id="mensaje" class="mensaje"></p>
 
     <a href="/admin/panel.html">
 
@@ -234,11 +235,11 @@ async function agregarEmpleado() {
         const data =
             await response.json();
         if (data.error) {
-            alert(data.error);
+            mostrarMensaje(data.error);
             return;
         }
 
-        alert(data.mensaje);
+        mostrarMensaje(data.mensaje, "success");
 
         document.getElementById(
             "correo_electronico"
@@ -274,9 +275,15 @@ async function agregarEmpleado() {
 
     catch (error) {
         console.error(error);
-        alert("Error al agregar empleado.");
+        mostrarMensaje("Error al agregar empleado.");
     }
 
+}
+
+function mostrarMensaje(texto, tipo = "error") {
+    const mensaje = document.getElementById("mensaje");
+    mensaje.textContent = texto;
+    mensaje.className = `mensaje ${tipo}`;
 }
 </script>
 </body>

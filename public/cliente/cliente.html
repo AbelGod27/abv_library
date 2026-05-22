@@ -8,6 +8,7 @@
 </head>
 <body>
     <h1>Consulta de Libros</h1>
+    <p id="mensaje" class="mensaje"></p>
     <div class="contenedor-switch">
     
     <span>
@@ -155,6 +156,12 @@ switchLibros.addEventListener("change", () => {
     cargarLibros("");
 
 });
+
+function mostrarMensaje(texto, tipo = "error") {
+    const mensaje = document.getElementById("mensaje");
+    mensaje.textContent = texto;
+    mensaje.className = `mensaje ${tipo}`;
+}
 </script>
 </body>
 </html>

@@ -9,6 +9,7 @@
 <body>
 
     <h1>Abv Library</h1>
+    <p id="mensaje" class="mensaje"></p>
 
     <div class="contenedor">
         <a href="/cliente/cliente.html">
@@ -24,6 +25,14 @@
         </a>
     </div>
     
+
+<script>
+function mostrarMensaje(texto, tipo = "error") {
+    const mensaje = document.getElementById("mensaje");
+    mensaje.textContent = texto;
+    mensaje.className = `mensaje ${tipo}`;
+}
+</script>
 
 </body>
 </html>

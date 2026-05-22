@@ -14,6 +14,7 @@
     <h1>
         Acceso Administrador
     </h1>
+    <p id="mensaje" class="mensaje"></p>
 
     <input type="password" id="passwordAdmin"placeholder="Contraseña">
 
@@ -63,12 +64,18 @@ async function loginAdmin() {
             window.location.href = "/admin/panel.html";
         }
 
-        else {alert(data.error);}
+        else {mostrarMensaje(data.error);}
     }
     catch (error) {
         console.error(error);
-        alert("Error al iniciar sesión");
+        mostrarMensaje("Error al iniciar sesión");
     }
+}
+
+function mostrarMensaje(texto, tipo = "error") {
+    const mensaje = document.getElementById("mensaje");
+    mensaje.textContent = texto;
+    mensaje.className = `mensaje ${tipo}`;
 }
 
 </script>

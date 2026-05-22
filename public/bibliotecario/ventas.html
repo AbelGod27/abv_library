@@ -16,6 +16,7 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
 </script>
 
 <h1>Registrar Venta</h1>
+<p id="mensaje" class="mensaje"></p>
 
 <h2 id="infoBibliotecario"></h2>
 
@@ -93,7 +94,7 @@ async function cargarLibros() {
 
     } catch (error) {
         console.error(error);
-        alert("Error al cargar libros.");
+        mostrarMensaje("Error al cargar libros.");
     }
 }
 
@@ -118,11 +119,11 @@ async function registrarVenta() {
         const data = await response.json();
 
         if (data.error) {
-            alert(data.error);
+            mostrarMensaje(data.error);
             return;
         }
 
-        alert(data.mensaje);
+        mostrarMensaje(data.mensaje, "success");
 
         document.getElementById("isbn").value = "";
         document.getElementById("cantidad").value = "1";
@@ -131,8 +132,14 @@ async function registrarVenta() {
 
     } catch (error) {
         console.error(error);
-        alert("Error al registrar venta.");
+        mostrarMensaje("Error al registrar venta.");
     }
+}
+
+function mostrarMensaje(texto, tipo = "error") {
+    const mensaje = document.getElementById("mensaje");
+    mensaje.textContent = texto;
+    mensaje.className = `mensaje ${tipo}`;
 }
 </script>
 

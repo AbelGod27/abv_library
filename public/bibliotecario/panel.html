@@ -21,6 +21,7 @@ if (
 </script>
 
 <h1>Panel Bibliotecario</h1>
+<p id="mensaje" class="mensaje"></p>
 
 <h2 id="infoBibliotecario"></h2>
 
@@ -96,6 +97,12 @@ function cerrarSesion() {
     window.location.href =
         "/index.html";
 
+}
+
+function mostrarMensaje(texto, tipo = "error") {
+    const mensaje = document.getElementById("mensaje");
+    mensaje.textContent = texto;
+    mensaje.className = `mensaje ${tipo}`;
 }
 
 </script>

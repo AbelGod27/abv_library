@@ -18,6 +18,7 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
 </script>
 
 <h1>Historial de Préstamos</h1>
+<p id="mensaje" class="mensaje"></p>
 
 <a href="/bibliotecario/panel.html">
     <button type="button">Regresar al panel</button>
@@ -93,7 +94,7 @@ async function cargarPrestamos() {
 
     } catch (error) {
         console.error(error);
-        alert("Error al cargar préstamos.");
+        mostrarMensaje("Error al cargar préstamos.");
     }
 }
 
@@ -117,18 +118,24 @@ async function devolverPrestamo(id_prestamo) {
         const data = await response.json();
 
         if (data.error) {
-            alert(data.error);
+            mostrarMensaje(data.error);
             return;
         }
 
-        alert(data.mensaje);
+        mostrarMensaje(data.mensaje, "success");
 
         cargarPrestamos();
 
     } catch (error) {
         console.error(error);
-        alert("Error al devolver préstamo.");
+        mostrarMensaje("Error al devolver préstamo.");
     }
+}
+
+function mostrarMensaje(texto, tipo = "error") {
+    const mensaje = document.getElementById("mensaje");
+    mensaje.textContent = texto;
+    mensaje.className = `mensaje ${tipo}`;
 }
 </script>
 

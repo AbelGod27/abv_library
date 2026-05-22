@@ -107,3 +107,32 @@ input:checked + .slider::before {
     transform: translateX(28px);
 
 }
+
+.mensaje {
+    width: fit-content;
+    margin: 15px auto;
+    padding: 12px 18px;
+
+    border-radius: 10px;
+
+    font-weight: bold;
+    text-align: center;
+
+    background-color: #f4f4f4;
+
+    border: 2px solid #ccc;
+
+    transition: all 0.3s ease;
+}
+
+.mensaje.error {
+    color: #b00020;
+    border-color: #b00020;
+    background-color: #ffe5e5;
+}
+
+.mensaje.success {
+    color: #006400;
+    border-color: #006400;
+    background-color: #e7ffe7;
+}

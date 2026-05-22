@@ -21,6 +21,7 @@ if (
 </script>
 
 <h1>Historial de Ventas</h1>
+<p id="mensaje" class="mensaje"></p>
 
 <h2 id="infoBibliotecario"></h2>
 
@@ -130,6 +131,12 @@ async function cargarVentas() {
 
     }
 
+}
+
+function mostrarMensaje(texto, tipo = "error") {
+    const mensaje = document.getElementById("mensaje");
+    mensaje.textContent = texto;
+    mensaje.className = `mensaje ${tipo}`;
 }
 
 </script>
