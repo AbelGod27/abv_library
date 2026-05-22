@@ -441,6 +441,7 @@ tbody tr:hover { background: #f8fafc; }
 .login-box .logo { font-size: 2.5rem; }
 
 .login-box h1 {
+    font-family: var(--font-serif);
     font-size: 1.5rem;
     font-weight: 700;
     color: var(--color-primary);
