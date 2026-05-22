@@ -1013,21 +1013,31 @@ app.get("/clientes", async (req, res) => {
                 p.nombre,
                 p.ap_paterno,
                 p.ap_materno,
+                p.fecha_de_nacimiento,
                 p.telefono,
                 c.fecha_de_registro
+
             FROM persona p
+
             JOIN cliente c
-            ON p.correo_electronico = c.correo_electronico
+            ON p.correo_electronico =
+                c.correo_electronico
+
             ORDER BY p.nombre
         `);
 
         res.json(result.rows);
 
     } catch (error) {
-        console.error("Error al consultar clientes:", error);
+
+        console.error(
+            "Error al consultar clientes:",
+            error
+        );
 
         res.status(500).json({
-            error: "Error al consultar clientes."
+            error:
+                "Error al consultar clientes."
         });
     }
 });
