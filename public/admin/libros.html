@@ -53,8 +53,12 @@
 
     <br><br>
 
-    <button type="button" onclick="agregarLibro()">
+    <button type="button" id="btnAgregarLibro" onclick="agregarLibro()">
         Agregar Libro
+    </button>
+
+    <button type="button" id="btnActualizarLibro" onclick="actualizarLibro()" style="display:none;">
+        Actualizar Libro
     </button>
 
     <hr>
@@ -151,6 +155,10 @@ async function cargarLibros(busqueda) {
             <td>${libro.version ?? ""}</td>
             <td>${libro.anio_publicacion ?? ""}</td>
             <td>
+                <button type="button" onclick="eliminarLibro('${libro.isbn}')">
+                    Eliminar
+                </button>
+
                 <button type="button" onclick="eliminarLibro('${libro.isbn}')">
                     Eliminar
                 </button>
@@ -290,6 +298,69 @@ async function eliminarLibro(isbn) {
         alert("Error al eliminar libro.");
     }
 }
+
+function cargarDatosEditar(isbn, titulo, autor, editorial, version, anio_publicacion) {
+    document.getElementById("isbn").value = isbn;
+    document.getElementById("titulo").value = titulo;
+    document.getElementById("autor").value = autor;
+    document.getElementById("editorial").value = editorial;
+    document.getElementById("version").value = version;
+    document.getElementById("anio_publicacion").value = anio_publicacion?.split("T")[0] || "";
+
+    document.getElementById("isbn").disabled = true;
+
+    document.getElementById("btnAgregarLibro").style.display = "none";
+    document.getElementById("btnActualizarLibro").style.display = "inline-block";
+}
+
+async function actualizarLibro() {
+    try {
+        const isbn = document.getElementById("isbn").value;
+
+        const libro = {
+            titulo: document.getElementById("titulo").value,
+            autor: document.getElementById("autor").value,
+            editorial: document.getElementById("editorial").value,
+            version: document.getElementById("version").value,
+            anio_publicacion: document.getElementById("anio_publicacion").value
+        };
+
+        const response = await fetch(`/libros/${isbn}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(libro)
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        alert(data.mensaje);
+
+        document.getElementById("isbn").disabled = false;
+        document.getElementById("isbn").value = "";
+        document.getElementById("titulo").value = "";
+        document.getElementById("autor").value = "";
+        document.getElementById("editorial").value = "";
+        document.getElementById("version").value = "";
+        document.getElementById("anio_publicacion").value = "";
+
+        document.getElementById("btnAgregarLibro").style.display = "inline-block";
+        document.getElementById("btnActualizarLibro").style.display = "none";
+
+        cargarLibros("");
+
+    } catch (error) {
+        console.error(error);
+        alert("Error al actualizar libro.");
+    }
+}
+
 </script>
 </body>
 </html>

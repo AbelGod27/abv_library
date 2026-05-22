@@ -1118,6 +1118,70 @@ app.post("/clientes", async (req, res) => {
 });
 
 // =========================
+// Editar un LIBRO
+// =========================
+
+app.put("/libros/:isbn", async (req, res) => {
+    try {
+        const { isbn } = req.params;
+
+        const {
+            titulo,
+            autor,
+            editorial,
+            version,
+            anio_publicacion
+        } = req.body;
+
+        if (!titulo || !autor) {
+            return res.status(400).json({
+                error: "Título y autor son obligatorios."
+            });
+        }
+
+        const result = await db.query(
+            `
+            UPDATE libro
+            SET
+                titulo = $1,
+                autor = $2,
+                editorial = $3,
+                version = $4,
+                anio_publicacion = $5
+            WHERE isbn = $6
+            RETURNING *
+            `,
+            [
+                titulo,
+                autor,
+                editorial || null,
+                version || null,
+                anio_publicacion || null,
+                isbn
+            ]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                error: "El libro no existe."
+            });
+        }
+
+        res.json({
+            mensaje: "Libro actualizado correctamente.",
+            libro: result.rows[0]
+        });
+
+    } catch (error) {
+        console.error("Error al actualizar libro:", error);
+
+        res.status(500).json({
+            error: "Error interno al actualizar libro."
+        });
+    }
+});
+
+// =========================
 // SERVIDOR
 // =========================
 
