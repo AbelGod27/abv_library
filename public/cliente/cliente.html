@@ -126,7 +126,8 @@ async function cargarLibros(busqueda) {
 
 function formatFecha(fecha) {
     if (!fecha) return "—";
-    return fecha.split("T")[0];
+    const str = String(fecha);
+    return str.includes("T") ? str.split("T")[0] : str;
 }
 
 function mostrarMensaje(texto, tipo = "error") {
