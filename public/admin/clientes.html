@@ -22,7 +22,7 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
 
 <hr>
 
-<h2>Agregar Cliente</h2>
+<h2>Agregar / Editar Cliente</h2>
 
 <input type="email" id="correo_electronico" placeholder="Correo electrónico">
 <input type="text" id="nombre" placeholder="Nombre">
@@ -36,8 +36,12 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
 
 <br><br>
 
-<button type="button" onclick="agregarCliente()">
+<button type="button" id="btnAgregarCliente" onclick="agregarCliente()">
     Agregar Cliente
+</button>
+
+<button type="button" id="btnActualizarCliente" onclick="actualizarCliente()" style="display:none;">
+    Actualizar Cliente
 </button>
 
 <hr>
@@ -53,6 +57,7 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
             <th>Apellido materno</th>
             <th>Teléfono</th>
             <th>Fecha registro</th>
+            <th>Acción</th>
         </tr>
     </thead>
     <tbody id="tablaClientes"></tbody>
@@ -74,7 +79,7 @@ async function cargarClientes() {
         if (data.length === 0) {
             tabla.innerHTML = `
                 <tr>
-                    <td colspan="6">No hay clientes registrados</td>
+                    <td colspan="7">No hay clientes registrados</td>
                 </tr>
             `;
             return;
@@ -89,6 +94,22 @@ async function cargarClientes() {
                     <td>${cliente.ap_materno ?? ""}</td>
                     <td>${cliente.telefono ?? ""}</td>
                     <td>${cliente.fecha_de_registro ?? ""}</td>
+                    <td>
+                        <button type="button" onclick="cargarDatosEditarCliente(
+                            '${cliente.correo_electronico}',
+                            '${cliente.nombre}',
+                            '${cliente.ap_paterno}',
+                            '${cliente.ap_materno ?? ""}',
+                            '${cliente.fecha_de_nacimiento ?? ""}',
+                            '${cliente.telefono ?? ""}'
+                        )">
+                            Editar
+                        </button>
+
+                        <button type="button" onclick="eliminarCliente('${cliente.correo_electronico}')">
+                            Eliminar
+                        </button>
+                    </td>
                 </tr>
             `;
         });
@@ -101,14 +122,7 @@ async function cargarClientes() {
 
 async function agregarCliente() {
     try {
-        const cliente = {
-            correo_electronico: document.getElementById("correo_electronico").value,
-            nombre: document.getElementById("nombre").value,
-            ap_paterno: document.getElementById("ap_paterno").value,
-            ap_materno: document.getElementById("ap_materno").value,
-            fecha_de_nacimiento: document.getElementById("fecha_de_nacimiento").value,
-            telefono: document.getElementById("telefono").value
-        };
+        const cliente = obtenerDatosCliente();
 
         const response = await fetch("/clientes", {
             method: "POST",
@@ -126,20 +140,120 @@ async function agregarCliente() {
         }
 
         alert(data.mensaje);
-
-        document.getElementById("correo_electronico").value = "";
-        document.getElementById("nombre").value = "";
-        document.getElementById("ap_paterno").value = "";
-        document.getElementById("ap_materno").value = "";
-        document.getElementById("fecha_de_nacimiento").value = "";
-        document.getElementById("telefono").value = "";
-
+        limpiarFormularioCliente();
         cargarClientes();
 
     } catch (error) {
         console.error(error);
         alert("Error al agregar cliente.");
     }
+}
+
+function cargarDatosEditarCliente(
+    correo,
+    nombre,
+    ap_paterno,
+    ap_materno,
+    fecha_de_nacimiento,
+    telefono
+) {
+    document.getElementById("correo_electronico").value = correo;
+    document.getElementById("nombre").value = nombre;
+    document.getElementById("ap_paterno").value = ap_paterno;
+    document.getElementById("ap_materno").value = ap_materno;
+    document.getElementById("fecha_de_nacimiento").value =
+        fecha_de_nacimiento ? fecha_de_nacimiento.split("T")[0] : "";
+    document.getElementById("telefono").value = telefono;
+
+    document.getElementById("correo_electronico").disabled = true;
+
+    document.getElementById("btnAgregarCliente").style.display = "none";
+    document.getElementById("btnActualizarCliente").style.display = "inline-block";
+}
+
+async function actualizarCliente() {
+    try {
+        const correo = document.getElementById("correo_electronico").value;
+        const cliente = obtenerDatosCliente();
+
+        const response = await fetch(`/clientes/${correo}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(cliente)
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        alert(data.mensaje);
+        limpiarFormularioCliente();
+        cargarClientes();
+
+    } catch (error) {
+        console.error(error);
+        alert("Error al actualizar cliente.");
+    }
+}
+
+async function eliminarCliente(correo) {
+    try {
+        const confirmar = confirm(
+            "¿Seguro que quieres eliminar este cliente?"
+        );
+
+        if (!confirmar) {
+            return;
+        }
+
+        const response = await fetch(`/clientes/${correo}`, {
+            method: "DELETE"
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        alert(data.mensaje);
+        cargarClientes();
+
+    } catch (error) {
+        console.error(error);
+        alert("Error al eliminar cliente.");
+    }
+}
+
+function obtenerDatosCliente() {
+    return {
+        correo_electronico: document.getElementById("correo_electronico").value,
+        nombre: document.getElementById("nombre").value,
+        ap_paterno: document.getElementById("ap_paterno").value,
+        ap_materno: document.getElementById("ap_materno").value,
+        fecha_de_nacimiento: document.getElementById("fecha_de_nacimiento").value,
+        telefono: document.getElementById("telefono").value
+    };
+}
+
+function limpiarFormularioCliente() {
+    document.getElementById("correo_electronico").disabled = false;
+
+    document.getElementById("correo_electronico").value = "";
+    document.getElementById("nombre").value = "";
+    document.getElementById("ap_paterno").value = "";
+    document.getElementById("ap_materno").value = "";
+    document.getElementById("fecha_de_nacimiento").value = "";
+    document.getElementById("telefono").value = "";
+
+    document.getElementById("btnAgregarCliente").style.display = "inline-block";
+    document.getElementById("btnActualizarCliente").style.display = "none";
 }
 </script>
 

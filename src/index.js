@@ -1182,6 +1182,114 @@ app.put("/libros/:isbn", async (req, res) => {
 });
 
 // =========================
+// ACTUALIZAR CLIENTE
+// =========================
+
+app.put("/clientes/:correo", async (req, res) => {
+    try {
+        const correoActual = req.params.correo;
+
+        const {
+            nombre,
+            ap_paterno,
+            ap_materno,
+            fecha_de_nacimiento,
+            telefono
+        } = req.body;
+
+        if (!nombre || !ap_paterno || !fecha_de_nacimiento) {
+            return res.status(400).json({
+                error: "Nombre, apellido paterno y fecha de nacimiento son obligatorios."
+            });
+        }
+
+        const result = await db.query(
+            `
+            UPDATE persona
+            SET
+                nombre = $1,
+                ap_paterno = $2,
+                ap_materno = $3,
+                fecha_de_nacimiento = $4,
+                telefono = $5
+            WHERE correo_electronico = $6
+            RETURNING *
+            `,
+            [
+                nombre,
+                ap_paterno,
+                ap_materno || null,
+                fecha_de_nacimiento,
+                telefono || null,
+                correoActual
+            ]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                error: "El cliente no existe."
+            });
+        }
+
+        res.json({
+            mensaje: "Cliente actualizado correctamente."
+        });
+
+    } catch (error) {
+        console.error("Error al actualizar cliente:", error);
+
+        res.status(500).json({
+            error: "Error interno al actualizar cliente."
+        });
+    }
+});
+
+
+// =========================
+// ELIMINAR CLIENTE
+// =========================
+
+app.delete("/clientes/:correo", async (req, res) => {
+    try {
+        const correo = req.params.correo;
+
+        const existe = await db.query(
+            `
+            SELECT correo_electronico
+            FROM cliente
+            WHERE correo_electronico = $1
+            `,
+            [correo]
+        );
+
+        if (existe.rows.length === 0) {
+            return res.status(404).json({
+                error: "El cliente no existe."
+            });
+        }
+
+        await db.query(
+            `
+            DELETE FROM persona
+            WHERE correo_electronico = $1
+            `,
+            [correo]
+        );
+
+        res.json({
+            mensaje: "Cliente eliminado correctamente."
+        });
+
+    } catch (error) {
+        console.error("Error al eliminar cliente:", error);
+
+        res.status(500).json({
+            error: "No se puede eliminar el cliente porque puede tener préstamos registrados."
+        });
+    }
+});
+
+// =========================
 // SERVIDOR
 // =========================
 
