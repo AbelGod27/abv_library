@@ -107,7 +107,7 @@ async function cargarClientes() {
                     <td>${c.ap_paterno}</td>
                     <td>${c.ap_materno ?? "—"}</td>
                     <td>${c.telefono ?? "—"}</td>
-                    <td>${formatFecha(c.fecha_de_registro)}</td>
+                    <td class="fecha">${formatFecha(c.fecha_de_registro)}</td>
                     <td>
                         <div class="td-actions">
                             <button class="btn-secondary btn-sm" type="button"

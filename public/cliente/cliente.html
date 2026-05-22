@@ -116,7 +116,7 @@ async function cargarLibros(busqueda) {
                     <td>${libro.autor ?? "—"}</td>
                     <td>${libro.editorial ?? "—"}</td>
                     <td>${libro.version ?? "—"}</td>
-                    <td>${formatFecha(libro.anio_publicacion)}</td>
+                    <td class="fecha">${formatFecha(libro.anio_publicacion)}</td>
                 </tr>`;
         });
     } catch (error) {

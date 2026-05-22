@@ -125,7 +125,7 @@ function mostrarVentas(ventas) {
         tabla.innerHTML += `
             <tr>
                 <td>${v.id}</td>
-                <td>${formatFecha(v.fecha)}</td>
+                <td class="fecha">${formatFecha(v.fecha)}</td>
                 <td>$${v.monto}</td>
                 <td>${v.metodo_de_pago ?? "—"}</td>
             </tr>`;
@@ -146,7 +146,7 @@ function mostrarPrestamos(prestamos) {
         tabla.innerHTML += `
             <tr>
                 <td>${p.id}</td>
-                <td>${formatFecha(p.fecha)}</td>
+                <td class="fecha">${formatFecha(p.fecha)}</td>
                 <td>$${p.monto}</td>
                 <td>${estadoBadge}</td>
             </tr>`;

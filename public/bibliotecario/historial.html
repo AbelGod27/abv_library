@@ -71,7 +71,7 @@ async function cargarVentas() {
             tabla.innerHTML += `
                 <tr>
                     <td>${v.id_venta}</td>
-                    <td>${formatFecha(v.fecha)}</td>
+                    <td class="fecha">${formatFecha(v.fecha)}</td>
                     <td>${v.hora ?? "—"}</td>
                     <td>$${v.total_pagado}</td>
                     <td>${v.metodo_de_pago}</td>

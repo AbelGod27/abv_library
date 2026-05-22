@@ -295,6 +295,11 @@ td {
     vertical-align: middle;
 }
 
+td.fecha {
+    white-space: nowrap;
+    min-width: 100px;
+}
+
 tbody tr:last-child td { border-bottom: none; }
 
 tbody tr:hover { background: #f8fafc; }

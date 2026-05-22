@@ -75,9 +75,9 @@ async function cargarPrestamos() {
                     <td>${p.id_prestamo}</td>
                     <td>${p.cliente}</td>
                     <td>${p.bibliotecario}</td>
-                    <td>${formatFecha(p.dia_de_inicio)}</td>
-                    <td>${formatFecha(p.dia_de_vencimiento)}</td>
-                    <td>${formatFecha(p.dia_de_entrega)}</td>
+                    <td class="fecha">${formatFecha(p.dia_de_inicio)}</td>
+                    <td class="fecha">${formatFecha(p.dia_de_vencimiento)}</td>
+                    <td class="fecha">${formatFecha(p.dia_de_entrega)}</td>
                     <td>${p.cantidad_de_libros}</td>
                     <td>${estadoBadge}</td>
                     <td>$${p.multa}</td>
