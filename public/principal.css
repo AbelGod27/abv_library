@@ -109,20 +109,18 @@ input:checked + .slider::before {
 }
 
 .mensaje {
+    display: none;
     width: fit-content;
     margin: 15px auto;
     padding: 12px 18px;
-
     border-radius: 10px;
-
     font-weight: bold;
     text-align: center;
-
-    background-color: #f4f4f4;
-
     border: 2px solid #ccc;
+}
 
-    transition: all 0.3s ease;
+.mensaje.mostrar {
+    display: block;
 }
 
 .mensaje.error {

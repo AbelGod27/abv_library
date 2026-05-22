@@ -160,7 +160,11 @@ switchLibros.addEventListener("change", () => {
 function mostrarMensaje(texto, tipo = "error") {
     const mensaje = document.getElementById("mensaje");
     mensaje.textContent = texto;
-    mensaje.className = `mensaje ${tipo}`;
+    mensaje.className = `mensaje mostrar ${tipo}`;
+    setTimeout(() => {
+        mensaje.textContent = "";
+        mensaje.className = "mensaje";
+    }, 4000);
 }
 </script>
 </body>
