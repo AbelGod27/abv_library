@@ -1,299 +1,172 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>
-        Gestión de Libros
-    </title>
+    <title>Gestión de Libros — Abv Library</title>
     <link rel="stylesheet" href="/principal.css">
 </head>
-
 <body>
-    <script>
-        if (sessionStorage.getItem("adminActivo") !== "true") {
-            window.location.href = "/admin/login.html";
-        }
-    </script>
-
-    <h1>
-        Gestión de Libros
-    </h1>
-    <p id="mensaje" class="mensaje"></p>
-
-    <a href="/admin/panel.html">
-
-        <button>
-            Regresar al panel
-        </button>
-
-    </a>
-
-    <hr>
-
-    <h2>
-        Agregar Libro
-    </h2>
-
-    <input type="text" id="isbn" placeholder="ISBN">
-
-    <input type="text" id="titulo" placeholder="Título">
-
-    <input type="text" id="autor" placeholder="Autor">
-
-    <input type="text" id="editorial" placeholder="Editorial">
-
-    <input type="text" id="version" placeholder="Versión">
-
-    <label for="anio_publicacion">
-        Año de publicación
-    </label>
-
-    <input type="date" id="anio_publicacion">
-
-    <br><br>
-
-    <button type="button" id="btnAgregarLibro" onclick="agregarLibro()">
-        Agregar Libro
-    </button>
-
-    <button type="button" id="btnActualizarLibro" onclick="actualizarLibro()" style="display:none;">
-        Actualizar Libro
-    </button>
-
-    <hr>
-
-    <h2>
-        Lista de Libros
-    </h2>
-
-    <input type="text" id="buscarLibro" placeholder="Buscar libro...">
-
-    <br><br>
-
-    <table border="1">
-
-        <thead>
-            <tr>
-                <th>ISBN</th>
-                <th>Título</th>
-                <th>Autor</th>
-                <th>Editorial</th>
-                <th>Versión</th>
-                <th>Año</th>
-                <th>Acción</th>
-            </tr>
-        </thead>
-
-        <tbody id="tablaLibros"></tbody>
-
-    </table>
 
 <script>
+if (sessionStorage.getItem("adminActivo") !== "true") {
+    window.location.href = "/admin/login.html";
+}
+</script>
 
-const inputBusqueda =
-    document.getElementById("buscarLibro");
+<header class="page-header">
+    <h1>📚 Gestión de Libros</h1>
+    <a href="/admin/panel.html"><button class="btn-secondary btn-sm">← Regresar</button></a>
+</header>
 
+<main class="page-content">
+
+    <p id="mensaje" class="mensaje"></p>
+
+    <!-- FORMULARIO -->
+    <div class="card">
+        <h2 id="formTitulo">Agregar Libro</h2>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="isbn">ISBN</label>
+                <input type="text" id="isbn" placeholder="978-...">
+            </div>
+            <div class="form-group">
+                <label for="titulo">Título</label>
+                <input type="text" id="titulo" placeholder="Título del libro">
+            </div>
+            <div class="form-group">
+                <label for="autor">Autor</label>
+                <input type="text" id="autor" placeholder="Nombre del autor">
+            </div>
+            <div class="form-group">
+                <label for="editorial">Editorial</label>
+                <input type="text" id="editorial" placeholder="Editorial">
+            </div>
+            <div class="form-group">
+                <label for="version">Versión</label>
+                <input type="text" id="version" placeholder="Ej: 1ra edición">
+            </div>
+            <div class="form-group">
+                <label for="anio_publicacion">Año de publicación</label>
+                <input type="date" id="anio_publicacion">
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" id="btnAgregarLibro" onclick="agregarLibro()">Agregar Libro</button>
+            <button type="button" id="btnActualizarLibro" onclick="actualizarLibro()" style="display:none;">Guardar Cambios</button>
+            <button type="button" id="btnCancelarEdicion" class="btn-secondary" onclick="cancelarEdicion()" style="display:none;">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- LISTA -->
+    <div class="card">
+        <h2>Lista de Libros</h2>
+
+        <div class="search-bar">
+            <input type="text" id="buscarLibro" placeholder="🔍  Buscar por título, autor, ISBN...">
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ISBN</th>
+                        <th>Título</th>
+                        <th>Autor</th>
+                        <th>Editorial</th>
+                        <th>Versión</th>
+                        <th>Año</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaLibros"></tbody>
+            </table>
+        </div>
+    </div>
+
+</main>
+
+<script>
+const inputBusqueda = document.getElementById("buscarLibro");
 let temporizador;
 
-window.onload = () => {
-    cargarLibros("");
-};
+window.onload = () => cargarLibros("");
 
 inputBusqueda.addEventListener("input", () => {
-
     clearTimeout(temporizador);
-    temporizador = setTimeout(() => {
-        cargarLibros(
-            inputBusqueda.value
-        );
-    }, 500);
-
+    temporizador = setTimeout(() => cargarLibros(inputBusqueda.value), 500);
 });
-
-
-// =========================
-// CONSULTAR LIBROS
-// =========================
 
 async function cargarLibros(busqueda) {
     try {
-        const response = await fetch(
-            `/libros?buscar=${encodeURIComponent(busqueda)}`
-        );
-
-        const data =
-            await response.json();
-
-        const tabla =
-            document.getElementById(
-                "tablaLibros"
-            );
-
+        const response = await fetch(`/libros?buscar=${encodeURIComponent(busqueda)}`);
+        const data = await response.json();
+        const tabla = document.getElementById("tablaLibros");
         tabla.innerHTML = "";
 
         if (data.length === 0) {
-            tabla.innerHTML = `
-                <tr>
-                    <td colspan="6">
-                        No se encontraron libros
-                    </td>
-                </tr>
-            `;
-
+            tabla.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">No se encontraron libros</td></tr>`;
             return;
         }
 
         data.forEach(libro => {
-
             tabla.innerHTML += `
-        <tr>
-            <td>${libro.isbn}</td>
-            <td>${libro.titulo}</td>
-            <td>${libro.autor}</td>
-            <td>${libro.editorial ?? ""}</td>
-            <td>${libro.version ?? ""}</td>
-            <td>${libro.anio_publicacion ?? ""}</td>
-            <td>
-                <button type="button" onclick="cargarDatosEditar('${libro.isbn}', '${libro.titulo}', '${libro.autor}', '${libro.editorial ?? ""}', '${libro.version ?? ""}', '${libro.anio_publicacion ?? ""}')">
-                    Editar
-                </button>
-
-                <button type="button" onclick="eliminarLibro('${libro.isbn}')">
-                    Eliminar
-                </button>
-            </td>
-        </tr>
-    `;
+                <tr>
+                    <td>${libro.isbn}</td>
+                    <td>${libro.titulo}</td>
+                    <td>${libro.autor}</td>
+                    <td>${libro.editorial ?? "—"}</td>
+                    <td>${libro.version ?? "—"}</td>
+                    <td>${libro.anio_publicacion ?? "—"}</td>
+                    <td>
+                        <div class="td-actions">
+                            <button class="btn-secondary btn-sm" type="button"
+                                onclick="cargarDatosEditar('${libro.isbn}','${libro.titulo}','${libro.autor}','${libro.editorial ?? ""}','${libro.version ?? ""}','${libro.anio_publicacion ?? ""}')">
+                                ✏️ Editar
+                            </button>
+                            <button class="btn-danger btn-sm" type="button" onclick="eliminarLibro('${libro.isbn}')">
+                                🗑️ Eliminar
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
         });
-    }
-
-    catch (error) {
+    } catch (error) {
         console.error(error);
         mostrarMensaje("Error al consultar libros.");
     }
 }
 
-
-// =========================
-// AGREGAR LIBRO
-// =========================
-
 async function agregarLibro() {
     try {
-        const libro = {
-            isbn:
-                document.getElementById(
-                    "isbn"
-                ).value,
-
-            titulo:
-                document.getElementById(
-                    "titulo"
-                ).value,
-
-            autor:
-                document.getElementById(
-                    "autor"
-                ).value,
-
-            editorial:
-                document.getElementById(
-                    "editorial"
-                ).value,
-
-            version:
-                document.getElementById(
-                    "version"
-                ).value,
-
-            anio_publicacion:
-                document.getElementById(
-                    "anio_publicacion"
-                ).value
-
-        };
-
-        const response = await fetch(
-            "/libros",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                },
-                body:
-                    JSON.stringify(libro)
-            }
-        );
+        const libro = obtenerDatosLibro();
+        const response = await fetch("/libros", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(libro)
+        });
         const data = await response.json();
-
-        if (data.error) {
-            mostrarMensaje(data.error);
-            return;
-        }
-
+        if (data.error) { mostrarMensaje(data.error); return; }
         mostrarMensaje(data.mensaje, "success");
-
-        document.getElementById(
-            "isbn"
-        ).value = "";
-
-        document.getElementById(
-            "titulo"
-        ).value = "";
-
-        document.getElementById(
-            "autor"
-        ).value = "";
-
-        document.getElementById(
-            "editorial"
-        ).value = "";
-
-        document.getElementById(
-            "version"
-        ).value = "";
-
-        document.getElementById(
-            "anio_publicacion"
-        ).value = "";
-
+        limpiarFormulario();
         cargarLibros("");
-    }
-
-    catch (error) {
+    } catch (error) {
         console.error(error);
         mostrarMensaje("Error al agregar libro.");
     }
 }
 
 async function eliminarLibro(isbn) {
+    if (!confirm("¿Seguro que quieres eliminar este libro?")) return;
     try {
-        const confirmar = confirm(
-            "¿Seguro que quieres eliminar este libro?"
-        );
-
-        if (!confirmar) {
-            return;
-        }
-
-        const response = await fetch(`/libros/${isbn}`, {
-            method: "DELETE"
-        });
-
+        const response = await fetch(`/libros/${isbn}`, { method: "DELETE" });
         const data = await response.json();
-
-        if (data.error) {
-            mostrarMensaje(data.error);
-            return;
-        }
-
+        if (data.error) { mostrarMensaje(data.error); return; }
         mostrarMensaje(data.mensaje, "success");
-
         cargarLibros("");
-
     } catch (error) {
         console.error(error);
         mostrarMensaje("Error al eliminar libro.");
@@ -307,59 +180,56 @@ function cargarDatosEditar(isbn, titulo, autor, editorial, version, anio_publica
     document.getElementById("editorial").value = editorial;
     document.getElementById("version").value = version;
     document.getElementById("anio_publicacion").value = anio_publicacion?.split("T")[0] || "";
-
     document.getElementById("isbn").disabled = true;
-
+    document.getElementById("formTitulo").textContent = "Editar Libro";
     document.getElementById("btnAgregarLibro").style.display = "none";
-    document.getElementById("btnActualizarLibro").style.display = "inline-block";
+    document.getElementById("btnActualizarLibro").style.display = "inline-flex";
+    document.getElementById("btnCancelarEdicion").style.display = "inline-flex";
+    window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 async function actualizarLibro() {
     try {
         const isbn = document.getElementById("isbn").value;
-
-        const libro = {
-            titulo: document.getElementById("titulo").value,
-            autor: document.getElementById("autor").value,
-            editorial: document.getElementById("editorial").value,
-            version: document.getElementById("version").value,
-            anio_publicacion: document.getElementById("anio_publicacion").value
-        };
-
+        const libro = obtenerDatosLibro();
         const response = await fetch(`/libros/${isbn}`, {
             method: "PUT",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(libro)
         });
-
         const data = await response.json();
-
-        if (data.error) {
-            mostrarMensaje(data.error);
-            return;
-        }
-
+        if (data.error) { mostrarMensaje(data.error); return; }
         mostrarMensaje(data.mensaje, "success");
-
-        document.getElementById("isbn").disabled = false;
-        document.getElementById("isbn").value = "";
-        document.getElementById("titulo").value = "";
-        document.getElementById("autor").value = "";
-        document.getElementById("editorial").value = "";
-        document.getElementById("version").value = "";
-        document.getElementById("anio_publicacion").value = "";
-
-        document.getElementById("btnAgregarLibro").style.display = "inline-block";
-        document.getElementById("btnActualizarLibro").style.display = "none";
-
+        limpiarFormulario();
         cargarLibros("");
-
     } catch (error) {
         console.error(error);
         mostrarMensaje("Error al actualizar libro.");
     }
+}
+
+function cancelarEdicion() { limpiarFormulario(); }
+
+function obtenerDatosLibro() {
+    return {
+        isbn:             document.getElementById("isbn").value,
+        titulo:           document.getElementById("titulo").value,
+        autor:            document.getElementById("autor").value,
+        editorial:        document.getElementById("editorial").value,
+        version:          document.getElementById("version").value,
+        anio_publicacion: document.getElementById("anio_publicacion").value
+    };
+}
+
+function limpiarFormulario() {
+    ["isbn","titulo","autor","editorial","version","anio_publicacion"].forEach(id => {
+        document.getElementById(id).value = "";
+    });
+    document.getElementById("isbn").disabled = false;
+    document.getElementById("formTitulo").textContent = "Agregar Libro";
+    document.getElementById("btnAgregarLibro").style.display = "inline-flex";
+    document.getElementById("btnActualizarLibro").style.display = "none";
+    document.getElementById("btnCancelarEdicion").style.display = "none";
 }
 
 function mostrarMensaje(texto, tipo = "error") {
@@ -371,7 +241,7 @@ function mostrarMensaje(texto, tipo = "error") {
         mensaje.className = "mensaje";
     }, 4000);
 }
-
 </script>
+
 </body>
 </html>

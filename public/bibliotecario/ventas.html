@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registrar Venta</title>
+    <title>Registrar Venta — Abv Library</title>
     <link rel="stylesheet" href="/principal.css">
 </head>
-
 <body>
 
 <script>
@@ -15,83 +14,71 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
 }
 </script>
 
-<h1>Registrar Venta</h1>
-<p id="mensaje" class="mensaje"></p>
+<header class="page-header">
+    <h1>🛒 Registrar Venta</h1>
+    <a href="/bibliotecario/panel.html"><button class="btn-secondary btn-sm">← Regresar</button></a>
+</header>
 
-<h2 id="infoBibliotecario"></h2>
+<main class="page-content">
 
-<a href="/bibliotecario/panel.html">
-    <button type="button">Regresar al panel</button>
-</a>
+    <p id="mensaje" class="mensaje"></p>
 
-<hr>
+    <div id="infoBibliotecario" class="panel-info"></div>
 
-<h2>Datos de la venta</h2>
+    <div class="card">
+        <h2>Datos de la venta</h2>
 
-<label for="isbn">Libro</label>
-<select id="isbn">
-    <option value="">Selecciona un libro</option>
-</select>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="isbn">Libro</label>
+                <select id="isbn">
+                    <option value="">Selecciona un libro</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="cantidad">Cantidad</label>
+                <input type="number" id="cantidad" min="1" value="1">
+            </div>
+            <div class="form-group">
+                <label for="total_pagado">Total pagado ($)</label>
+                <input type="number" id="total_pagado" step="0.01" min="0" placeholder="0.00">
+            </div>
+            <div class="form-group">
+                <label for="metodo_de_pago">Método de pago</label>
+                <select id="metodo_de_pago">
+                    <option value="">Selecciona método</option>
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="Tarjeta">Tarjeta</option>
+                    <option value="Transferencia">Transferencia</option>
+                </select>
+            </div>
+        </div>
 
-<br><br>
+        <div class="form-actions">
+            <button type="button" onclick="registrarVenta()">Registrar Venta</button>
+        </div>
+    </div>
 
-<label for="cantidad">Cantidad</label>
-<input type="number" id="cantidad" min="1" value="1">
-
-<br><br>
-
-<label for="total_pagado">Total pagado</label>
-<input
-    type="number"
-    id="total_pagado"
-    step="0.01"
-    min="0"
-    placeholder="Total pagado"
->
-
-<br><br>
-
-<label for="metodo_de_pago">Método de pago</label>
-<select id="metodo_de_pago">
-    <option value="">Selecciona método</option>
-    <option value="Efectivo">Efectivo</option>
-    <option value="Tarjeta">Tarjeta</option>
-    <option value="Transferencia">Transferencia</option>
-</select>
-
-<br><br>
-
-<button type="button" onclick="registrarVenta()">
-    Registrar Venta
-</button>
+</main>
 
 <script>
 const correoBibliotecario = sessionStorage.getItem("correoBibliotecario");
 const nombreBibliotecario = sessionStorage.getItem("nombreBibliotecario");
-const rolBibliotecario = sessionStorage.getItem("rolBibliotecario");
+const rolBibliotecario    = sessionStorage.getItem("rolBibliotecario");
 
 document.getElementById("infoBibliotecario").textContent =
     `Bibliotecario: ${nombreBibliotecario} (${rolBibliotecario})`;
 
-window.onload = () => {
-    cargarLibros();
-};
+window.onload = () => cargarLibros();
 
 async function cargarLibros() {
     try {
         const response = await fetch("/libros");
         const data = await response.json();
-
         const select = document.getElementById("isbn");
-
         data.forEach(libro => {
-            select.innerHTML += `
-                <option value="${libro.isbn}">
-                    ${libro.titulo} - ${libro.autor}
-                </option>
-            `;
+            select.innerHTML += `<option value="${libro.isbn}">${libro.titulo} — ${libro.autor}</option>`;
         });
-
     } catch (error) {
         console.error(error);
         mostrarMensaje("Error al cargar libros.");
@@ -102,34 +89,26 @@ async function registrarVenta() {
     try {
         const venta = {
             correo_electronico: correoBibliotecario,
-            isbn: document.getElementById("isbn").value,
-            cantidad: document.getElementById("cantidad").value,
-            total_pagado: document.getElementById("total_pagado").value,
-            metodo_de_pago: document.getElementById("metodo_de_pago").value
+            isbn:               document.getElementById("isbn").value,
+            cantidad:           document.getElementById("cantidad").value,
+            total_pagado:       document.getElementById("total_pagado").value,
+            metodo_de_pago:     document.getElementById("metodo_de_pago").value
         };
 
         const response = await fetch("/ventas", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(venta)
         });
 
         const data = await response.json();
-
-        if (data.error) {
-            mostrarMensaje(data.error);
-            return;
-        }
+        if (data.error) { mostrarMensaje(data.error); return; }
 
         mostrarMensaje(data.mensaje, "success");
-
         document.getElementById("isbn").value = "";
         document.getElementById("cantidad").value = "1";
         document.getElementById("total_pagado").value = "";
         document.getElementById("metodo_de_pago").value = "";
-
     } catch (error) {
         console.error(error);
         mostrarMensaje("Error al registrar venta.");

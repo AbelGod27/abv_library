@@ -1,283 +1,157 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>
-        Gestión de Empleados
-    </title>
+    <title>Gestión de Empleados — Abv Library</title>
     <link rel="stylesheet" href="/principal.css">
 </head>
-
 <body>
 
 <script>
-    if (sessionStorage.getItem("adminActivo") !== "true") {
+if (sessionStorage.getItem("adminActivo") !== "true") {
     window.location.href = "/admin/login.html";
-    }
+}
 </script>
-    <h1>
-        Gestión de Empleados
-    </h1>
+
+<header class="page-header">
+    <h1>👤 Gestión de Empleados</h1>
+    <a href="/admin/panel.html"><button class="btn-secondary btn-sm">← Regresar</button></a>
+</header>
+
+<main class="page-content">
+
     <p id="mensaje" class="mensaje"></p>
 
-    <a href="/admin/panel.html">
+    <!-- FORMULARIO -->
+    <div class="card">
+        <h2>Agregar Empleado</h2>
 
-    <button>
-        Regresar al panel
-    </button>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="correo_electronico">Correo electrónico</label>
+                <input type="email" id="correo_electronico" placeholder="correo@ejemplo.com">
+            </div>
+            <div class="form-group">
+                <label for="nombre">Nombre</label>
+                <input type="text" id="nombre" placeholder="Nombre">
+            </div>
+            <div class="form-group">
+                <label for="ap_paterno">Apellido paterno</label>
+                <input type="text" id="ap_paterno" placeholder="Apellido paterno">
+            </div>
+            <div class="form-group">
+                <label for="ap_materno">Apellido materno</label>
+                <input type="text" id="ap_materno" placeholder="Apellido materno">
+            </div>
+            <div class="form-group">
+                <label for="fecha_de_nacimiento">Fecha de nacimiento</label>
+                <input type="date" id="fecha_de_nacimiento">
+            </div>
+            <div class="form-group">
+                <label for="telefono">Teléfono</label>
+                <input type="text" id="telefono" placeholder="10 dígitos">
+            </div>
+            <div class="form-group">
+                <label for="rol">Rol</label>
+                <select id="rol">
+                    <option value="">Selecciona un rol</option>
+                    <option value="Vendedor">Vendedor</option>
+                    <option value="Administrador">Administrador</option>
+                    <option value="Dueno">Dueño</option>
+                </select>
+            </div>
+        </div>
 
-    </a>
+        <div class="form-actions">
+            <button type="button" onclick="agregarEmpleado()">Agregar Empleado</button>
+        </div>
+    </div>
 
-    <hr>
+    <!-- LISTA -->
+    <div class="card">
+        <h2>Lista de Empleados</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Correo</th>
+                        <th>Nombre</th>
+                        <th>Ap. Paterno</th>
+                        <th>Ap. Materno</th>
+                        <th>Teléfono</th>
+                        <th>Rol</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaEmpleados"></tbody>
+            </table>
+        </div>
+    </div>
 
-    <h2>
-        Agregar Empleado
-    </h2>
-
-    <input type="email" id="correo_electronico" placeholder="Correo electrónico">
-
-    <input type="text" id="nombre" placeholder="Nombre">
-
-    <input type="text" id="ap_paterno"placeholder="Apellido paterno">
-
-    <input type="text" id="ap_materno" placeholder="Apellido materno">
-
-<br><br>
-
-    <label for="fecha_de_nacimiento">
-    Fecha de nacimiento
-    </label>
-
-    <input type="date" id="fecha_de_nacimiento">
-
-    <input type="text" id="telefono" placeholder="Teléfono">
-
-<br><br>
-
-    <label for="rol">
-        Rol del empleado
-    </label>
-
-|   <select id="rol">
-
-    <option value="">
-        Selecciona un rol
-    </option>
-
-    <option value="Vendedor">
-        Vendedor
-    </option>
-
-    <option value="Administrador">
-        Administrador
-    </option>
-
-    <option value="Dueno">
-        Dueño
-    </option>
-
-    </select>
-
-<br><br>
-
-    <button type="button" onclick="agregarEmpleado()">
-        Agregar Empleado
-    </button>
-
-<hr>
-
-    <h2>
-        Lista de Empleados
-    </h2>
-
-    <table border="1">
-
-    <thead>
-
-        <tr>
-            <th>
-                Correo
-            </th>
-
-            <th>
-                Nombre
-            </th>
-
-            <th>
-                Apellido paterno
-            </th>
-
-            <th>
-                Apellido materno
-            </th>
-
-            <th>
-                Teléfono
-            </th>
-
-            <th>
-                Rol
-            </th>
-        </tr>
-
-    </thead>
-
-        <tbody id="tablaEmpleados"></tbody>
-
-    </table>
+</main>
 
 <script>
-
-    window.onload = () => {cargarEmpleados();};
-
-
-// =========================
-// CONSULTAR EMPLEADOS
-// =========================
+window.onload = () => cargarEmpleados();
 
 async function cargarEmpleados() {
     try {
-        const response =
-            await fetch("/empleados");
+        const response = await fetch("/empleados");
         const data = await response.json();
-        const tabla =
-            document.getElementById(
-                "tablaEmpleados"
-            );
-
+        const tabla = document.getElementById("tablaEmpleados");
         tabla.innerHTML = "";
 
         if (data.length === 0) {
-            tabla.innerHTML = `
-                <tr>
-                    <td colspan="6">
-                        No hay empleados registrados
-                    </td>
-                </tr>
-            `;
+            tabla.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">No hay empleados registrados</td></tr>`;
             return;
         }
-        data.forEach(empleado => {
+
+        data.forEach(e => {
             tabla.innerHTML += `
                 <tr>
-                    <td>${empleado.correo_electronico}</td>
-                    <td>${empleado.nombre}</td>
-                    <td>${empleado.ap_paterno}</td>
-                    <td>${empleado.ap_materno ?? ""}</td>
-                    <td>${empleado.telefono ?? ""}</td>
-                    <td>${empleado.rol}</td>
-                </tr>
-            `;
+                    <td>${e.correo_electronico}</td>
+                    <td>${e.nombre}</td>
+                    <td>${e.ap_paterno}</td>
+                    <td>${e.ap_materno ?? "—"}</td>
+                    <td>${e.telefono ?? "—"}</td>
+                    <td>${e.rol}</td>
+                </tr>`;
         });
-    }
-
-    catch (error) {
+    } catch (error) {
         console.error(error);
-        alert(
-            "Error al consultar empleados."
-        );
+        mostrarMensaje("Error al consultar empleados.");
     }
 }
-
-// =========================
-// AGREGAR EMPLEADO
-// =========================
 
 async function agregarEmpleado() {
     try {
         const empleado = {
-            correo_electronico:
-                document.getElementById(
-                    "correo_electronico"
-                ).value,
-            nombre:
-                document.getElementById(
-                    "nombre"
-                ).value,
-            ap_paterno:
-                document.getElementById(
-                    "ap_paterno"
-                ).value,
-            ap_materno:
-                document.getElementById(
-                    "ap_materno"
-                ).value,
-            fecha_de_nacimiento:
-                document.getElementById(
-                    "fecha_de_nacimiento"
-                ).value,
-            telefono:
-                document.getElementById(
-                    "telefono"
-                ).value,
-            rol:
-                document.getElementById(
-                    "rol"
-                ).value
+            correo_electronico:  document.getElementById("correo_electronico").value,
+            nombre:              document.getElementById("nombre").value,
+            ap_paterno:          document.getElementById("ap_paterno").value,
+            ap_materno:          document.getElementById("ap_materno").value,
+            fecha_de_nacimiento: document.getElementById("fecha_de_nacimiento").value,
+            telefono:            document.getElementById("telefono").value,
+            rol:                 document.getElementById("rol").value
         };
 
-        const response = await fetch("/empleados",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                },
-                body:
-                    JSON.stringify(
-                        empleado
-                    )
-            }
-        );
+        const response = await fetch("/empleados", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(empleado)
+        });
 
-        const data =
-            await response.json();
-        if (data.error) {
-            mostrarMensaje(data.error);
-            return;
-        }
+        const data = await response.json();
+        if (data.error) { mostrarMensaje(data.error); return; }
 
         mostrarMensaje(data.mensaje, "success");
-
-        document.getElementById(
-            "correo_electronico"
-        ).value = "";
-
-        document.getElementById(
-            "nombre"
-        ).value = "";
-
-        document.getElementById(
-            "ap_paterno"
-        ).value = "";
-
-        document.getElementById(
-            "ap_materno"
-        ).value = "";
-
-        document.getElementById(
-            "fecha_de_nacimiento"
-        ).value = "";
-
-        document.getElementById(
-            "telefono"
-        ).value = "";
-
-        document.getElementById(
-            "rol"
-        ).value = "";
-
+        ["correo_electronico","nombre","ap_paterno","ap_materno","fecha_de_nacimiento","telefono","rol"].forEach(id => {
+            document.getElementById(id).value = "";
+        });
         cargarEmpleados();
-
-    }
-
-    catch (error) {
+    } catch (error) {
         console.error(error);
         mostrarMensaje("Error al agregar empleado.");
     }
-
 }
 
 function mostrarMensaje(texto, tipo = "error") {
@@ -290,5 +164,6 @@ function mostrarMensaje(texto, tipo = "error") {
     }, 4000);
 }
 </script>
+
 </body>
 </html>

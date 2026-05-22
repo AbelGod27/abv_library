@@ -3,159 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cliente</title>
+    <title>Consulta de Libros — Abv Library</title>
     <link rel="stylesheet" href="/principal.css">
 </head>
 <body>
-    <h1>Consulta de Libros</h1>
+
+<header class="page-header">
+    <h1>🔍 Consulta de Libros</h1>
+    <a href="/index.html"><button class="btn-secondary btn-sm">← Inicio</button></a>
+</header>
+
+<main class="page-content">
+
     <p id="mensaje" class="mensaje"></p>
-    <div class="contenedor-switch">
-    
-    <span>
-        Local
-    </span>
 
-    <label class="switch">
-        <input type="checkbox" id="switchLibros" aria-label="Cambiar biblioteca">
-        <span class="slider"></span>
-    </label>
+    <div class="card">
 
-    <span>
-        Global
-    </span>
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; margin-bottom:20px;">
 
-</div>
+            <div class="search-bar" style="margin:0; flex:1; min-width:200px;">
+                <input type="text" id="buscarLibro" placeholder="🔍  Buscar por título, autor, ISBN...">
+            </div>
 
-    <br><br>
+            <div class="contenedor-switch">
+                <span>Local</span>
+                <label class="switch">
+                    <input type="checkbox" id="switchLibros" aria-label="Cambiar fuente de libros">
+                    <span class="slider"></span>
+                </label>
+                <span>Global</span>
+            </div>
 
-    <input type="text" id="buscarLibro" placeholder="Buscar libro...">
+        </div>
 
-    <br><br>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Portada</th>
+                        <th>ISBN</th>
+                        <th>Título</th>
+                        <th>Autor</th>
+                        <th>Editorial</th>
+                        <th>Versión</th>
+                        <th>Año</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaLibros"></tbody>
+            </table>
+        </div>
 
-    <table border="1">
-        <thead>
-            <tr>
-                <th>Portada</th>
-                <th>ISBN</th>
-                <th>Título</th>
-                <th>Autor</th>
-                <th>Editorial</th>
-                <th>Versión</th>
-                <th>Año</th>
-            </tr>
-        </thead>
+    </div>
 
-        <tbody id="tablaLibros"></tbody>
-    </table>
-
-    <br>
-
-    <a href="/index.html">
-        <button>Regresar</button>
-    </a>
+</main>
 
 <script>
 const inputBusqueda = document.getElementById("buscarLibro");
+const switchLibros  = document.getElementById("switchLibros");
 let temporizador;
 let fuenteActual = "db";
 
-window.onload = () => {
-    cargarLibros("");
-};
+window.onload = () => cargarLibros("");
 
 inputBusqueda.addEventListener("input", () => {
     clearTimeout(temporizador);
-
-    temporizador = setTimeout(() => {
-        cargarLibros(inputBusqueda.value);
-    }, 500);
+    temporizador = setTimeout(() => cargarLibros(inputBusqueda.value), 500);
 });
 
-function cambiarFuente(fuente) {
-    fuenteActual = fuente;
+switchLibros.addEventListener("change", () => {
+    fuenteActual = switchLibros.checked ? "api" : "db";
     inputBusqueda.value = "";
     cargarLibros("");
-}
+});
 
 async function cargarLibros(busqueda) {
     try {
-        let url = "";
-
-        if (fuenteActual === "db") {
-            url = `/libros?buscar=${encodeURIComponent(busqueda)}`;
-        } else {
-            url = `/api/libros-externos?buscar=${encodeURIComponent(busqueda)}`;
-        }
+        const url = fuenteActual === "db"
+            ? `/libros?buscar=${encodeURIComponent(busqueda)}`
+            : `/api/libros-externos?buscar=${encodeURIComponent(busqueda)}`;
 
         const response = await fetch(url);
         const data = await response.json();
-
         const tabla = document.getElementById("tablaLibros");
         tabla.innerHTML = "";
 
         if (data.error) {
-            tabla.innerHTML = `
-                <tr>
-                    <td colspan="6">${data.error}</td>
-                </tr>
-            `;
+            tabla.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">${data.error}</td></tr>`;
             return;
         }
 
         if (data.length === 0) {
-            tabla.innerHTML = `
-                <tr>
-                    <td colspan="6">No se encontraron libros</td>
-                </tr>
-            `;
+            tabla.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">No se encontraron libros</td></tr>`;
             return;
         }
 
         data.forEach(libro => {
-    const portada = libro.isbn && libro.isbn !== "Sin ISBN"
-        ? `https://covers.openlibrary.org/b/isbn/${libro.isbn}-M.jpg`
-        : "https://via.placeholder.com/80x120?text=Sin+imagen";
+            const portada = libro.isbn && libro.isbn !== "Sin ISBN"
+                ? `https://covers.openlibrary.org/b/isbn/${libro.isbn}-M.jpg`
+                : "https://via.placeholder.com/56x80?text=N/A";
 
-    tabla.innerHTML += `
-        <tr>
-            <td>
-                <img
-                    src="${portada}"
-                    alt="Portada de ${libro.titulo}"
-                    width="80"
-                    onerror="this.src='https://via.placeholder.com/80x120?text=Sin+imagen'"
-                >
-            </td>
-            <td>${libro.isbn ?? ""}</td>
-            <td>${libro.titulo ?? ""}</td>
-            <td>${libro.autor ?? ""}</td>
-            <td>${libro.editorial ?? ""}</td>
-            <td>${libro.version ?? ""}</td>
-            <td>${libro.anio_publicacion ?? ""}</td>
-        </tr>
-    `;
-});
-
+            tabla.innerHTML += `
+                <tr>
+                    <td>
+                        <img class="book-cover" src="${portada}"
+                            alt="Portada de ${libro.titulo}"
+                            onerror="this.src='https://via.placeholder.com/56x80?text=N/A'">
+                    </td>
+                    <td>${libro.isbn ?? "—"}</td>
+                    <td>${libro.titulo ?? "—"}</td>
+                    <td>${libro.autor ?? "—"}</td>
+                    <td>${libro.editorial ?? "—"}</td>
+                    <td>${libro.version ?? "—"}</td>
+                    <td>${libro.anio_publicacion ?? "—"}</td>
+                </tr>`;
+        });
     } catch (error) {
         console.error(error);
     }
 }
-const switchLibros =
-    document.getElementById("switchLibros");
-
-switchLibros.addEventListener("change", () => {
-
-    if (switchLibros.checked) {
-        fuenteActual = "api";
-    }
-
-    else {fuenteActual = "db";}
-
-    inputBusqueda.value = "";
-
-    cargarLibros("");
-
-});
 
 function mostrarMensaje(texto, tipo = "error") {
     const mensaje = document.getElementById("mensaje");
@@ -167,5 +132,6 @@ function mostrarMensaje(texto, tipo = "error") {
     }, 4000);
 }
 </script>
+
 </body>
 </html>

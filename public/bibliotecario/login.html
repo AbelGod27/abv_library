@@ -3,113 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Bibliotecario</title>
+    <title>Login Bibliotecario — Abv Library</title>
     <link rel="stylesheet" href="/principal.css">
 </head>
-
 <body>
 
-<h1>Acceso Bibliotecario</h1>
-<p id="mensaje" class="mensaje"></p>
+<div class="login-wrapper">
+    <div class="login-box">
 
-<input
-    type="email"
-    id="correoBibliotecario"
-    placeholder="Correo electrónico"
->
+        <div class="logo">📖</div>
+        <h1>Acceso Bibliotecario</h1>
+        <p>Ingresa tu correo para continuar</p>
 
-<br><br>
+        <p id="mensaje" class="mensaje"></p>
 
-<button type="button" onclick="loginBibliotecario()">
-    Entrar
-</button>
+        <div class="form-group">
+            <label for="correoBibliotecario">Correo electrónico</label>
+            <input type="email" id="correoBibliotecario" placeholder="correo@ejemplo.com" autocomplete="email">
+        </div>
 
-<br><br>
+        <button type="button" class="btn-login" onclick="loginBibliotecario()">Ingresar</button>
 
-<a href="/index.html">
-    <button type="button">Regresar</button>
-</a>
+        <p class="back-link">¿No eres bibliotecario? <a href="/index.html">Volver al inicio</a></p>
+
+    </div>
+</div>
 
 <script>
 async function loginBibliotecario() {
-
     try {
-
-        const correo =
-            document.getElementById(
-                "correoBibliotecario"
-            ).value;
+        const correo = document.getElementById("correoBibliotecario").value;
 
         if (!correo) {
-            alert("Ingresa un correo.");
+            mostrarMensaje("Ingresa un correo.");
             return;
         }
 
-        const response = await fetch(
-            "/login-vendedor",
-            {
-                method: "POST",
+        const response = await fetch("/login-vendedor", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ correo_electronico: correo })
+        });
 
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                },
-
-                body: JSON.stringify({
-                    correo_electronico: correo
-                })
-            }
-        );
-
-        const data =
-            await response.json();
+        const data = await response.json();
 
         if (data.acceso) {
-
-            sessionStorage.setItem(
-                "bibliotecarioActivo",
-                "true"
-            );
-
-            sessionStorage.setItem(
-                "correoBibliotecario",
-                correo
-            );
-
-            sessionStorage.setItem(
-                "nombreBibliotecario",
-                data.empleado.nombre
-            );
-
-            sessionStorage.setItem(
-                "rolBibliotecario",
-                data.empleado.rol
-            );
-
-            window.location.href =
-                "/bibliotecario/panel.html";
-
-        }
-
-        else {
-
+            sessionStorage.setItem("bibliotecarioActivo", "true");
+            sessionStorage.setItem("correoBibliotecario", correo);
+            sessionStorage.setItem("nombreBibliotecario", data.empleado.nombre);
+            sessionStorage.setItem("rolBibliotecario", data.empleado.rol);
+            window.location.href = "/bibliotecario/panel.html";
+        } else {
             mostrarMensaje(data.error);
-
         }
-
-    }
-
-    catch (error) {
-
+    } catch (error) {
         console.error(error);
-
-        alert(
-            "Error al iniciar sesión."
-        );
-
+        mostrarMensaje("Error al iniciar sesión.");
     }
-
 }
+
+document.getElementById("correoBibliotecario").addEventListener("keydown", e => {
+    if (e.key === "Enter") loginBibliotecario();
+});
 
 function mostrarMensaje(texto, tipo = "error") {
     const mensaje = document.getElementById("mensaje");

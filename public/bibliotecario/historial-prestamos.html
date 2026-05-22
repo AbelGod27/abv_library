@@ -1,14 +1,11 @@
-<!-- public/bibliotecario/historial-prestamos.html -->
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Historial de Préstamos</title>
+    <title>Historial de Préstamos — Abv Library</title>
     <link rel="stylesheet" href="/principal.css">
 </head>
-
 <body>
 
 <script>
@@ -17,81 +14,81 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
 }
 </script>
 
-<h1>Historial de Préstamos</h1>
-<p id="mensaje" class="mensaje"></p>
+<header class="page-header">
+    <h1>📥 Historial de Préstamos</h1>
+    <a href="/bibliotecario/panel.html"><button class="btn-secondary btn-sm">← Regresar</button></a>
+</header>
 
-<a href="/bibliotecario/panel.html">
-    <button type="button">Regresar al panel</button>
-</a>
+<main class="page-content">
 
-<hr>
+    <p id="mensaje" class="mensaje"></p>
 
-<table border="1">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Cliente</th>
-            <th>Bibliotecario</th>
-            <th>Inicio</th>
-            <th>Vencimiento</th>
-            <th>Entrega</th>
-            <th>Cantidad</th>
-            <th>Estado</th>
-            <th>Multa</th>
-            <th>Acción</th>
-        </tr>
-    </thead>
+    <div class="card">
+        <h2>Préstamos registrados</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Cliente</th>
+                        <th>Bibliotecario</th>
+                        <th>Inicio</th>
+                        <th>Vencimiento</th>
+                        <th>Entrega</th>
+                        <th>Cantidad</th>
+                        <th>Estado</th>
+                        <th>Multa</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaPrestamos"></tbody>
+            </table>
+        </div>
+    </div>
 
-    <tbody id="tablaPrestamos"></tbody>
-</table>
+</main>
 
 <script>
-window.onload = () => {
-    cargarPrestamos();
-};
+window.onload = () => cargarPrestamos();
 
 async function cargarPrestamos() {
     try {
         const response = await fetch("/prestamos");
         const data = await response.json();
-
         const tabla = document.getElementById("tablaPrestamos");
         tabla.innerHTML = "";
 
         if (data.length === 0) {
-            tabla.innerHTML = `
-                <tr>
-                    <td colspan="10">No hay préstamos registrados</td>
-                </tr>
-            `;
+            tabla.innerHTML = `<tr><td colspan="10" style="text-align:center;color:var(--text-muted)">No hay préstamos registrados</td></tr>`;
             return;
         }
 
-        data.forEach(prestamo => {
+        data.forEach(p => {
+            const estadoBadge = p.estado === "Devuelto"
+                ? `<span class="badge badge-returned">Devuelto</span>`
+                : p.estado === "Vencido"
+                    ? `<span class="badge badge-overdue">Vencido</span>`
+                    : `<span class="badge badge-pending">Pendiente</span>`;
+
             tabla.innerHTML += `
                 <tr>
-                    <td>${prestamo.id_prestamo}</td>
-                    <td>${prestamo.cliente}</td>
-                    <td>${prestamo.bibliotecario}</td>
-                    <td>${prestamo.dia_de_inicio ?? ""}</td>
-                    <td>${prestamo.dia_de_vencimiento ?? ""}</td>
-                    <td>${prestamo.dia_de_entrega ?? "Pendiente"}</td>
-                    <td>${prestamo.cantidad_de_libros}</td>
-                    <td>${prestamo.estado}</td>
-                    <td>${prestamo.multa}</td>
+                    <td>${p.id_prestamo}</td>
+                    <td>${p.cliente}</td>
+                    <td>${p.bibliotecario}</td>
+                    <td>${p.dia_de_inicio ?? "—"}</td>
+                    <td>${p.dia_de_vencimiento ?? "—"}</td>
+                    <td>${p.dia_de_entrega ?? "—"}</td>
+                    <td>${p.cantidad_de_libros}</td>
+                    <td>${estadoBadge}</td>
+                    <td>$${p.multa}</td>
                     <td>
-                        ${
-                            prestamo.dia_de_entrega
-                            ? `<button type="button" disabled>Devuelto</button>`
-                            : `<button type="button" onclick="devolverPrestamo(${prestamo.id_prestamo})">
-                                Devolver
-                              </button>`
+                        ${p.dia_de_entrega
+                            ? `<button class="btn-secondary btn-sm" disabled>Devuelto</button>`
+                            : `<button class="btn-success btn-sm" type="button" onclick="devolverPrestamo(${p.id_prestamo})">Devolver</button>`
                         }
                     </td>
-                </tr>
-            `;
+                </tr>`;
         });
-
     } catch (error) {
         console.error(error);
         mostrarMensaje("Error al cargar préstamos.");
@@ -99,33 +96,13 @@ async function cargarPrestamos() {
 }
 
 async function devolverPrestamo(id_prestamo) {
+    if (!confirm("¿Confirmas la devolución de este préstamo?")) return;
     try {
-        const confirmar = confirm(
-            "¿Confirmas la devolución de este préstamo?"
-        );
-
-        if (!confirmar) {
-            return;
-        }
-
-        const response = await fetch(
-            `/prestamos/${id_prestamo}/devolver`,
-            {
-                method: "PUT"
-            }
-        );
-
+        const response = await fetch(`/prestamos/${id_prestamo}/devolver`, { method: "PUT" });
         const data = await response.json();
-
-        if (data.error) {
-            mostrarMensaje(data.error);
-            return;
-        }
-
+        if (data.error) { mostrarMensaje(data.error); return; }
         mostrarMensaje(data.mensaje, "success");
-
         cargarPrestamos();
-
     } catch (error) {
         console.error(error);
         mostrarMensaje("Error al devolver préstamo.");

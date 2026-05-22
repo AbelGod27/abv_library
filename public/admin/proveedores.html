@@ -1,84 +1,82 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Proveedores</title>
+    <title>Gestión de Proveedores — Abv Library</title>
     <link rel="stylesheet" href="/principal.css">
 </head>
-
 <body>
 
-    <script>
-    if (sessionStorage.getItem("adminActivo") !== "true") {
-        window.location.href = "/admin/login.html";
-    }
-    </script>
+<script>
+if (sessionStorage.getItem("adminActivo") !== "true") {
+    window.location.href = "/admin/login.html";
+}
+</script>
 
-    <h1>Gestión de Proveedores</h1>
+<header class="page-header">
+    <h1>🏭 Gestión de Proveedores</h1>
+    <a href="/admin/panel.html"><button class="btn-secondary btn-sm">← Regresar</button></a>
+</header>
+
+<main class="page-content">
+
     <p id="mensaje" class="mensaje"></p>
 
-    <a href="/admin/panel.html">
-        <button>Regresar al panel</button>
-    </a>
+    <!-- FORMULARIO -->
+    <div class="card">
+        <h2>Agregar Proveedor</h2>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="nombreProveedor">Nombre del proveedor</label>
+                <input type="text" id="nombreProveedor" placeholder="Nombre del proveedor">
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="button" onclick="agregarProveedor()">Agregar Proveedor</button>
+        </div>
+    </div>
 
-<hr>
+    <!-- LISTA -->
+    <div class="card">
+        <h2>Lista de Proveedores</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaProveedores"></tbody>
+            </table>
+        </div>
+    </div>
 
-    <h2>Agregar Proveedor</h2>
-
-    <input type="text" id="nombreProveedor" placeholder="Nombre del proveedor">
-
-    <button type="button" onclick="agregarProveedor()">
-        Agregar Proveedor
-    </button>
-
-<hr>
-
-    <h2>Lista de Proveedores</h2>
-
-    <table border="1">
-        <thead>
-            <tr>
-                <th>ID Proveedor</th>
-                <th>Nombre</th>
-            </tr>
-        </thead>
-
-        <tbody id="tablaProveedores"></tbody>
-    </table>
+</main>
 
 <script>
-window.onload = () => {
-    cargarProveedores();
-};
+window.onload = () => cargarProveedores();
 
 async function cargarProveedores() {
     try {
         const response = await fetch("/proveedores");
         const data = await response.json();
-
         const tabla = document.getElementById("tablaProveedores");
         tabla.innerHTML = "";
 
         if (data.length === 0) {
-            tabla.innerHTML = `
-                <tr>
-                    <td colspan="2">No hay proveedores registrados</td>
-                </tr>
-            `;
+            tabla.innerHTML = `<tr><td colspan="2" style="text-align:center;color:var(--text-muted)">No hay proveedores registrados</td></tr>`;
             return;
         }
 
-        data.forEach(proveedor => {
+        data.forEach(p => {
             tabla.innerHTML += `
                 <tr>
-                    <td>${proveedor.id_proveedor}</td>
-                    <td>${proveedor.nombre}</td>
-                </tr>
-            `;
+                    <td>${p.id_proveedor}</td>
+                    <td>${p.nombre}</td>
+                </tr>`;
         });
-
     } catch (error) {
         console.error(error);
         mostrarMensaje("Error al consultar proveedores.");
@@ -87,24 +85,14 @@ async function cargarProveedores() {
 
 async function agregarProveedor() {
     try {
-        const proveedor = {
-            nombre: document.getElementById("nombreProveedor").value
-        };
-
+        const proveedor = { nombre: document.getElementById("nombreProveedor").value };
         const response = await fetch("/proveedores", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(proveedor)
         });
-
         const data = await response.json();
-
-        if (data.error) {
-            mostrarMensaje(data.error);
-            return;
-        }
+        if (data.error) { mostrarMensaje(data.error); return; }
         mostrarMensaje(data.mensaje, "success");
         document.getElementById("nombreProveedor").value = "";
         cargarProveedores();
@@ -124,5 +112,6 @@ function mostrarMensaje(texto, tipo = "error") {
     }, 4000);
 }
 </script>
+
 </body>
 </html>

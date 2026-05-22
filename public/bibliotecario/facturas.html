@@ -1,14 +1,11 @@
-<!-- public/admin/facturas.html -->
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Facturas</title>
+    <title>Facturas — Abv Library</title>
     <link rel="stylesheet" href="/principal.css">
 </head>
-
 <body>
 
 <script>
@@ -17,91 +14,100 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
 }
 </script>
 
-<h1>Facturas</h1>
-<p id="mensaje" class="mensaje"></p>
+<header class="page-header">
+    <h1>🧾 Facturas</h1>
+    <a href="/admin/panel.html"><button class="btn-secondary btn-sm">← Regresar</button></a>
+</header>
 
-<a href="/admin/panel.html">
-    <button type="button">Regresar al panel</button>
-</a>
+<main class="page-content">
 
-<hr>
+    <p id="mensaje" class="mensaje"></p>
 
-<h2>Generar reporte por fechas</h2>
+    <!-- FILTRO -->
+    <div class="card">
+        <h2>Generar reporte por fechas</h2>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="fecha_inicio">Fecha inicio</label>
+                <input type="date" id="fecha_inicio">
+            </div>
+            <div class="form-group">
+                <label for="fecha_fin">Fecha fin</label>
+                <input type="date" id="fecha_fin">
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="button" onclick="generarReporte()">Generar reporte</button>
+        </div>
+    </div>
 
-<label for="fecha_inicio">Fecha inicio</label>
-<input type="date" id="fecha_inicio">
+    <!-- RESUMEN -->
+    <div class="card" id="seccionResumen" style="display:none;">
+        <h2>Resumen del periodo</h2>
+        <div class="resumen-box" id="resumenFacturas"></div>
+    </div>
 
-<label for="fecha_fin">Fecha fin</label>
-<input type="date" id="fecha_fin">
+    <!-- VENTAS -->
+    <div class="card" id="seccionVentas" style="display:none;">
+        <h2>Ventas realizadas</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID Venta</th>
+                        <th>Fecha</th>
+                        <th>Monto</th>
+                        <th>Método de pago</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaVentas"></tbody>
+            </table>
+        </div>
+    </div>
 
-<button type="button" onclick="generarReporte()">
-    Generar reporte
-</button>
+    <!-- PRÉSTAMOS -->
+    <div class="card" id="seccionPrestamos" style="display:none;">
+        <h2>Préstamos registrados</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID Préstamo</th>
+                        <th>Fecha</th>
+                        <th>Multa</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaPrestamos"></tbody>
+            </table>
+        </div>
+    </div>
 
-<hr>
-
-<h2>Ventas realizadas</h2>
-
-<table border="1">
-    <thead>
-        <tr>
-            <th>ID Venta</th>
-            <th>Fecha</th>
-            <th>Monto</th>
-            <th>Método de pago</th>
-        </tr>
-    </thead>
-    <tbody id="tablaVentas"></tbody>
-</table>
-
-<hr>
-
-<h2>Préstamos registrados</h2>
-
-<table border="1">
-    <thead>
-        <tr>
-            <th>ID Préstamo</th>
-            <th>Fecha</th>
-            <th>Multa</th>
-            <th>Estado</th>
-        </tr>
-    </thead>
-    <tbody id="tablaPrestamos"></tbody>
-</table>
-
-<hr>
-
-<h2>Resumen</h2>
-
-<p id="resumenFacturas"></p>
+</main>
 
 <script>
 async function generarReporte() {
     try {
         const fechaInicio = document.getElementById("fecha_inicio").value;
-        const fechaFin = document.getElementById("fecha_fin").value;
+        const fechaFin    = document.getElementById("fecha_fin").value;
 
         if (!fechaInicio || !fechaFin) {
-            alert("Selecciona ambas fechas.");
+            mostrarMensaje("Selecciona ambas fechas.");
             return;
         }
 
-        const response = await fetch(
-            `/facturas?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`
-        );
-
+        const response = await fetch(`/facturas?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`);
         const data = await response.json();
 
-        if (data.error) {
-            mostrarMensaje(data.error);
-            return;
-        }
+        if (data.error) { mostrarMensaje(data.error); return; }
 
         mostrarVentas(data.ventas);
         mostrarPrestamos(data.prestamos);
         mostrarResumen(data.ventas, data.prestamos);
 
+        document.getElementById("seccionResumen").style.display = "block";
+        document.getElementById("seccionVentas").style.display = "block";
+        document.getElementById("seccionPrestamos").style.display = "block";
     } catch (error) {
         console.error(error);
         mostrarMensaje("Error al generar reporte.");
@@ -111,78 +117,69 @@ async function generarReporte() {
 function mostrarVentas(ventas) {
     const tabla = document.getElementById("tablaVentas");
     tabla.innerHTML = "";
-
     if (ventas.length === 0) {
-        tabla.innerHTML = `
-            <tr>
-                <td colspan="4">No hay ventas en este periodo</td>
-            </tr>
-        `;
+        tabla.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-muted)">No hay ventas en este periodo</td></tr>`;
         return;
     }
-
-    ventas.forEach(venta => {
+    ventas.forEach(v => {
         tabla.innerHTML += `
             <tr>
-                <td>${venta.id}</td>
-                <td>${venta.fecha ?? ""}</td>
-                <td>${venta.monto}</td>
-                <td>${venta.metodo_de_pago ?? ""}</td>
-            </tr>
-        `;
+                <td>${v.id}</td>
+                <td>${v.fecha ?? "—"}</td>
+                <td>$${v.monto}</td>
+                <td>${v.metodo_de_pago ?? "—"}</td>
+            </tr>`;
     });
 }
 
 function mostrarPrestamos(prestamos) {
     const tabla = document.getElementById("tablaPrestamos");
     tabla.innerHTML = "";
-
     if (prestamos.length === 0) {
-        tabla.innerHTML = `
-            <tr>
-                <td colspan="4">No hay préstamos en este periodo</td>
-            </tr>
-        `;
+        tabla.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-muted)">No hay préstamos en este periodo</td></tr>`;
         return;
     }
-
-    prestamos.forEach(prestamo => {
+    prestamos.forEach(p => {
+        const estadoBadge = p.estado === "Devuelto"
+            ? `<span class="badge badge-returned">Devuelto</span>`
+            : `<span class="badge badge-pending">Pendiente</span>`;
         tabla.innerHTML += `
             <tr>
-                <td>${prestamo.id}</td>
-                <td>${prestamo.fecha ?? ""}</td>
-                <td>${prestamo.monto}</td>
-                <td>${prestamo.estado}</td>
-            </tr>
-        `;
+                <td>${p.id}</td>
+                <td>${p.fecha ?? "—"}</td>
+                <td>$${p.monto}</td>
+                <td>${estadoBadge}</td>
+            </tr>`;
     });
 }
 
 function mostrarResumen(ventas, prestamos) {
-    const totalVentas = ventas.reduce(
-        (total, venta) => total + Number(venta.monto || 0),
-        0
-    );
-
-    const totalMultas = prestamos.reduce(
-        (total, prestamo) => total + Number(prestamo.monto || 0),
-        0
-    );
-
-    const prestamosPendientes = prestamos.filter(
-        prestamo => prestamo.estado === "Pendiente"
-    ).length;
-
-    const prestamosDevueltos = prestamos.filter(
-        prestamo => prestamo.estado === "Devuelto"
-    ).length;
+    const totalVentas = ventas.reduce((t, v) => t + Number(v.monto || 0), 0);
+    const totalMultas = prestamos.reduce((t, p) => t + Number(p.monto || 0), 0);
+    const pendientes  = prestamos.filter(p => p.estado === "Pendiente").length;
+    const devueltos   = prestamos.filter(p => p.estado === "Devuelto").length;
 
     document.getElementById("resumenFacturas").innerHTML = `
-        Total por ventas: $${totalVentas}<br>
-        Total por multas: $${totalMultas}<br>
-        Préstamos pendientes: ${prestamosPendientes}<br>
-        Préstamos devueltos: ${prestamosDevueltos}<br>
-        Total general: $${totalVentas + totalMultas}
+        <div class="resumen-item">
+            <div class="label">Total ventas</div>
+            <div class="value">$${totalVentas.toFixed(2)}</div>
+        </div>
+        <div class="resumen-item">
+            <div class="label">Total multas</div>
+            <div class="value">$${totalMultas.toFixed(2)}</div>
+        </div>
+        <div class="resumen-item">
+            <div class="label">Préstamos pendientes</div>
+            <div class="value">${pendientes}</div>
+        </div>
+        <div class="resumen-item">
+            <div class="label">Préstamos devueltos</div>
+            <div class="value">${devueltos}</div>
+        </div>
+        <div class="resumen-item">
+            <div class="label">Total general</div>
+            <div class="value" style="color:var(--color-success)">$${(totalVentas + totalMultas).toFixed(2)}</div>
+        </div>
     `;
 }
 

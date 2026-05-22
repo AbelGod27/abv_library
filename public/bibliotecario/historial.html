@@ -3,134 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Historial de Ventas</title>
+    <title>Historial de Ventas — Abv Library</title>
     <link rel="stylesheet" href="/principal.css">
 </head>
-
 <body>
 
 <script>
-if (
-    sessionStorage.getItem(
-        "bibliotecarioActivo"
-    ) !== "true"
-) {
-    window.location.href =
-        "/bibliotecario/login.html";
+if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
+    window.location.href = "/bibliotecario/login.html";
 }
 </script>
 
-<h1>Historial de Ventas</h1>
-<p id="mensaje" class="mensaje"></p>
+<header class="page-header">
+    <h1>📋 Historial de Ventas</h1>
+    <a href="/bibliotecario/panel.html"><button class="btn-secondary btn-sm">← Regresar</button></a>
+</header>
 
-<h2 id="infoBibliotecario"></h2>
+<main class="page-content">
 
-<a href="/bibliotecario/panel.html">
-    <button type="button">
-        Regresar al panel
-    </button>
-</a>
+    <p id="mensaje" class="mensaje"></p>
 
-<hr>
+    <div id="infoBibliotecario" class="panel-info"></div>
 
-<table border="1">
+    <div class="card">
+        <h2>Ventas registradas</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID Venta</th>
+                        <th>Fecha</th>
+                        <th>Hora</th>
+                        <th>Total</th>
+                        <th>Método</th>
+                        <th>Bibliotecario</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaVentas"></tbody>
+            </table>
+        </div>
+    </div>
 
-    <thead>
-
-        <tr>
-            <th>ID Venta</th>
-            <th>Fecha</th>
-            <th>Hora</th>
-            <th>Total</th>
-            <th>Método</th>
-            <th>Bibliotecario</th>
-        </tr>
-
-    </thead>
-
-    <tbody id="tablaVentas"></tbody>
-
-</table>
+</main>
 
 <script>
+const nombreBibliotecario = sessionStorage.getItem("nombreBibliotecario");
+const rolBibliotecario    = sessionStorage.getItem("rolBibliotecario");
 
-const nombreBibliotecario =
-    sessionStorage.getItem(
-        "nombreBibliotecario"
-    );
-
-const rolBibliotecario =
-    sessionStorage.getItem(
-        "rolBibliotecario"
-    );
-
-document.getElementById(
-    "infoBibliotecario"
-).textContent =
+document.getElementById("infoBibliotecario").textContent =
     `Sesión: ${nombreBibliotecario} (${rolBibliotecario})`;
 
-window.onload = () => {
-    cargarVentas();
-};
+window.onload = () => cargarVentas();
 
 async function cargarVentas() {
-
     try {
-
-        const response =
-            await fetch("/ventas");
-
-        const data =
-            await response.json();
-
-        const tabla =
-            document.getElementById(
-                "tablaVentas"
-            );
-
+        const response = await fetch("/ventas");
+        const data = await response.json();
+        const tabla = document.getElementById("tablaVentas");
         tabla.innerHTML = "";
 
         if (data.length === 0) {
-
-            tabla.innerHTML = `
-                <tr>
-                    <td colspan="6">
-                        No hay ventas registradas
-                    </td>
-                </tr>
-            `;
-
+            tabla.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">No hay ventas registradas</td></tr>`;
             return;
-
         }
 
-        data.forEach(venta => {
-
+        data.forEach(v => {
             tabla.innerHTML += `
                 <tr>
-                    <td>${venta.id_venta}</td>
-                    <td>${venta.fecha ?? ""}</td>
-                    <td>${venta.hora ?? ""}</td>
-                    <td>${venta.total_pagado}</td>
-                    <td>${venta.metodo_de_pago}</td>
-                    <td>${venta.vendedor ?? ""}</td>
-                </tr>
-            `;
-
+                    <td>${v.id_venta}</td>
+                    <td>${v.fecha ?? "—"}</td>
+                    <td>${v.hora ?? "—"}</td>
+                    <td>$${v.total_pagado}</td>
+                    <td>${v.metodo_de_pago}</td>
+                    <td>${v.vendedor ?? "—"}</td>
+                </tr>`;
         });
-
-    }
-
-    catch (error) {
-
+    } catch (error) {
         console.error(error);
-
-        alert(
-            "Error al cargar ventas."
-        );
-
+        mostrarMensaje("Error al cargar ventas.");
     }
-
 }
 
 function mostrarMensaje(texto, tipo = "error") {
@@ -142,7 +93,6 @@ function mostrarMensaje(texto, tipo = "error") {
         mensaje.className = "mensaje";
     }, 4000);
 }
-
 </script>
 
 </body>

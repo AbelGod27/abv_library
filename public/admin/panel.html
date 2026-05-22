@@ -3,39 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Administrador</title>
+    <title>Panel Administrador — Abv Library</title>
     <link rel="stylesheet" href="/principal.css">
 </head>
 <body>
-
-    <h1>Panel de Administrador</h1>
-    <p id="mensaje" class="mensaje"></p>
-
-    <a href="/admin/libros.html">
-        <button>Gestionar Libros</button>
-    </a>
-
-    <a href="/admin/proveedores.html">
-        <button>Gestionar Proveedores</button>
-    </a>
-
-    <a href="/admin/empleados.html">
-        <button>Gestionar Empleados</button>
-    </a>
-
-    <a href="/admin/clientes.html">
-        <button type="button">Gestionar Clientes</button>
-    </a>
-
-    <br><br>
-
-    <button onclick="cerrarSesion()">Cerrar sesión</button>
 
 <script>
 if (sessionStorage.getItem("adminActivo") !== "true") {
     window.location.href = "/admin/login.html";
 }
+</script>
 
+<header class="page-header">
+    <h1>🛡️ Panel de Administrador</h1>
+    <button class="btn-secondary btn-sm" onclick="cerrarSesion()">Cerrar sesión</button>
+</header>
+
+<main class="page-content">
+
+    <p id="mensaje" class="mensaje"></p>
+
+    <div class="panel-grid">
+
+        <a href="/admin/libros.html" class="panel-card">
+            <div class="icon">📚</div>
+            <span>Gestionar Libros</span>
+            <button>Abrir</button>
+        </a>
+
+        <a href="/admin/proveedores.html" class="panel-card">
+            <div class="icon">🏭</div>
+            <span>Gestionar Proveedores</span>
+            <button>Abrir</button>
+        </a>
+
+        <a href="/admin/empleados.html" class="panel-card">
+            <div class="icon">👤</div>
+            <span>Gestionar Empleados</span>
+            <button>Abrir</button>
+        </a>
+
+        <a href="/admin/clientes.html" class="panel-card">
+            <div class="icon">🧑‍💼</div>
+            <span>Gestionar Clientes</span>
+            <button>Abrir</button>
+        </a>
+
+    </div>
+
+</main>
+
+<script>
 function cerrarSesion() {
     sessionStorage.removeItem("adminActivo");
     window.location.href = "/index.html";

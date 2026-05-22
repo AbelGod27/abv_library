@@ -1,76 +1,61 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>
-        Login Administrador
-    </title>
+    <title>Login Administrador — Abv Library</title>
     <link rel="stylesheet" href="/principal.css">
 </head>
-
 <body>
-    <h1>
-        Acceso Administrador
-    </h1>
-    <p id="mensaje" class="mensaje"></p>
 
-    <input type="password" id="passwordAdmin"placeholder="Contraseña">
+<div class="login-wrapper">
+    <div class="login-box">
 
-    <button type="button" onclick="loginAdmin()">
-        Entrar
-    </button>
+        <div class="logo">🛡️</div>
+        <h1>Acceso Administrador</h1>
+        <p>Ingresa tu contraseña para continuar</p>
 
-    <br><br>
+        <p id="mensaje" class="mensaje"></p>
 
-    <a href="/index.html">
-        <button>
-            Regresar
-        </button>
-    </a>
+        <div class="form-group">
+            <label for="passwordAdmin">Contraseña</label>
+            <input type="password" id="passwordAdmin" placeholder="••••••••" autocomplete="current-password">
+        </div>
+
+        <button type="button" class="btn-login" onclick="loginAdmin()">Ingresar</button>
+
+        <p class="back-link">¿No eres admin? <a href="/index.html">Volver al inicio</a></p>
+
+    </div>
+</div>
 
 <script>
-
 async function loginAdmin() {
     try {
-        const password =
-            document.getElementById(
-                "passwordAdmin"
-            ).value;
-        const response = await fetch(
-            "/login-admin",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                },
-                body: JSON.stringify({
-                    password
-                })
-            }
-        );
+        const password = document.getElementById("passwordAdmin").value;
+        const response = await fetch("/login-admin", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password })
+        });
 
-        const data =
-            await response.json();
+        const data = await response.json();
 
         if (data.acceso) {
-            sessionStorage.setItem(
-                "adminActivo",
-                "true"
-            );
-
+            sessionStorage.setItem("adminActivo", "true");
             window.location.href = "/admin/panel.html";
+        } else {
+            mostrarMensaje(data.error);
         }
-
-        else {mostrarMensaje(data.error);}
-    }
-    catch (error) {
+    } catch (error) {
         console.error(error);
         mostrarMensaje("Error al iniciar sesión");
     }
 }
+
+document.getElementById("passwordAdmin").addEventListener("keydown", e => {
+    if (e.key === "Enter") loginAdmin();
+});
 
 function mostrarMensaje(texto, tipo = "error") {
     const mensaje = document.getElementById("mensaje");
@@ -81,7 +66,7 @@ function mostrarMensaje(texto, tipo = "error") {
         mensaje.className = "mensaje";
     }, 4000);
 }
-
 </script>
+
 </body>
 </html>

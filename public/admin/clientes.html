@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Clientes</title>
+    <title>Gestión de Clientes — Abv Library</title>
     <link rel="stylesheet" href="/principal.css">
 </head>
 <body>
@@ -14,107 +14,113 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
 }
 </script>
 
-<h1>Gestión de Clientes</h1>
-<p id="mensaje" class="mensaje"></p>
+<header class="page-header">
+    <h1>🧑‍💼 Gestión de Clientes</h1>
+    <a href="/admin/panel.html"><button class="btn-secondary btn-sm">← Regresar</button></a>
+</header>
 
-<a href="/admin/panel.html">
-    <button type="button">Regresar al panel</button>
-</a>
+<main class="page-content">
 
-<hr>
+    <p id="mensaje" class="mensaje"></p>
 
-<h2>Agregar / Editar Cliente</h2>
+    <!-- FORMULARIO -->
+    <div class="card">
+        <h2 id="formTitulo">Agregar Cliente</h2>
 
-<input type="email" id="correo_electronico" placeholder="Correo electrónico">
-<input type="text" id="nombre" placeholder="Nombre">
-<input type="text" id="ap_paterno" placeholder="Apellido paterno">
-<input type="text" id="ap_materno" placeholder="Apellido materno">
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="correo_electronico">Correo electrónico</label>
+                <input type="email" id="correo_electronico" placeholder="correo@ejemplo.com">
+            </div>
+            <div class="form-group">
+                <label for="nombre">Nombre</label>
+                <input type="text" id="nombre" placeholder="Nombre">
+            </div>
+            <div class="form-group">
+                <label for="ap_paterno">Apellido paterno</label>
+                <input type="text" id="ap_paterno" placeholder="Apellido paterno">
+            </div>
+            <div class="form-group">
+                <label for="ap_materno">Apellido materno</label>
+                <input type="text" id="ap_materno" placeholder="Apellido materno">
+            </div>
+            <div class="form-group">
+                <label for="fecha_de_nacimiento">Fecha de nacimiento</label>
+                <input type="date" id="fecha_de_nacimiento">
+            </div>
+            <div class="form-group">
+                <label for="telefono">Teléfono</label>
+                <input type="text" id="telefono" placeholder="10 dígitos">
+            </div>
+        </div>
 
-<label for="fecha_de_nacimiento">Fecha de nacimiento</label>
-<input type="date" id="fecha_de_nacimiento">
+        <div class="form-actions">
+            <button type="button" id="btnAgregarCliente" onclick="agregarCliente()">Agregar Cliente</button>
+            <button type="button" id="btnActualizarCliente" onclick="actualizarCliente()" style="display:none;">Guardar Cambios</button>
+            <button type="button" id="btnCancelar" class="btn-secondary" onclick="limpiarFormularioCliente()" style="display:none;">Cancelar</button>
+        </div>
+    </div>
 
-<input type="text" id="telefono" placeholder="Teléfono">
+    <!-- LISTA -->
+    <div class="card">
+        <h2>Lista de Clientes</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Correo</th>
+                        <th>Nombre</th>
+                        <th>Ap. Paterno</th>
+                        <th>Ap. Materno</th>
+                        <th>Teléfono</th>
+                        <th>Registro</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaClientes"></tbody>
+            </table>
+        </div>
+    </div>
 
-<br><br>
-
-<button type="button" id="btnAgregarCliente" onclick="agregarCliente()">
-    Agregar Cliente
-</button>
-
-<button type="button" id="btnActualizarCliente" onclick="actualizarCliente()" style="display:none;">
-    Actualizar Cliente
-</button>
-
-<hr>
-
-<h2>Lista de Clientes</h2>
-
-<table border="1">
-    <thead>
-        <tr>
-            <th>Correo</th>
-            <th>Nombre</th>
-            <th>Apellido paterno</th>
-            <th>Apellido materno</th>
-            <th>Teléfono</th>
-            <th>Fecha registro</th>
-            <th>Acción</th>
-        </tr>
-    </thead>
-    <tbody id="tablaClientes"></tbody>
-</table>
+</main>
 
 <script>
-window.onload = () => {
-    cargarClientes();
-};
+window.onload = () => cargarClientes();
 
 async function cargarClientes() {
     try {
         const response = await fetch("/clientes");
         const data = await response.json();
-
         const tabla = document.getElementById("tablaClientes");
         tabla.innerHTML = "";
 
         if (data.length === 0) {
-            tabla.innerHTML = `
-                <tr>
-                    <td colspan="7">No hay clientes registrados</td>
-                </tr>
-            `;
+            tabla.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">No hay clientes registrados</td></tr>`;
             return;
         }
 
-        data.forEach(cliente => {
+        data.forEach(c => {
             tabla.innerHTML += `
                 <tr>
-                    <td>${cliente.correo_electronico}</td>
-                    <td>${cliente.nombre}</td>
-                    <td>${cliente.ap_paterno}</td>
-                    <td>${cliente.ap_materno ?? ""}</td>
-                    <td>${cliente.telefono ?? ""}</td>
-                    <td>${cliente.fecha_de_registro ?? ""}</td>
+                    <td>${c.correo_electronico}</td>
+                    <td>${c.nombre}</td>
+                    <td>${c.ap_paterno}</td>
+                    <td>${c.ap_materno ?? "—"}</td>
+                    <td>${c.telefono ?? "—"}</td>
+                    <td>${c.fecha_de_registro ?? "—"}</td>
                     <td>
-                        <button type="button" onclick="cargarDatosEditarCliente(
-                            '${cliente.correo_electronico}',
-                            '${cliente.nombre}',
-                            '${cliente.ap_paterno}',
-                            '${cliente.ap_materno ?? ""}',
-                            '${cliente.fecha_de_nacimiento ?? ""}',
-                            '${cliente.telefono ?? ""}'
-                        )">
-                            Editar
-                        </button>
-
-                        <button type="button" onclick="eliminarCliente('${cliente.correo_electronico}')">
-                            Eliminar
-                        </button>
+                        <div class="td-actions">
+                            <button class="btn-secondary btn-sm" type="button"
+                                onclick="cargarDatosEditarCliente('${c.correo_electronico}','${c.nombre}','${c.ap_paterno}','${c.ap_materno ?? ""}','${c.fecha_de_nacimiento ?? ""}','${c.telefono ?? ""}')">
+                                ✏️ Editar
+                            </button>
+                            <button class="btn-danger btn-sm" type="button" onclick="eliminarCliente('${c.correo_electronico}')">
+                                🗑️ Eliminar
+                            </button>
+                        </div>
                     </td>
-                </tr>
-            `;
+                </tr>`;
         });
-
     } catch (error) {
         console.error(error);
         mostrarMensaje("Error al consultar clientes.");
@@ -124,78 +130,51 @@ async function cargarClientes() {
 async function agregarCliente() {
     try {
         const cliente = obtenerDatosCliente();
-
         const response = await fetch("/clientes", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(cliente)
         });
-
         const data = await response.json();
-
-        if (data.error) {
-            mostrarMensaje(data.error);
-            return;
-        }
-
+        if (data.error) { mostrarMensaje(data.error); return; }
         mostrarMensaje(data.mensaje, "success");
         limpiarFormularioCliente();
         cargarClientes();
-
     } catch (error) {
         console.error(error);
         mostrarMensaje("Error al agregar cliente.");
     }
 }
 
-function cargarDatosEditarCliente(
-    correo,
-    nombre,
-    ap_paterno,
-    ap_materno,
-    fecha_de_nacimiento,
-    telefono
-) {
+function cargarDatosEditarCliente(correo, nombre, ap_paterno, ap_materno, fecha_de_nacimiento, telefono) {
     document.getElementById("correo_electronico").value = correo;
     document.getElementById("nombre").value = nombre;
     document.getElementById("ap_paterno").value = ap_paterno;
     document.getElementById("ap_materno").value = ap_materno;
-    document.getElementById("fecha_de_nacimiento").value =
-        fecha_de_nacimiento ? fecha_de_nacimiento.split("T")[0] : "";
+    document.getElementById("fecha_de_nacimiento").value = fecha_de_nacimiento ? fecha_de_nacimiento.split("T")[0] : "";
     document.getElementById("telefono").value = telefono;
-
     document.getElementById("correo_electronico").disabled = true;
-
+    document.getElementById("formTitulo").textContent = "Editar Cliente";
     document.getElementById("btnAgregarCliente").style.display = "none";
-    document.getElementById("btnActualizarCliente").style.display = "inline-block";
+    document.getElementById("btnActualizarCliente").style.display = "inline-flex";
+    document.getElementById("btnCancelar").style.display = "inline-flex";
+    window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 async function actualizarCliente() {
     try {
         const correo = document.getElementById("correo_electronico").value;
         const cliente = obtenerDatosCliente();
-
         const response = await fetch(`/clientes/${correo}`, {
             method: "PUT",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(cliente)
         });
-
         const data = await response.json();
-
-        if (data.error) {
-            mostrarMensaje(data.error);
-            return;
-        }
-
+        if (data.error) { mostrarMensaje(data.error); return; }
         mostrarMensaje(data.mensaje, "success");
         limpiarFormularioCliente();
         cargarClientes();
-
     } catch (error) {
         console.error(error);
         mostrarMensaje("Error al actualizar cliente.");
@@ -203,29 +182,13 @@ async function actualizarCliente() {
 }
 
 async function eliminarCliente(correo) {
+    if (!confirm("¿Seguro que quieres eliminar este cliente?")) return;
     try {
-        const confirmar = confirm(
-            "¿Seguro que quieres eliminar este cliente?"
-        );
-
-        if (!confirmar) {
-            return;
-        }
-
-        const response = await fetch(`/clientes/${correo}`, {
-            method: "DELETE"
-        });
-
+        const response = await fetch(`/clientes/${correo}`, { method: "DELETE" });
         const data = await response.json();
-
-        if (data.error) {
-            mostrarMensaje(data.error);
-            return;
-        }
-
+        if (data.error) { mostrarMensaje(data.error); return; }
         mostrarMensaje(data.mensaje, "success");
         cargarClientes();
-
     } catch (error) {
         console.error(error);
         mostrarMensaje("Error al eliminar cliente.");
@@ -235,26 +198,23 @@ async function eliminarCliente(correo) {
 function obtenerDatosCliente() {
     return {
         correo_electronico: document.getElementById("correo_electronico").value,
-        nombre: document.getElementById("nombre").value,
-        ap_paterno: document.getElementById("ap_paterno").value,
-        ap_materno: document.getElementById("ap_materno").value,
-        fecha_de_nacimiento: document.getElementById("fecha_de_nacimiento").value,
-        telefono: document.getElementById("telefono").value
+        nombre:             document.getElementById("nombre").value,
+        ap_paterno:         document.getElementById("ap_paterno").value,
+        ap_materno:         document.getElementById("ap_materno").value,
+        fecha_de_nacimiento:document.getElementById("fecha_de_nacimiento").value,
+        telefono:           document.getElementById("telefono").value
     };
 }
 
 function limpiarFormularioCliente() {
+    ["correo_electronico","nombre","ap_paterno","ap_materno","fecha_de_nacimiento","telefono"].forEach(id => {
+        document.getElementById(id).value = "";
+    });
     document.getElementById("correo_electronico").disabled = false;
-
-    document.getElementById("correo_electronico").value = "";
-    document.getElementById("nombre").value = "";
-    document.getElementById("ap_paterno").value = "";
-    document.getElementById("ap_materno").value = "";
-    document.getElementById("fecha_de_nacimiento").value = "";
-    document.getElementById("telefono").value = "";
-
-    document.getElementById("btnAgregarCliente").style.display = "inline-block";
+    document.getElementById("formTitulo").textContent = "Agregar Cliente";
+    document.getElementById("btnAgregarCliente").style.display = "inline-flex";
     document.getElementById("btnActualizarCliente").style.display = "none";
+    document.getElementById("btnCancelar").style.display = "none";
 }
 
 function mostrarMensaje(texto, tipo = "error") {

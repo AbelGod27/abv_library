@@ -8,23 +8,34 @@
 </head>
 <body>
 
+<div class="landing">
+    <div class="logo">📚</div>
     <h1>Abv Library</h1>
     <p id="mensaje" class="mensaje"></p>
+    <p>Selecciona tu perfil para continuar</p>
 
-    <div class="contenedor">
-        <a href="/cliente/cliente.html">
-            <button>Cliente</button>
+    <div class="landing-cards">
+
+        <a href="/cliente/cliente.html" class="landing-card">
+            <div class="icon">🔍</div>
+            <span>Cliente</span>
+            <button>Entrar</button>
         </a>
 
-        <a href="/admin/login.html">
-            <button>Administrador</button>
+        <a href="/admin/login.html" class="landing-card">
+            <div class="icon">🛡️</div>
+            <span>Administrador</span>
+            <button>Entrar</button>
         </a>
-    
-        <a href="/bibliotecario/login.html">
-            <button>Bibliotecario</button>
+
+        <a href="/bibliotecario/login.html" class="landing-card">
+            <div class="icon">📖</div>
+            <span>Bibliotecario</span>
+            <button>Entrar</button>
         </a>
+
     </div>
-    
+</div>
 
 <script>
 function mostrarMensaje(texto, tipo = "error") {

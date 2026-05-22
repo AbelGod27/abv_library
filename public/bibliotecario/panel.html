@@ -3,100 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Bibliotecario</title>
+    <title>Panel Bibliotecario — Abv Library</title>
     <link rel="stylesheet" href="/principal.css">
 </head>
-
 <body>
 
 <script>
-if (
-    sessionStorage.getItem(
-        "bibliotecarioActivo"
-    ) !== "true"
-) {
-    window.location.href =
-        "/bibliotecario/login.html";
+if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
+    window.location.href = "/bibliotecario/login.html";
 }
 </script>
 
-<h1>Panel Bibliotecario</h1>
-<p id="mensaje" class="mensaje"></p>
+<header class="page-header">
+    <h1>📖 Panel Bibliotecario</h1>
+    <button class="btn-secondary btn-sm" onclick="cerrarSesion()">Cerrar sesión</button>
+</header>
 
-<h2 id="infoBibliotecario"></h2>
+<main class="page-content">
 
-<div class="menu-bibliotecario">
+    <p id="mensaje" class="mensaje"></p>
 
-    <a href="/bibliotecario/ventas.html">
-        <button>Registrar Venta</button>
-    </a>
+    <div id="infoBibliotecario" class="panel-info"></div>
 
-    <a href="/bibliotecario/historial.html">
-        <button>Historial Ventas</button>
-    </a>
+    <div class="panel-grid">
 
-    <a href="/bibliotecario/prestamos.html">
-        <button>Registrar Préstamo</button>
-    </a>
+        <a href="/bibliotecario/ventas.html" class="panel-card">
+            <div class="icon">🛒</div>
+            <span>Registrar Venta</span>
+            <button>Abrir</button>
+        </a>
 
-    <a href="/bibliotecario/historial-prestamos.html">
-        <button>Historial Préstamos</button>
-    </a>
+        <a href="/bibliotecario/historial.html" class="panel-card">
+            <div class="icon">📋</div>
+            <span>Historial Ventas</span>
+            <button>Abrir</button>
+        </a>
 
-    <a href="/bibliotecario/facturas.html">
-        <button>Facturas</button>
-    </a>
+        <a href="/bibliotecario/prestamos.html" class="panel-card">
+            <div class="icon">📤</div>
+            <span>Registrar Préstamo</span>
+            <button>Abrir</button>
+        </a>
 
-    <a href="/bibliotecario/libros.html">
-        <button>Libros Disponibles</button>
-    </a>
+        <a href="/bibliotecario/historial-prestamos.html" class="panel-card">
+            <div class="icon">📥</div>
+            <span>Historial Préstamos</span>
+            <button>Abrir</button>
+        </a>
 
-</div>
+        <a href="/bibliotecario/facturas.html" class="panel-card">
+            <div class="icon">🧾</div>
+            <span>Facturas</span>
+            <button>Abrir</button>
+        </a>
 
-<br><br>
+    </div>
 
-<button type="button" onclick="cerrarSesion()">
-    Cerrar sesión
-</button>
+</main>
 
 <script>
-
-const nombre =
-    sessionStorage.getItem(
-        "nombreBibliotecario"
-    );
-
-const rol =
-    sessionStorage.getItem(
-        "rolBibliotecario"
-    );
-
-document.getElementById(
-    "infoBibliotecario"
-).textContent =
-    `Bienvenido ${nombre} (${rol})`;
+const nombre = sessionStorage.getItem("nombreBibliotecario");
+const rol    = sessionStorage.getItem("rolBibliotecario");
+document.getElementById("infoBibliotecario").textContent = `Bienvenido, ${nombre} (${rol})`;
 
 function cerrarSesion() {
-
-    sessionStorage.removeItem(
-        "bibliotecarioActivo"
-    );
-
-    sessionStorage.removeItem(
-        "correoBibliotecario"
-    );
-
-    sessionStorage.removeItem(
-        "nombreBibliotecario"
-    );
-
-    sessionStorage.removeItem(
-        "rolBibliotecario"
-    );
-
-    window.location.href =
-        "/index.html";
-
+    sessionStorage.removeItem("bibliotecarioActivo");
+    sessionStorage.removeItem("correoBibliotecario");
+    sessionStorage.removeItem("nombreBibliotecario");
+    sessionStorage.removeItem("rolBibliotecario");
+    window.location.href = "/index.html";
 }
 
 function mostrarMensaje(texto, tipo = "error") {
@@ -108,7 +83,6 @@ function mostrarMensaje(texto, tipo = "error") {
         mensaje.className = "mensaje";
     }, 4000);
 }
-
 </script>
 
 </body>
