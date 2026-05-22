@@ -611,28 +611,8 @@ if (
     }
 });
 
-// CONSULTAR CLIENTES
-app.get("/clientes", async (req, res) => {
-    try {
-        const result = await db.query(`
-            SELECT
-                p.correo_electronico,
-                p.nombre,
-                p.ap_paterno
-            FROM persona p
-            JOIN cliente c
-            ON p.correo_electronico = c.correo_electronico
-            ORDER BY p.nombre
-        `);
+// CONSULTAR CLIENTES — ver ruta completa más abajo
 
-        res.json(result.rows);
-    } catch (error) {
-        console.error("Error al consultar clientes:", error);
-        res.status(500).json({
-            error: "Error al consultar clientes."
-        });
-    }
-});
 
 // REGISTRAR PRÉSTAMO
 app.post("/prestamos", async (req, res) => {
