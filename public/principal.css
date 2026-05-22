@@ -2,6 +2,8 @@
    ABV LIBRARY — Design System
    ============================================= */
 
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Lato:wght@300;400;600;700&display=swap');
+
 /* --- Variables --- */
 :root {
     --color-primary:     #4f46e5;
@@ -25,7 +27,8 @@
     --shadow:    0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
     --shadow-lg: 0 8px 32px rgba(0,0,0,.12);
 
-    --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --font:        'Lato', 'Segoe UI', system-ui, sans-serif;
+    --font-serif:  'Playfair Display', Georgia, serif;
 }
 
 /* --- Reset & Base --- */
@@ -72,6 +75,7 @@ a { text-decoration: none; color: inherit; }
 }
 
 .page-header h1 {
+    font-family: var(--font-serif);
     font-size: 1.5rem;
     font-weight: 700;
     color: var(--color-primary);
@@ -106,6 +110,7 @@ a { text-decoration: none; color: inherit; }
 }
 
 .card h2 {
+    font-family: var(--font-serif);
     font-size: 1.05rem;
     font-weight: 600;
     color: var(--text);
@@ -351,10 +356,12 @@ tbody tr:hover { background: #f8fafc; }
 }
 
 .landing h1 {
+    font-family: var(--font-serif);
     font-size: 2.4rem;
     font-weight: 800;
-    color: var(--color-primary);
+    color: #fff;
     letter-spacing: -1px;
+    text-shadow: 0 2px 12px rgba(0,0,0,.4);
 }
 
 .landing p {
