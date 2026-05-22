@@ -757,6 +757,16 @@ app.get("/prestamos", async (req, res) => {
                 pr.dia_de_entrega,
                 pr.cantidad_de_libros,
 
+                CASE
+                    WHEN pr.dia_de_entrega IS NOT NULL 
+                    THEN 'Devuelto'
+                    
+                    WHEN CURRENT_DATE > pr.dia_de_vencimiento 
+                    THEN 'Vencido'
+                    ELSE 'Activo'
+                    
+                END AS estado
+
                 CONCAT(
                     pc.nombre,
                     ' ',

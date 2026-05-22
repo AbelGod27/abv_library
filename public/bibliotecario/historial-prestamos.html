@@ -54,6 +54,7 @@ if (
             <th>Cantidad</th>
             <th>Multa</th>
             <th>Acción</th>
+            <th>Estado</th>
         </tr>
     </thead>
 
@@ -92,6 +93,7 @@ async function cargarPrestamos() {
                     <td>${prestamo.dia_de_vencimiento ?? ""}</td>
                     <td>${prestamo.dia_de_entrega ?? "Pendiente"}</td>
                     <td>${prestamo.cantidad_de_libros}</td>
+                    <td>${prestamo.estado}</td>
                     <td>${prestamo.multa}</td>
                     <td>
                         ${
