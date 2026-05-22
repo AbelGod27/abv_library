@@ -765,7 +765,7 @@ app.get("/prestamos", async (req, res) => {
                     THEN 'Vencido'
                     ELSE 'Activo'
                     
-                END AS estado
+                END AS estado,
 
                 CONCAT(
                     pc.nombre,
