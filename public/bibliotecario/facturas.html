@@ -1,0 +1,190 @@
+<!-- public/admin/facturas.html -->
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facturas</title>
+    <link rel="stylesheet" href="/principal.css">
+</head>
+
+<body>
+
+<script>
+if (sessionStorage.getItem("adminActivo") !== "true") {
+    window.location.href = "/admin/login.html";
+}
+</script>
+
+<h1>Facturas</h1>
+
+<a href="/admin/panel.html">
+    <button type="button">Regresar al panel</button>
+</a>
+
+<hr>
+
+<h2>Generar reporte por fechas</h2>
+
+<label for="fecha_inicio">Fecha inicio</label>
+<input type="date" id="fecha_inicio">
+
+<label for="fecha_fin">Fecha fin</label>
+<input type="date" id="fecha_fin">
+
+<button type="button" onclick="generarReporte()">
+    Generar reporte
+</button>
+
+<hr>
+
+<h2>Ventas realizadas</h2>
+
+<table border="1">
+    <thead>
+        <tr>
+            <th>ID Venta</th>
+            <th>Fecha</th>
+            <th>Monto</th>
+            <th>Método de pago</th>
+        </tr>
+    </thead>
+    <tbody id="tablaVentas"></tbody>
+</table>
+
+<hr>
+
+<h2>Préstamos registrados</h2>
+
+<table border="1">
+    <thead>
+        <tr>
+            <th>ID Préstamo</th>
+            <th>Fecha</th>
+            <th>Multa</th>
+            <th>Estado</th>
+        </tr>
+    </thead>
+    <tbody id="tablaPrestamos"></tbody>
+</table>
+
+<hr>
+
+<h2>Resumen</h2>
+
+<p id="resumenFacturas"></p>
+
+<script>
+async function generarReporte() {
+    try {
+        const fechaInicio = document.getElementById("fecha_inicio").value;
+        const fechaFin = document.getElementById("fecha_fin").value;
+
+        if (!fechaInicio || !fechaFin) {
+            alert("Selecciona ambas fechas.");
+            return;
+        }
+
+        const response = await fetch(
+            `/facturas?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`
+        );
+
+        const data = await response.json();
+
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        mostrarVentas(data.ventas);
+        mostrarPrestamos(data.prestamos);
+        mostrarResumen(data.ventas, data.prestamos);
+
+    } catch (error) {
+        console.error(error);
+        alert("Error al generar reporte.");
+    }
+}
+
+function mostrarVentas(ventas) {
+    const tabla = document.getElementById("tablaVentas");
+    tabla.innerHTML = "";
+
+    if (ventas.length === 0) {
+        tabla.innerHTML = `
+            <tr>
+                <td colspan="4">No hay ventas en este periodo</td>
+            </tr>
+        `;
+        return;
+    }
+
+    ventas.forEach(venta => {
+        tabla.innerHTML += `
+            <tr>
+                <td>${venta.id}</td>
+                <td>${venta.fecha ?? ""}</td>
+                <td>${venta.monto}</td>
+                <td>${venta.metodo_de_pago ?? ""}</td>
+            </tr>
+        `;
+    });
+}
+
+function mostrarPrestamos(prestamos) {
+    const tabla = document.getElementById("tablaPrestamos");
+    tabla.innerHTML = "";
+
+    if (prestamos.length === 0) {
+        tabla.innerHTML = `
+            <tr>
+                <td colspan="4">No hay préstamos en este periodo</td>
+            </tr>
+        `;
+        return;
+    }
+
+    prestamos.forEach(prestamo => {
+        tabla.innerHTML += `
+            <tr>
+                <td>${prestamo.id}</td>
+                <td>${prestamo.fecha ?? ""}</td>
+                <td>${prestamo.monto}</td>
+                <td>${prestamo.estado}</td>
+            </tr>
+        `;
+    });
+}
+
+function mostrarResumen(ventas, prestamos) {
+    const totalVentas = ventas.reduce(
+        (total, venta) => total + Number(venta.monto || 0),
+        0
+    );
+
+    const totalMultas = prestamos.reduce(
+        (total, prestamo) => total + Number(prestamo.monto || 0),
+        0
+    );
+
+    const prestamosPendientes = prestamos.filter(
+        prestamo => prestamo.estado === "Pendiente"
+    ).length;
+
+    const prestamosDevueltos = prestamos.filter(
+        prestamo => prestamo.estado === "Devuelto"
+    ).length;
+
+    document.getElementById("resumenFacturas").innerHTML = `
+        Total por ventas: $${totalVentas}<br>
+        Total por multas: $${totalMultas}<br>
+        Préstamos pendientes: ${prestamosPendientes}<br>
+        Préstamos devueltos: ${prestamosDevueltos}<br>
+        Total general: $${totalVentas + totalMultas}
+    `;
+}
+</script>
+
+</body>
+</html>
