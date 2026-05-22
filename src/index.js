@@ -496,6 +496,29 @@ app.post("/ventas", async (req, res) => {
         }
         await db.query("BEGIN");
 
+        const stockVenta = await db.query(
+    `
+    SELECT cantidad
+    FROM lib_venta
+    WHERE isbn = $1
+    AND id_venta IS NULL
+    `,
+    [isbn]
+);
+
+if (
+    stockVenta.rows.length === 0 ||
+    stockVenta.rows[0].cantidad < cantidad
+) {
+
+    await db.query("ROLLBACK");
+
+    return res.status(400).json({
+        error:
+            "No hay suficiente stock para vender."
+    });
+
+}
 
         // =========================
         // INSERTAR VENTA
@@ -553,6 +576,16 @@ app.post("/ventas", async (req, res) => {
                 isbn
             ]
         );
+
+        await db.query(
+    `
+    UPDATE lib_venta
+    SET cantidad = cantidad - $1
+    WHERE isbn = $2
+    AND id_venta IS NULL
+    `,
+    [cantidad, isbn]
+);
 
         await db.query("COMMIT");
 
@@ -620,6 +653,24 @@ app.post("/prestamos", async (req, res) => {
 
         await db.query("BEGIN");
 
+        const stockPrestamo = await db.query(
+            `
+            SELECT cantidad
+            FROM lib_pres
+            WHERE isbn = $1
+            AND id_prestamo IS NULL
+            `,
+            [isbn]
+        );
+
+        if (stockPrestamo.rows.length === 0 || stockPrestamo.rows[0].cantidad < cantidad) {
+            await db.query("ROLLBACK");
+
+            return res.status(400).json({
+                error: "No hay suficientes libros disponibles para préstamo."
+            });
+        }
+
         const prestamoResult = await db.query(`
             INSERT INTO prestamo (
                 multa,
@@ -661,6 +712,16 @@ app.post("/prestamos", async (req, res) => {
             idPrestamo,
             isbn
         ]);
+
+        await db.query(
+            `
+            UPDATE lib_pres
+            SET cantidad = cantidad - $1
+            WHERE isbn = $2
+            AND id_prestamo IS NULL
+            `,
+            [cantidad, isbn]
+        );
 
         await db.query("COMMIT");
 
