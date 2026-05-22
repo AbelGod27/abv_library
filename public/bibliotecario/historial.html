@@ -71,7 +71,7 @@ async function cargarVentas() {
             tabla.innerHTML += `
                 <tr>
                     <td>${v.id_venta}</td>
-                    <td>${v.fecha ?? "—"}</td>
+                    <td>${formatFecha(v.fecha)}</td>
                     <td>${v.hora ?? "—"}</td>
                     <td>$${v.total_pagado}</td>
                     <td>${v.metodo_de_pago}</td>
@@ -82,6 +82,11 @@ async function cargarVentas() {
         console.error(error);
         mostrarMensaje("Error al cargar ventas.");
     }
+}
+
+function formatFecha(fecha) {
+    if (!fecha) return "—";
+    return fecha.split("T")[0];
 }
 
 function mostrarMensaje(texto, tipo = "error") {

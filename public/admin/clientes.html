@@ -107,7 +107,7 @@ async function cargarClientes() {
                     <td>${c.ap_paterno}</td>
                     <td>${c.ap_materno ?? "—"}</td>
                     <td>${c.telefono ?? "—"}</td>
-                    <td>${c.fecha_de_registro ?? "—"}</td>
+                    <td>${formatFecha(c.fecha_de_registro)}</td>
                     <td>
                         <div class="td-actions">
                             <button class="btn-secondary btn-sm" type="button"
@@ -215,6 +215,11 @@ function limpiarFormularioCliente() {
     document.getElementById("btnAgregarCliente").style.display = "inline-flex";
     document.getElementById("btnActualizarCliente").style.display = "none";
     document.getElementById("btnCancelar").style.display = "none";
+}
+
+function formatFecha(fecha) {
+    if (!fecha) return "—";
+    return fecha.split("T")[0];
 }
 
 function mostrarMensaje(texto, tipo = "error") {
