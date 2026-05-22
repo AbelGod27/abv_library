@@ -578,6 +578,108 @@ app.post("/ventas", async (req, res) => {
     }
 });
 
+// CONSULTAR CLIENTES
+app.get("/clientes", async (req, res) => {
+    try {
+        const result = await db.query(`
+            SELECT
+                p.correo_electronico,
+                p.nombre,
+                p.ap_paterno
+            FROM persona p
+            JOIN cliente c
+            ON p.correo_electronico = c.correo_electronico
+            ORDER BY p.nombre
+        `);
+
+        res.json(result.rows);
+    } catch (error) {
+        console.error("Error al consultar clientes:", error);
+        res.status(500).json({
+            error: "Error al consultar clientes."
+        });
+    }
+});
+
+// REGISTRAR PRÉSTAMO
+app.post("/prestamos", async (req, res) => {
+    try {
+        const {
+            correo_cliente,
+            correo_empleado,
+            isbn,
+            cantidad,
+            dia_de_vencimiento
+        } = req.body;
+
+        if (!correo_cliente || !correo_empleado || !isbn || !cantidad || !dia_de_vencimiento) {
+            return res.status(400).json({
+                error: "Todos los campos son obligatorios."
+            });
+        }
+
+        await db.query("BEGIN");
+
+        const prestamoResult = await db.query(`
+            INSERT INTO prestamo (
+                multa,
+                dia_de_inicio,
+                dia_de_vencimiento,
+                dia_de_entrega,
+                cantidad_de_libros,
+                correo_cliente,
+                correo_empleado
+            )
+            VALUES (
+                0,
+                CURRENT_DATE,
+                $1,
+                NULL,
+                $2,
+                $3,
+                $4
+            )
+            RETURNING id_prestamo
+        `, [
+            dia_de_vencimiento,
+            cantidad,
+            correo_cliente,
+            correo_empleado
+        ]);
+
+        const idPrestamo = prestamoResult.rows[0].id_prestamo;
+
+        await db.query(`
+            INSERT INTO lib_pres (
+                cantidad,
+                id_prestamo,
+                isbn
+            )
+            VALUES ($1, $2, $3)
+        `, [
+            cantidad,
+            idPrestamo,
+            isbn
+        ]);
+
+        await db.query("COMMIT");
+
+        res.json({
+            mensaje: "Préstamo registrado correctamente.",
+            id_prestamo: idPrestamo
+        });
+
+    } catch (error) {
+        await db.query("ROLLBACK");
+
+        console.error("Error al registrar préstamo:", error);
+
+        res.status(500).json({
+            error: "Error interno al registrar préstamo."
+        });
+    }
+});
+
 // =========================
 // SERVIDOR
 // =========================

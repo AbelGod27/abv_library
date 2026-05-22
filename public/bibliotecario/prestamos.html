@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar Préstamo</title>
+    <link rel="stylesheet" href="/principal.css">
+</head>
+
+<body>
+
+<script>
+if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
+    window.location.href = "/bibliotecario/login.html";
+}
+</script>
+
+<h1>Registrar Préstamo</h1>
+
+<h2 id="infoBibliotecario"></h2>
+
+<a href="/bibliotecario/panel.html">
+    <button type="button">Regresar al panel</button>
+</a>
+
+<hr>
+
+<label for="correo_cliente">Cliente</label>
+<select id="correo_cliente">
+    <option value="">Selecciona un cliente</option>
+</select>
+
+<br><br>
+
+<label for="isbn">Libro</label>
+<select id="isbn">
+    <option value="">Selecciona un libro</option>
+</select>
+
+<br><br>
+
+<label for="cantidad">Cantidad</label>
+<input type="number" id="cantidad" min="1" value="1">
+
+<br><br>
+
+<label for="dia_de_vencimiento">Fecha de vencimiento</label>
+<input type="date" id="dia_de_vencimiento">
+
+<br><br>
+
+<button type="button" onclick="registrarPrestamo()">
+    Registrar Préstamo
+</button>
+
+<script>
+const correoBibliotecario = sessionStorage.getItem("correoBibliotecario");
+const nombreBibliotecario = sessionStorage.getItem("nombreBibliotecario");
+const rolBibliotecario = sessionStorage.getItem("rolBibliotecario");
+
+document.getElementById("infoBibliotecario").textContent =
+    `Bibliotecario: ${nombreBibliotecario} (${rolBibliotecario})`;
+
+window.onload = () => {
+    cargarClientes();
+    cargarLibros();
+};
+
+async function cargarClientes() {
+    try {
+        const response = await fetch("/clientes");
+        const data = await response.json();
+
+        const select = document.getElementById("correo_cliente");
+
+        data.forEach(cliente => {
+            select.innerHTML += `
+                <option value="${cliente.correo_electronico}">
+                    ${cliente.nombre} ${cliente.ap_paterno}
+                </option>
+            `;
+        });
+
+    } catch (error) {
+        console.error(error);
+        alert("Error al cargar clientes.");
+    }
+}
+
+async function cargarLibros() {
+    try {
+        const response = await fetch("/libros");
+        const data = await response.json();
+
+        const select = document.getElementById("isbn");
+
+        data.forEach(libro => {
+            select.innerHTML += `
+                <option value="${libro.isbn}">
+                    ${libro.titulo} - ${libro.autor}
+                </option>
+            `;
+        });
+
+    } catch (error) {
+        console.error(error);
+        alert("Error al cargar libros.");
+    }
+}
+
+async function registrarPrestamo() {
+    try {
+        const prestamo = {
+            correo_cliente: document.getElementById("correo_cliente").value,
+            correo_empleado: correoBibliotecario,
+            isbn: document.getElementById("isbn").value,
+            cantidad: document.getElementById("cantidad").value,
+            dia_de_vencimiento: document.getElementById("dia_de_vencimiento").value
+        };
+
+        const response = await fetch("/prestamos", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(prestamo)
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        alert(data.mensaje);
+
+        document.getElementById("correo_cliente").value = "";
+        document.getElementById("isbn").value = "";
+        document.getElementById("cantidad").value = "1";
+        document.getElementById("dia_de_vencimiento").value = "";
+
+    } catch (error) {
+        console.error(error);
+        alert("Error al registrar préstamo.");
+    }
+}
+</script>
+
+</body>
+</html>
