@@ -1,43 +1,26 @@
+<!-- public/bibliotecario/historial-prestamos.html -->
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1.0">
-
-    <title>
-        Historial de Préstamos
-    </title>
-
-    <link rel="stylesheet"
-        href="/principal.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial de Préstamos</title>
+    <link rel="stylesheet" href="/principal.css">
 </head>
 
 <body>
 
 <script>
-if (
-    sessionStorage.getItem(
-        "bibliotecarioActivo"
-    ) !== "true"
-) {
-
-    window.location.href =
-        "/bibliotecario/login.html";
-
+if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
+    window.location.href = "/bibliotecario/login.html";
 }
 </script>
 
-<h1>
-    Historial de Préstamos
-</h1>
+<h1>Historial de Préstamos</h1>
 
 <a href="/bibliotecario/panel.html">
-
-    <button type="button">
-        Regresar al panel
-    </button>
-
+    <button type="button">Regresar al panel</button>
 </a>
 
 <hr>
@@ -52,9 +35,9 @@ if (
             <th>Vencimiento</th>
             <th>Entrega</th>
             <th>Cantidad</th>
+            <th>Estado</th>
             <th>Multa</th>
             <th>Acción</th>
-            <th>Estado</th>
         </tr>
     </thead>
 
@@ -77,7 +60,7 @@ async function cargarPrestamos() {
         if (data.length === 0) {
             tabla.innerHTML = `
                 <tr>
-                    <td colspan="9">No hay préstamos registrados</td>
+                    <td colspan="10">No hay préstamos registrados</td>
                 </tr>
             `;
             return;
@@ -98,7 +81,7 @@ async function cargarPrestamos() {
                     <td>
                         ${
                             prestamo.dia_de_entrega
-                            ? "Devuelto"
+                            ? `<button type="button" disabled>Devuelto</button>`
                             : `<button type="button" onclick="devolverPrestamo(${prestamo.id_prestamo})">
                                 Devolver
                               </button>`
@@ -147,87 +130,6 @@ async function devolverPrestamo(id_prestamo) {
         alert("Error al devolver préstamo.");
     }
 }
-</script>
-
-<script>
-
-window.onload = () => {
-
-    cargarPrestamos();
-
-};
-
-async function cargarPrestamos() {
-
-    try {
-
-        const response =
-            await fetch("/prestamos");
-
-        const data =
-            await response.json();
-
-        const tabla =
-            document.getElementById(
-                "tablaPrestamos"
-            );
-
-        tabla.innerHTML = "";
-
-        if (data.length === 0) {
-
-            tabla.innerHTML = `
-                <tr>
-                    <td colspan="8">
-                        No hay préstamos registrados
-                    </td>
-                </tr>
-            `;
-
-            return;
-
-        }
-
-        data.forEach(prestamo => {
-
-            tabla.innerHTML += `
-                <tr>
-
-                    <td>${prestamo.id_prestamo}</td>
-
-                    <td>${prestamo.cliente}</td>
-
-                    <td>${prestamo.bibliotecario}</td>
-
-                    <td>${prestamo.dia_de_inicio ?? ""}</td>
-
-                    <td>${prestamo.dia_de_vencimiento ?? ""}</td>
-
-                    <td>${prestamo.dia_de_entrega ?? "Pendiente"}</td>
-
-                    <td>${prestamo.cantidad_de_libros}</td>
-
-                    <td>${prestamo.multa}</td>
-
-                </tr>
-            `;
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.error(error);
-
-        alert(
-            "Error al cargar préstamos."
-        );
-
-    }
-
-}
-
 </script>
 
 </body>
