@@ -114,12 +114,17 @@ async function cargarLibros(busqueda) {
                     <td>${libro.autor ?? "—"}</td>
                     <td>${libro.editorial ?? "—"}</td>
                     <td>${libro.version ?? "—"}</td>
-                    <td>${libro.anio_publicacion ?? "—"}</td>
+                    <td>${formatFecha(libro.anio_publicacion)}</td>
                 </tr>`;
         });
     } catch (error) {
         console.error(error);
     }
+}
+
+function formatFecha(fecha) {
+    if (!fecha) return "—";
+    return fecha.split("T")[0];
 }
 
 function mostrarMensaje(texto, tipo = "error") {

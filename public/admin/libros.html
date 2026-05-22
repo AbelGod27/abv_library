@@ -120,7 +120,7 @@ async function cargarLibros(busqueda) {
                     <td>${libro.autor}</td>
                     <td>${libro.editorial ?? "—"}</td>
                     <td>${libro.version ?? "—"}</td>
-                    <td>${libro.anio_publicacion ?? "—"}</td>
+                    <td>${formatFecha(libro.anio_publicacion)}</td>
                     <td>
                         <div class="td-actions">
                             <button class="btn-secondary btn-sm" type="button"
@@ -230,6 +230,11 @@ function limpiarFormulario() {
     document.getElementById("btnAgregarLibro").style.display = "inline-flex";
     document.getElementById("btnActualizarLibro").style.display = "none";
     document.getElementById("btnCancelarEdicion").style.display = "none";
+}
+
+function formatFecha(fecha) {
+    if (!fecha) return "—";
+    return fecha.split("T")[0];
 }
 
 function mostrarMensaje(texto, tipo = "error") {
