@@ -268,6 +268,7 @@ app.get("/empleados", async (req, res) => {
                 p.nombre,
                 p.ap_paterno,
                 p.ap_materno,
+                p.fecha_de_nacimiento,
                 p.telefono,
                 e.rol
             FROM persona p
@@ -373,6 +374,74 @@ app.post("/empleados", async (req, res) => {
         res.status(500).json({
             error: "Error interno al agregar empleado."
         });
+    }
+});
+
+// =========================
+// ACTUALIZAR EMPLEADO
+// =========================
+
+app.put("/empleados/:correo", async (req, res) => {
+    try {
+        const correo = req.params.correo;
+        const { nombre, ap_paterno, ap_materno, fecha_de_nacimiento, telefono, rol } = req.body;
+
+        if (!nombre || !ap_paterno || !fecha_de_nacimiento || !rol) {
+            return res.status(400).json({ error: "Nombre, apellido paterno, fecha de nacimiento y rol son obligatorios." });
+        }
+
+        await db.query("BEGIN");
+
+        await db.query(`
+            UPDATE persona SET
+                nombre = $1,
+                ap_paterno = $2,
+                ap_materno = $3,
+                fecha_de_nacimiento = $4,
+                telefono = $5
+            WHERE correo_electronico = $6
+        `, [nombre, ap_paterno, ap_materno || null, fecha_de_nacimiento, telefono || null, correo]);
+
+        await db.query(`
+            UPDATE empleado SET rol = $1
+            WHERE correo_electronico = $2
+        `, [rol, correo]);
+
+        await db.query("COMMIT");
+
+        res.json({ mensaje: "Empleado actualizado correctamente." });
+
+    } catch (error) {
+        await db.query("ROLLBACK");
+        console.error("Error al actualizar empleado:", error);
+        res.status(500).json({ error: "Error interno al actualizar empleado." });
+    }
+});
+
+// =========================
+// ELIMINAR EMPLEADO
+// =========================
+
+app.delete("/empleados/:correo", async (req, res) => {
+    try {
+        const correo = req.params.correo;
+
+        const existe = await db.query(
+            "SELECT correo_electronico FROM empleado WHERE correo_electronico = $1",
+            [correo]
+        );
+
+        if (existe.rows.length === 0) {
+            return res.status(404).json({ error: "El empleado no existe." });
+        }
+
+        await db.query("DELETE FROM persona WHERE correo_electronico = $1", [correo]);
+
+        res.json({ mensaje: "Empleado eliminado correctamente." });
+
+    } catch (error) {
+        console.error("Error al eliminar empleado:", error);
+        res.status(500).json({ error: "Error interno al eliminar empleado." });
     }
 });
 

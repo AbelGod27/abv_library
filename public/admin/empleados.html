@@ -25,7 +25,7 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
 
     <!-- FORMULARIO -->
     <div class="card">
-        <h2>Agregar Empleado</h2>
+        <h2 id="formTitulo">Agregar Empleado</h2>
 
         <div class="form-grid">
             <div class="form-group">
@@ -64,7 +64,9 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
         </div>
 
         <div class="form-actions">
-            <button type="button" onclick="agregarEmpleado()">Agregar Empleado</button>
+            <button type="button" id="btnAgregar" onclick="agregarEmpleado()">Agregar Empleado</button>
+            <button type="button" id="btnActualizar" onclick="actualizarEmpleado()" style="display:none;">Guardar Cambios</button>
+            <button type="button" id="btnCancelar" class="btn-secondary" onclick="limpiarFormulario()" style="display:none;">Cancelar</button>
         </div>
     </div>
 
@@ -81,6 +83,7 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
                         <th>Ap. Materno</th>
                         <th>Teléfono</th>
                         <th>Rol</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="tablaEmpleados"></tbody>
@@ -101,7 +104,7 @@ async function cargarEmpleados() {
         tabla.innerHTML = "";
 
         if (data.length === 0) {
-            tabla.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">No hay empleados registrados</td></tr>`;
+            tabla.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">No hay empleados registrados</td></tr>`;
             return;
         }
 
@@ -114,6 +117,17 @@ async function cargarEmpleados() {
                     <td>${e.ap_materno ?? "—"}</td>
                     <td>${e.telefono ?? "—"}</td>
                     <td>${e.rol}</td>
+                    <td>
+                        <div class="td-actions">
+                            <button class="btn-secondary btn-sm" type="button"
+                                onclick="cargarDatosEditar('${e.correo_electronico}','${e.nombre}','${e.ap_paterno}','${e.ap_materno ?? ""}','${e.fecha_de_nacimiento ?? ""}','${e.telefono ?? ""}','${e.rol}')">
+                                ✏️ Editar
+                            </button>
+                            <button class="btn-danger btn-sm" type="button" onclick="eliminarEmpleado('${e.correo_electronico}')">
+                                🗑️ Eliminar
+                            </button>
+                        </div>
+                    </td>
                 </tr>`;
         });
     } catch (error) {
@@ -124,34 +138,94 @@ async function cargarEmpleados() {
 
 async function agregarEmpleado() {
     try {
-        const empleado = {
-            correo_electronico:  document.getElementById("correo_electronico").value,
-            nombre:              document.getElementById("nombre").value,
-            ap_paterno:          document.getElementById("ap_paterno").value,
-            ap_materno:          document.getElementById("ap_materno").value,
-            fecha_de_nacimiento: document.getElementById("fecha_de_nacimiento").value,
-            telefono:            document.getElementById("telefono").value,
-            rol:                 document.getElementById("rol").value
-        };
-
+        const empleado = obtenerDatos();
         const response = await fetch("/empleados", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(empleado)
         });
-
         const data = await response.json();
         if (data.error) { mostrarMensaje(data.error); return; }
-
         mostrarMensaje(data.mensaje, "success");
-        ["correo_electronico","nombre","ap_paterno","ap_materno","fecha_de_nacimiento","telefono","rol"].forEach(id => {
-            document.getElementById(id).value = "";
-        });
+        limpiarFormulario();
         cargarEmpleados();
     } catch (error) {
         console.error(error);
         mostrarMensaje("Error al agregar empleado.");
     }
+}
+
+function cargarDatosEditar(correo, nombre, ap_paterno, ap_materno, fecha_de_nacimiento, telefono, rol) {
+    document.getElementById("correo_electronico").value = correo;
+    document.getElementById("nombre").value = nombre;
+    document.getElementById("ap_paterno").value = ap_paterno;
+    document.getElementById("ap_materno").value = ap_materno;
+    document.getElementById("fecha_de_nacimiento").value = fecha_de_nacimiento ? fecha_de_nacimiento.split("T")[0] : "";
+    document.getElementById("telefono").value = telefono;
+    document.getElementById("rol").value = rol;
+    document.getElementById("correo_electronico").disabled = true;
+    document.getElementById("formTitulo").textContent = "Editar Empleado";
+    document.getElementById("btnAgregar").style.display = "none";
+    document.getElementById("btnActualizar").style.display = "inline-flex";
+    document.getElementById("btnCancelar").style.display = "inline-flex";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function actualizarEmpleado() {
+    try {
+        const correo = document.getElementById("correo_electronico").value;
+        const empleado = obtenerDatos();
+        const response = await fetch(`/empleados/${correo}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(empleado)
+        });
+        const data = await response.json();
+        if (data.error) { mostrarMensaje(data.error); return; }
+        mostrarMensaje(data.mensaje, "success");
+        limpiarFormulario();
+        cargarEmpleados();
+    } catch (error) {
+        console.error(error);
+        mostrarMensaje("Error al actualizar empleado.");
+    }
+}
+
+async function eliminarEmpleado(correo) {
+    if (!confirm("¿Seguro que quieres eliminar este empleado?")) return;
+    try {
+        const response = await fetch(`/empleados/${correo}`, { method: "DELETE" });
+        const data = await response.json();
+        if (data.error) { mostrarMensaje(data.error); return; }
+        mostrarMensaje(data.mensaje, "success");
+        cargarEmpleados();
+    } catch (error) {
+        console.error(error);
+        mostrarMensaje("Error al eliminar empleado.");
+    }
+}
+
+function obtenerDatos() {
+    return {
+        correo_electronico:  document.getElementById("correo_electronico").value,
+        nombre:              document.getElementById("nombre").value,
+        ap_paterno:          document.getElementById("ap_paterno").value,
+        ap_materno:          document.getElementById("ap_materno").value,
+        fecha_de_nacimiento: document.getElementById("fecha_de_nacimiento").value,
+        telefono:            document.getElementById("telefono").value,
+        rol:                 document.getElementById("rol").value
+    };
+}
+
+function limpiarFormulario() {
+    ["correo_electronico","nombre","ap_paterno","ap_materno","fecha_de_nacimiento","telefono","rol"].forEach(id => {
+        document.getElementById(id).value = "";
+    });
+    document.getElementById("correo_electronico").disabled = false;
+    document.getElementById("formTitulo").textContent = "Agregar Empleado";
+    document.getElementById("btnAgregar").style.display = "inline-flex";
+    document.getElementById("btnActualizar").style.display = "none";
+    document.getElementById("btnCancelar").style.display = "none";
 }
 
 function mostrarMensaje(texto, tipo = "error") {
