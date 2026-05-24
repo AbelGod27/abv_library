@@ -16,16 +16,52 @@ Sistema web de gestion para una libreria/biblioteca, desarrollado como proyecto 
 - **Libros favoritos** — los clientes pueden guardar libros favoritos (locales y de Open Library).
 - **Recomendaciones personalizadas** basadas en favoritos, compras y prestamos del cliente.
 - **Importacion masiva** desde Open Library al catalogo local.
+- **Proveedores con suministro de libros** — relacion proveedor-libro para registrar que libros suministra cada proveedor.
 - **Login unificado** — un solo formulario de login que detecta los roles del usuario y permite elegir como entrar.
 - **CRUD completo** en todas las entidades del admin (libros, empleados, clientes, proveedores).
-- **Busqueda inteligente** de libros en ventas y prestamos (autocompletado en lugar de dropdown).
+- **Busqueda inteligente** de libros en ventas, prestamos y asignacion de proveedores (autocompletado).
 - **Autenticacion segura** con bcrypt (hash de contrasenas).
 - **Validacion de correo electronico** en todos los formularios.
 - **Iconos Bootstrap Icons** en toda la interfaz.
 - **Tres roles de acceso:**
-  - **Administrador** — gestiona libros, empleados, clientes y proveedores (CRUD completo).
+  - **Administrador** — gestiona libros, empleados, clientes, proveedores y sus relaciones (CRUD completo).
   - **Bibliotecario** — registra ventas (carrito), prestamos, donaciones y consulta historial/facturas.
   - **Cliente** — consulta el catalogo, ve sus puntos, favoritos, prestamos, donaciones y recomendaciones.
+
+---
+
+## Seguridad: Hasheo de contrasenas con bcrypt
+
+El sistema nunca almacena contrasenas en texto plano. Se utiliza **bcrypt** para generar un hash seguro antes de guardar en la base de datos.
+
+### Como funciona
+
+1. **Registro/creacion de usuario:** cuando se crea un empleado o cliente con contrasena, el servidor ejecuta `bcrypt.hash(password, 10)` que genera un hash unico e irreversible. El numero 10 es el "salt rounds" (factor de costo) que determina cuantas iteraciones de cifrado se aplican.
+
+2. **Login:** cuando el usuario ingresa su contrasena, el servidor ejecuta `bcrypt.compare(password, hash)` que compara la contrasena ingresada contra el hash almacenado sin necesidad de descifrar.
+
+3. **Salt automatico:** bcrypt genera un salt aleatorio por cada hash, lo que significa que dos usuarios con la misma contrasena tendran hashes diferentes. Esto protege contra ataques de tablas rainbow.
+
+4. **Admin:** la contrasena del administrador se almacena como hash en la variable de entorno `ADMIN_PASSWORD_HASH`.
+
+### Ejemplo practico
+
+```bash
+# Generar un hash para una contrasena:
+node -e "require('bcrypt').hash('MiContrasena123', 10).then(console.log)"
+# Resultado: $2b$10$ID8ndfLLHbTeTr8PzDew0u50U4MY7Psdb6Yi8aYVwzfbPHWkuKpnG
+
+# Estructura del hash:
+# $2b$   -> version del algoritmo
+# 10$    -> salt rounds (factor de costo)
+# ID8... -> salt + hash combinados (60 caracteres)
+```
+
+### Por que bcrypt y no SHA-256 u otro
+
+- bcrypt es **deliberadamente lento** (configurable con salt rounds), lo que dificulta ataques de fuerza bruta.
+- Incluye salt automatico, no necesitas generarlo manualmente.
+- Es el estandar de la industria para almacenar contrasenas en aplicaciones web.
 
 ---
 
@@ -123,6 +159,8 @@ Para generar el hash del admin:
 node -e "require('bcrypt').hash('TuContraseña', 10).then(console.log)"
 ```
 
+Copia el resultado y pegalo en `ADMIN_PASSWORD_HASH`.
+
 4. **Crear las tablas:**
 
 Ejecutar el esquema en PostgreSQL:
@@ -191,6 +229,8 @@ El servidor se levanta en `http://localhost:3000`.
 | POST | `/proveedores` | Agregar proveedor |
 | PUT | `/proveedores/:id` | Actualizar proveedor |
 | DELETE | `/proveedores/:id` | Eliminar proveedor |
+| GET | `/proveedores-libros` | Listar relaciones proveedor-libro |
+| POST | `/proveedores-libros` | Asignar libro a proveedor |
 
 ### Ventas
 
@@ -251,11 +291,12 @@ El servidor se levanta en `http://localhost:3000`.
 
 Tablas (ver `bd/abv_library.sql` para el esquema completo):
 
-- **persona** — datos personales + contrasena hash
+- **persona** — datos personales + contrasena hash (bcrypt)
 - **empleado** — rol (Vendedor, Bibliotecario, Administrador, Dueno)
 - **cliente** — fecha de registro + puntos acumulados
 - **libro** — catalogo con precio
 - **proveedor** — proveedores de libros
+- **prov_suministra_lib** — relacion N:M entre proveedor y libro
 - **venta** — registro de ventas
 - **lib_venta** — stock para venta y libros vendidos
 - **prestamo** — prestamos con multas
@@ -272,7 +313,7 @@ Tablas (ver `bd/abv_library.sql` para el esquema completo):
 |---------|-----|
 | express | Servidor web y API REST |
 | pg | Cliente PostgreSQL |
-| bcrypt | Hash de contrasenas |
+| bcrypt | Hash de contrasenas (10 salt rounds) |
 | dotenv | Variables de entorno |
 | cors | Cross-Origin Resource Sharing |
 | axios | Consultas a Open Library API |

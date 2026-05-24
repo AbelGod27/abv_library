@@ -144,6 +144,21 @@ CREATE TABLE IF NOT EXISTS historial_puntos (
         ON DELETE CASCADE
 );
 
+-- PROVEEDOR SUMINISTRA LIBRO
+CREATE TABLE IF NOT EXISTS prov_suministra_lib (
+    id_proveedor    INTEGER NOT NULL,
+    isbn            VARCHAR(50) NOT NULL,
+    PRIMARY KEY (id_proveedor, isbn),
+    CONSTRAINT fk_psl_proveedor
+        FOREIGN KEY (id_proveedor)
+        REFERENCES proveedor(id_proveedor)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_psl_libro
+        FOREIGN KEY (isbn)
+        REFERENCES libro(isbn)
+        ON DELETE CASCADE
+);
+
 -- DONACION
 CREATE TABLE IF NOT EXISTS donacion (
     id_donacion         SERIAL PRIMARY KEY,

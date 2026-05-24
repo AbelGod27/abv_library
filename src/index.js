@@ -421,6 +421,64 @@ app.delete("/proveedores/:id", async (req, res) => {
 });
 
 // =========================
+// PROVEEDOR - LIBROS (prov_suministra_lib)
+// =========================
+
+app.get("/proveedores-libros", async (req, res) => {
+    try {
+        const result = await db.query(`
+            SELECT
+                psl.id_proveedor,
+                p.nombre AS proveedor,
+                psl.isbn,
+                l.titulo,
+                l.autor
+            FROM prov_suministra_lib psl
+            JOIN proveedor p ON psl.id_proveedor = p.id_proveedor
+            JOIN libro l ON psl.isbn = l.isbn
+            ORDER BY p.nombre, l.titulo
+        `);
+
+        res.json(result.rows);
+
+    } catch (error) {
+        console.error("Error al consultar proveedores-libros:", error);
+        res.status(500).json({ error: "Error al consultar relación proveedor-libro." });
+    }
+});
+
+app.post("/proveedores-libros", async (req, res) => {
+    try {
+        const { id_proveedor, isbn } = req.body;
+
+        if (!id_proveedor || !isbn) {
+            return res.status(400).json({ error: "Proveedor e ISBN son obligatorios." });
+        }
+
+        // Verificar que no exista ya la relación
+        const existe = await db.query(
+            "SELECT 1 FROM prov_suministra_lib WHERE id_proveedor = $1 AND isbn = $2",
+            [id_proveedor, isbn]
+        );
+
+        if (existe.rows.length > 0) {
+            return res.status(409).json({ error: "Este proveedor ya tiene asignado ese libro." });
+        }
+
+        await db.query(
+            "INSERT INTO prov_suministra_lib (id_proveedor, isbn) VALUES ($1, $2)",
+            [id_proveedor, isbn]
+        );
+
+        res.json({ mensaje: "Libro asignado al proveedor correctamente." });
+
+    } catch (error) {
+        console.error("Error al asignar libro a proveedor:", error);
+        res.status(500).json({ error: "Error al asignar libro al proveedor." });
+    }
+});
+
+// =========================
 // CONSULTAR EMPLEADOS
 // =========================
 

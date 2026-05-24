@@ -56,12 +56,52 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
         </div>
     </div>
 
+    <!-- ASIGNAR LIBRO A PROVEEDOR -->
+    <div class="card">
+        <h2>Asignar libro a proveedor</h2>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="selectProveedor">Proveedor</label>
+                <select id="selectProveedor">
+                    <option value="">Selecciona un proveedor</option>
+                </select>
+            </div>
+            <div class="form-group" style="position:relative;">
+                <label for="buscarLibroProv">Libro</label>
+                <input type="text" id="buscarLibroProv" placeholder="Buscar por título, autor o ISBN..." autocomplete="off" oninput="buscarLibrosProv()">
+                <input type="hidden" id="isbnSeleccionado">
+                <div id="resultadosLibroProv" style="display:none; position:absolute; top:100%; left:0; right:0; z-index:10; background:#fff; border:1px solid #e2e8f0; border-radius:8px; max-height:200px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,.1);"></div>
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="button" onclick="asignarLibroProveedor()">Asignar libro a proveedor</button>
+        </div>
+    </div>
+
+    <!-- RELACIONES PROVEEDOR-LIBRO -->
+    <div class="card">
+        <h2>Libros por proveedor</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Proveedor</th>
+                        <th>ISBN</th>
+                        <th>Titulo</th>
+                        <th>Autor</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaProvLibros"></tbody>
+            </table>
+        </div>
+    </div>
+
 </main>
 
 <script>
 let idEditando = null;
 
-window.onload = () => cargarProveedores();
+window.onload = () => { cargarProveedores(); cargarSelectProveedores(); cargarProveedoresLibros(); };
 
 async function cargarProveedores() {
     try {
@@ -113,6 +153,7 @@ async function agregarProveedor() {
         mostrarMensaje(data.mensaje, "success");
         document.getElementById("nombreProveedor").value = "";
         cargarProveedores();
+        cargarSelectProveedores();
     } catch (error) {
         console.error(error);
         mostrarMensaje("Error al agregar proveedor.");
@@ -182,6 +223,127 @@ function mostrarMensaje(texto, tipo = "error") {
         mensaje.textContent = "";
         mensaje.className = "mensaje";
     }, 4000);
+}
+
+// === ASIGNAR LIBROS A PROVEEDORES ===
+
+async function cargarSelectProveedores() {
+    try {
+        const res = await fetch("/proveedores");
+        const data = await res.json();
+        const select = document.getElementById("selectProveedor");
+        select.innerHTML = '<option value="">Selecciona un proveedor</option>';
+        data.forEach(p => {
+            select.innerHTML += `<option value="${p.id_proveedor}">${p.nombre}</option>`;
+        });
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+let tempBusquedaLibroProv;
+
+function buscarLibrosProv() {
+    clearTimeout(tempBusquedaLibroProv);
+    tempBusquedaLibroProv = setTimeout(async () => {
+        const texto = document.getElementById("buscarLibroProv").value.trim();
+        const contenedor = document.getElementById("resultadosLibroProv");
+
+        if (texto.length < 2) {
+            contenedor.style.display = "none";
+            return;
+        }
+
+        try {
+            const res = await fetch(`/libros?buscar=${encodeURIComponent(texto)}`);
+            const data = await res.json();
+            contenedor.innerHTML = "";
+
+            if (data.length === 0) {
+                contenedor.innerHTML = '<div style="padding:10px 14px; color:#64748b; font-size:0.85rem;">No se encontraron libros</div>';
+                contenedor.style.display = "block";
+                return;
+            }
+
+            data.slice(0, 15).forEach(libro => {
+                const item = document.createElement("div");
+                item.style.cssText = "padding:10px 14px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.9rem;";
+                item.innerHTML = `<strong>${libro.titulo}</strong> <span style="color:#64748b;">— ${libro.autor}</span> <small style="color:#94a3b8;">(${libro.isbn})</small>`;
+                item.onmouseover = () => item.style.background = "#f8f4f0";
+                item.onmouseout = () => item.style.background = "#fff";
+                item.onclick = () => {
+                    document.getElementById("isbnSeleccionado").value = libro.isbn;
+                    document.getElementById("buscarLibroProv").value = `${libro.titulo} — ${libro.autor}`;
+                    contenedor.style.display = "none";
+                };
+                contenedor.appendChild(item);
+            });
+
+            contenedor.style.display = "block";
+        } catch (e) {
+            console.error(e);
+        }
+    }, 300);
+}
+
+document.addEventListener("click", (e) => {
+    if (!e.target.closest("#buscarLibroProv") && !e.target.closest("#resultadosLibroProv")) {
+        document.getElementById("resultadosLibroProv").style.display = "none";
+    }
+});
+
+async function asignarLibroProveedor() {
+    const id_proveedor = document.getElementById("selectProveedor").value;
+    const isbn = document.getElementById("isbnSeleccionado").value;
+
+    if (!id_proveedor) { mostrarMensaje("Selecciona un proveedor."); return; }
+    if (!isbn) { mostrarMensaje("Selecciona un libro."); return; }
+
+    try {
+        const res = await fetch("/proveedores-libros", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id_proveedor, isbn })
+        });
+
+        const data = await res.json();
+        if (data.error) { mostrarMensaje(data.error); return; }
+
+        mostrarMensaje(data.mensaje, "success");
+        document.getElementById("selectProveedor").value = "";
+        document.getElementById("buscarLibroProv").value = "";
+        document.getElementById("isbnSeleccionado").value = "";
+        cargarProveedoresLibros();
+    } catch (e) {
+        console.error(e);
+        mostrarMensaje("Error al asignar libro.");
+    }
+}
+
+async function cargarProveedoresLibros() {
+    try {
+        const res = await fetch("/proveedores-libros");
+        const data = await res.json();
+        const tabla = document.getElementById("tablaProvLibros");
+        tabla.innerHTML = "";
+
+        if (data.length === 0) {
+            tabla.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-muted)">No hay asignaciones registradas</td></tr>`;
+            return;
+        }
+
+        data.forEach(r => {
+            tabla.innerHTML += `
+                <tr>
+                    <td>${r.proveedor}</td>
+                    <td>${r.isbn}</td>
+                    <td>${r.titulo}</td>
+                    <td>${r.autor}</td>
+                </tr>`;
+        });
+    } catch (e) {
+        console.error(e);
+    }
 }
 </script>
 
