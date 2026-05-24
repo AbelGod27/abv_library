@@ -15,7 +15,7 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
 </script>
 
 <header class="page-header">
-    <h1>📚 Gestión de Libros</h1>
+    <h1><i class="bi bi-book"></i> Gestión de Libros</h1>
     <a href="/admin/panel.html"><button class="btn-secondary btn-sm">← Regresar</button></a>
 </header>
 
@@ -67,7 +67,7 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
 
     <!-- IMPORTAR DESDE OPEN LIBRARY -->
     <div class="card">
-        <h2>📥 Importar desde Open Library</h2>
+        <h2><i class="bi bi-cloud-download"></i> Importar desde Open Library</h2>
         <p style="color:#64748b; margin-bottom:16px; font-size:0.9rem;">
             Busca libros en Open Library e impórtalos a tu base de datos local. Se importan hasta 50 libros que tengan ISBN.
         </p>
@@ -89,7 +89,7 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
         <h2>Lista de Libros</h2>
 
         <div class="search-bar">
-            <input type="text" id="buscarLibro" placeholder="🔍  Buscar por título, autor, ISBN...">
+            <input type="text" id="buscarLibro" placeholder="Buscar por título, autor, ISBN...">
         </div>
 
         <div class="table-wrapper">
@@ -150,10 +150,10 @@ async function cargarLibros(busqueda) {
                         <div class="td-actions">
                             <button class="btn-secondary btn-sm" type="button"
                                 onclick="cargarDatosEditar('${libro.isbn}','${libro.titulo}','${libro.autor}','${libro.editorial ?? ""}','${libro.version ?? ""}','${libro.anio_publicacion ?? ""}','${libro.precio ?? 0}')">
-                                ✏️ Editar
+                                <i class="bi bi-pencil"></i> Editar
                             </button>
                             <button class="btn-danger btn-sm" type="button" onclick="eliminarLibro('${libro.isbn}')">
-                                🗑️ Eliminar
+                                <i class="bi bi-trash"></i> Eliminar
                             </button>
                         </div>
                     </td>

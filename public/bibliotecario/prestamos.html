@@ -15,7 +15,7 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
 </script>
 
 <header class="page-header">
-    <h1>📤 Registrar Préstamo</h1>
+    <h1><i class="bi bi-box-arrow-up-right"></i> Registrar Préstamo</h1>
     <a href="/bibliotecario/panel.html"><button class="btn-secondary btn-sm">← Regresar</button></a>
 </header>
 
@@ -35,11 +35,11 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
                     <option value="">Selecciona un cliente</option>
                 </select>
             </div>
-            <div class="form-group">
-                <label for="isbn">Libro</label>
-                <select id="isbn">
-                    <option value="">Selecciona un libro</option>
-                </select>
+            <div class="form-group" style="position:relative;">
+                <label for="buscarLibro">Libro</label>
+                <input type="text" id="buscarLibro" placeholder="Buscar por título, autor o ISBN..." autocomplete="off" oninput="buscarLibrosPrestamo()">
+                <input type="hidden" id="isbn">
+                <div id="resultadosLibro" style="display:none; position:absolute; top:100%; left:0; right:0; z-index:10; background:#fff; border:1px solid #e2e8f0; border-radius:8px; max-height:200px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,.1);"></div>
             </div>
             <div class="form-group">
                 <label for="cantidad">Cantidad</label>
@@ -66,7 +66,7 @@ const rolBibliotecario    = sessionStorage.getItem("rolBibliotecario");
 document.getElementById("infoBibliotecario").textContent =
     `Bibliotecario: ${nombreBibliotecario} (${rolBibliotecario})`;
 
-window.onload = () => { cargarClientes(); cargarLibros(); };
+window.onload = () => { cargarClientes(); };
 
 async function cargarClientes() {
     try {
@@ -82,19 +82,56 @@ async function cargarClientes() {
     }
 }
 
-async function cargarLibros() {
-    try {
-        const response = await fetch("/libros");
-        const data = await response.json();
-        const select = document.getElementById("isbn");
-        data.forEach(libro => {
-            select.innerHTML += `<option value="${libro.isbn}">${libro.titulo} — ${libro.autor}</option>`;
-        });
-    } catch (error) {
-        console.error(error);
-        mostrarMensaje("Error al cargar libros.");
-    }
+let tempBusquedaLibro;
+
+function buscarLibrosPrestamo() {
+    clearTimeout(tempBusquedaLibro);
+    tempBusquedaLibro = setTimeout(async () => {
+        const texto = document.getElementById("buscarLibro").value.trim();
+        const contenedor = document.getElementById("resultadosLibro");
+
+        if (texto.length < 2) {
+            contenedor.style.display = "none";
+            return;
+        }
+
+        try {
+            const res = await fetch(`/libros?buscar=${encodeURIComponent(texto)}`);
+            const data = await res.json();
+            contenedor.innerHTML = "";
+
+            if (data.length === 0) {
+                contenedor.innerHTML = '<div style="padding:10px 14px; color:#64748b; font-size:0.85rem;">No se encontraron libros</div>';
+                contenedor.style.display = "block";
+                return;
+            }
+
+            data.slice(0, 15).forEach(libro => {
+                const item = document.createElement("div");
+                item.style.cssText = "padding:10px 14px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.9rem;";
+                item.innerHTML = `<strong>${libro.titulo}</strong> <span style="color:#64748b;">— ${libro.autor}</span> <small style="color:#94a3b8;">(${libro.isbn})</small>`;
+                item.onmouseover = () => item.style.background = "#f8f4f0";
+                item.onmouseout = () => item.style.background = "#fff";
+                item.onclick = () => {
+                    document.getElementById("isbn").value = libro.isbn;
+                    document.getElementById("buscarLibro").value = `${libro.titulo} — ${libro.autor}`;
+                    contenedor.style.display = "none";
+                };
+                contenedor.appendChild(item);
+            });
+
+            contenedor.style.display = "block";
+        } catch (e) {
+            console.error(e);
+        }
+    }, 300);
 }
+
+document.addEventListener("click", (e) => {
+    if (!e.target.closest("#buscarLibro") && !e.target.closest("#resultadosLibro")) {
+        document.getElementById("resultadosLibro").style.display = "none";
+    }
+});
 
 async function registrarPrestamo() {
     try {
@@ -117,6 +154,7 @@ async function registrarPrestamo() {
 
         mostrarMensaje(data.mensaje, "success");
         document.getElementById("correo_cliente").value = "";
+        document.getElementById("buscarLibro").value = "";
         document.getElementById("isbn").value = "";
         document.getElementById("cantidad").value = "1";
         document.getElementById("dia_de_vencimiento").value = "";

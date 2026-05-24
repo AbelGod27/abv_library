@@ -15,7 +15,7 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
 </script>
 
 <header class="page-header">
-    <h1>🛡️ Panel de Administrador</h1>
+    <h1><i class="bi bi-shield-lock"></i> Panel de Administrador</h1>
     <button class="btn-secondary btn-sm" onclick="cerrarSesion()">Cerrar sesión</button>
 </header>
 
@@ -26,25 +26,25 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
     <div class="panel-grid">
 
         <a href="/admin/libros.html" class="panel-card">
-            <div class="icon">📚</div>
+            <div class="icon"><i class="bi bi-book"></i></div>
             <span>Gestionar Libros</span>
             <button>Abrir</button>
         </a>
 
         <a href="/admin/proveedores.html" class="panel-card">
-            <div class="icon">🏭</div>
+            <div class="icon"><i class="bi bi-building"></i></div>
             <span>Gestionar Proveedores</span>
             <button>Abrir</button>
         </a>
 
         <a href="/admin/empleados.html" class="panel-card">
-            <div class="icon">👤</div>
+            <div class="icon"><i class="bi bi-person-badge"></i></div>
             <span>Gestionar Empleados</span>
             <button>Abrir</button>
         </a>
 
         <a href="/admin/clientes.html" class="panel-card">
-            <div class="icon">🧑‍💼</div>
+            <div class="icon"><i class="bi bi-people"></i></div>
             <span>Gestionar Clientes</span>
             <button>Abrir</button>
         </a>

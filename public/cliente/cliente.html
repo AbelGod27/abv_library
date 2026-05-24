@@ -9,7 +9,7 @@
 <body>
 
 <header class="page-header">
-    <h1>🔍 Consulta de Libros</h1>
+    <h1><i class="bi bi-search"></i> Consulta de Libros</h1>
     <div style="display:flex; gap:8px; align-items:center;">
         <span id="infoCliente" style="font-size:0.85rem; color:#64748b;"></span>
         <button id="btnLogout" class="btn-secondary btn-sm" onclick="cerrarSesionCliente()" style="display:none;">Cerrar sesión</button>
@@ -44,7 +44,7 @@
 
     <!-- SECCIÓN PUNTOS -->
     <div class="card" id="seccionPuntos" style="display:none; margin-bottom:24px;">
-        <h2 style="margin:0 0 16px; font-size:1.2rem;">⭐ Mis Puntos</h2>
+        <h2 style="margin:0 0 16px; font-size:1.2rem;"><i class="bi bi-star-fill"></i> Mis Puntos</h2>
         <p style="font-size:1.5rem; font-weight:700; color:#a0784c; margin:0 0 4px;">
             <span id="totalPuntos">0</span> puntos
         </p>
@@ -74,9 +74,9 @@
 
     <!-- SECCIÓN PRÉSTAMOS -->
     <div class="card" id="seccionPrestamos" style="display:none; margin-bottom:24px;">
-        <h2 style="margin:0 0 16px; font-size:1.2rem;">📤 Mis Préstamos</h2>
+        <h2 style="margin:0 0 16px; font-size:1.2rem;"><i class="bi bi-send-fill"></i> Mis Préstamos</h2>
         <div id="alertaPrestamo" style="display:none; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:12px 16px; margin-bottom:16px;">
-            <p style="margin:0; color:#dc2626; font-weight:600;">⚠️ <span id="alertaTexto"></span></p>
+            <p style="margin:0; color:#dc2626; font-weight:600;"><i class="bi bi-exclamation-triangle-fill"></i> <span id="alertaTexto"></span></p>
         </div>
         <div class="table-wrapper">
             <table>
@@ -98,14 +98,14 @@
 
     <!-- SECCIÓN RECOMENDACIONES -->
     <div class="card" id="seccionRecomendaciones" style="margin-bottom:24px;">
-        <h2 style="margin:0 0 16px; font-size:1.2rem;">📚 Libros Recomendados para Ti</h2>
+        <h2 style="margin:0 0 16px; font-size:1.2rem;"><i class="bi bi-book"></i> Libros Recomendados para Ti</h2>
         <div id="gridRecomendaciones" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:16px;"></div>
         <p id="recomendacionesVacio" style="text-align:center; color:#64748b; display:none;">No hay recomendaciones disponibles.</p>
     </div>
 
     <!-- SECCIÓN DONACIONES -->
     <div class="card" id="seccionDonaciones" style="display:none; margin-bottom:24px;">
-        <h2 style="margin:0 0 16px; font-size:1.2rem;">🎁 Mis Donaciones</h2>
+        <h2 style="margin:0 0 16px; font-size:1.2rem;"><i class="bi bi-gift"></i> Mis Donaciones</h2>
         <p style="font-size:0.85rem; color:#64748b; margin:0 0 12px;">Ganas 20 puntos por cada libro que dones. ¡Gracias por contribuir!</p>
         <div class="table-wrapper">
             <table>
@@ -126,7 +126,7 @@
 
     <!-- SECCIÓN FAVORITOS -->
     <div class="card" id="seccionFavoritos" style="display:none; margin-bottom:24px;">
-        <h2 style="margin:0 0 16px; font-size:1.2rem;">❤️ Mis Libros Favoritos</h2>
+        <h2 style="margin:0 0 16px; font-size:1.2rem;"><i class="bi bi-heart-fill"></i> Mis Libros Favoritos</h2>
         <div class="table-wrapper">
             <table>
                 <thead>
@@ -150,7 +150,7 @@
         <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; margin-bottom:20px;">
 
             <div class="search-bar" style="margin:0; flex:1; min-width:200px;">
-                <input type="text" id="buscarLibro" placeholder="🔍  Buscar por título, autor, ISBN...">
+                <input type="text" id="buscarLibro" placeholder="Buscar por título, autor, ISBN...">
             </div>
 
             <div class="contenedor-switch">

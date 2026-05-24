@@ -15,7 +15,7 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
 </script>
 
 <header class="page-header">
-    <h1>🎁 Registrar Donación</h1>
+    <h1><i class="bi bi-gift"></i> Registrar Donación</h1>
     <a href="/bibliotecario/panel.html"><button class="btn-secondary btn-sm">← Regresar</button></a>
 </header>
 
@@ -59,11 +59,11 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
             <div style="display:flex; gap:20px; flex-wrap:wrap;">
                 <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
                     <input type="radio" name="tipo_recompensa" value="puntos" checked onchange="cambiarRecompensa()">
-                    <span>⭐ Recibir puntos (<strong id="puntosPreview">20</strong> pts)</span>
+                    <span><i class="bi bi-star-fill"></i> Recibir puntos (<strong id="puntosPreview">20</strong> pts)</span>
                 </label>
                 <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
                     <input type="radio" name="tipo_recompensa" value="intercambio" onchange="cambiarRecompensa()">
-                    <span>📖 Intercambiar por otro libro</span>
+                    <span><i class="bi bi-arrow-left-right"></i> Intercambiar por otro libro</span>
                 </label>
             </div>
 

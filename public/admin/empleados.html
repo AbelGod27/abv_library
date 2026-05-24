@@ -15,7 +15,7 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
 </script>
 
 <header class="page-header">
-    <h1>👤 Gestión de Empleados</h1>
+    <h1><i class="bi bi-person-badge"></i> Gestión de Empleados</h1>
     <a href="/admin/panel.html"><button class="btn-secondary btn-sm">← Regresar</button></a>
 </header>
 
@@ -147,19 +147,19 @@ async function cargarEmpleados() {
                     <td>${e.ap_materno ?? "—"}</td>
                     <td>${e.telefono ?? "—"}</td>
                     <td>${e.rol}</td>
-                    <td>${e.tiene_password ? "✅ Configurada" : "⚠️ Sin contraseña"}</td>
+                    <td>${e.tiene_password ? "<i class='bi bi-check-circle-fill' style='color:#16a34a;'></i> Configurada" : "<i class='bi bi-exclamation-triangle-fill' style='color:#f59e0b;'></i> Sin contraseña"}</td>
                     <td>
                         <div class="td-actions">
                             <button class="btn-secondary btn-sm" type="button"
                                 onclick="cargarDatosEditar('${e.correo_electronico}','${e.nombre}','${e.ap_paterno}','${e.ap_materno ?? ""}','${e.fecha_de_nacimiento ?? ""}','${e.telefono ?? ""}','${e.rol}')">
-                                ✏️ Editar
+                                <i class="bi bi-pencil"></i> Editar
                             </button>
                             <button class="btn-secondary btn-sm" type="button"
                                 onclick="abrirModalPassword('${e.correo_electronico}', ${e.tiene_password})">
-                                🔑 Contraseña
+                                <i class="bi bi-key"></i> Contraseña
                             </button>
                             <button class="btn-danger btn-sm" type="button" onclick="eliminarEmpleado('${e.correo_electronico}')">
-                                🗑️ Eliminar
+                                <i class="bi bi-trash"></i> Eliminar
                             </button>
                         </div>
                     </td>

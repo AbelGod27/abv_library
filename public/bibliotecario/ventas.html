@@ -15,7 +15,7 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
 </script>
 
 <header class="page-header">
-    <h1>🛒 Registrar Venta</h1>
+    <h1><i class="bi bi-cart3"></i> Registrar Venta</h1>
     <a href="/bibliotecario/panel.html"><button class="btn-secondary btn-sm">← Regresar</button></a>
 </header>
 
@@ -26,23 +26,56 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
     <div id="infoBibliotecario" class="panel-info"></div>
 
     <div class="card">
-        <h2>Datos de la venta</h2>
+        <h2>Agregar libros a la venta</h2>
+
+        <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; margin-bottom:16px;">
+            <div class="form-group" style="position:relative; flex:2; min-width:220px; margin:0;">
+                <label for="buscarLibro">Libro</label>
+                <input type="text" id="buscarLibro" placeholder="Buscar por título, autor o ISBN..." autocomplete="off" oninput="buscarLibrosVenta()">
+                <input type="hidden" id="isbnSeleccionado">
+                <input type="hidden" id="precioSeleccionado">
+                <input type="hidden" id="tituloSeleccionado">
+                <div id="resultadosLibro" style="display:none; position:absolute; top:100%; left:0; right:0; z-index:10; background:#fff; border:1px solid #e2e8f0; border-radius:8px; max-height:200px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,.1);"></div>
+            </div>
+            <div class="form-group" style="margin:0; width:90px;">
+                <label for="cantidadAgregar">Cant.</label>
+                <input type="number" id="cantidadAgregar" min="1" value="1" style="width:100%;">
+            </div>
+            <button type="button" onclick="agregarAlCarrito()" style="height:40px;">+ Agregar</button>
+        </div>
+
+        <!-- Carrito -->
+        <div id="carritoVacio" style="text-align:center; color:#64748b; padding:20px; font-size:0.9rem;">
+            No hay libros agregados aún.
+        </div>
+        <div class="table-wrapper" id="carritoWrapper" style="display:none;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Libro</th>
+                        <th>Precio unit.</th>
+                        <th>Cantidad</th>
+                        <th>Subtotal</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="tablaCarrito"></tbody>
+                <tfoot>
+                    <tr style="font-weight:700; font-size:1.05rem;">
+                        <td colspan="3" style="text-align:right;">Total:</td>
+                        <td id="totalCarrito">$0.00</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- Datos de pago -->
+    <div class="card" id="seccionPago" style="display:none;">
+        <h2>Datos de pago</h2>
 
         <div class="form-grid">
-            <div class="form-group">
-                <label for="isbn">Libro</label>
-                <select id="isbn">
-                    <option value="">Selecciona un libro</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="cantidad">Cantidad</label>
-                <input type="number" id="cantidad" min="1" value="1">
-            </div>
-            <div class="form-group">
-                <label for="total_pagado">Total pagado ($)</label>
-                <input type="number" id="total_pagado" step="0.01" min="0" placeholder="0.00">
-            </div>
             <div class="form-group">
                 <label for="metodo_de_pago">Método de pago</label>
                 <select id="metodo_de_pago">
@@ -60,7 +93,7 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
 
         <!-- Sección de canje de puntos -->
         <div id="seccionCanje" class="form-group" style="display:none; margin-top:16px; padding:16px; background:#fef9f3; border-radius:8px; border:1px solid #e8d5c0;">
-            <p style="margin:0 0 8px; font-weight:600; color:#a0784c;">⭐ Puntos disponibles: <span id="puntosDisponibles">0</span></p>
+            <p style="margin:0 0 8px; font-weight:600; color:#a0784c;"><i class="bi bi-star-fill"></i> Puntos disponibles: <span id="puntosDisponibles">0</span></p>
             <p style="margin:0 0 12px; font-size:0.85rem; color:#64748b;">10 puntos = $1 de descuento</p>
             <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
                 <label for="puntos_canjear" style="font-size:0.9rem;">Puntos a canjear:</label>
@@ -69,7 +102,7 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
             </div>
         </div>
 
-        <div class="form-actions">
+        <div class="form-actions" style="margin-top:20px;">
             <button type="button" onclick="registrarVenta()">Registrar Venta</button>
         </div>
     </div>
@@ -84,22 +117,136 @@ const rolBibliotecario    = sessionStorage.getItem("rolBibliotecario");
 document.getElementById("infoBibliotecario").textContent =
     `Bibliotecario: ${nombreBibliotecario} (${rolBibliotecario})`;
 
-window.onload = () => cargarLibros();
+// === CARRITO ===
+let carrito = []; // { isbn, titulo, autor, precio, cantidad }
 
-async function cargarLibros() {
-    try {
-        const response = await fetch("/libros");
-        const data = await response.json();
-        const select = document.getElementById("isbn");
-        data.forEach(libro => {
-            select.innerHTML += `<option value="${libro.isbn}">${libro.titulo} — ${libro.autor}</option>`;
-        });
-    } catch (error) {
-        console.error(error);
-        mostrarMensaje("Error al cargar libros.");
+function renderCarrito() {
+    const tabla = document.getElementById("tablaCarrito");
+    const vacio = document.getElementById("carritoVacio");
+    const wrapper = document.getElementById("carritoWrapper");
+    const seccionPago = document.getElementById("seccionPago");
+
+    if (carrito.length === 0) {
+        vacio.style.display = "block";
+        wrapper.style.display = "none";
+        seccionPago.style.display = "none";
+        return;
     }
+
+    vacio.style.display = "none";
+    wrapper.style.display = "block";
+    seccionPago.style.display = "block";
+    tabla.innerHTML = "";
+
+    let total = 0;
+
+    carrito.forEach((item, i) => {
+        const subtotal = item.precio * item.cantidad;
+        total += subtotal;
+
+        tabla.innerHTML += `
+            <tr>
+                <td>${item.titulo} <br><small style="color:#64748b;">${item.isbn}</small></td>
+                <td>$${Number(item.precio).toFixed(2)}</td>
+                <td>${item.cantidad}</td>
+                <td>$${subtotal.toFixed(2)}</td>
+                <td><button class="btn-danger btn-sm" onclick="quitarDelCarrito(${i})">X</button></td>
+            </tr>`;
+    });
+
+    document.getElementById("totalCarrito").textContent = `$${total.toFixed(2)}`;
 }
 
+function agregarAlCarrito() {
+    const isbn = document.getElementById("isbnSeleccionado").value;
+    const titulo = document.getElementById("tituloSeleccionado").value;
+    const precio = parseFloat(document.getElementById("precioSeleccionado").value) || 0;
+    const cantidad = parseInt(document.getElementById("cantidadAgregar").value) || 1;
+
+    if (!isbn || !titulo) {
+        mostrarMensaje("Selecciona un libro primero.");
+        return;
+    }
+
+    // Si ya está en el carrito, sumar cantidad
+    const existente = carrito.find(item => item.isbn === isbn);
+    if (existente) {
+        existente.cantidad += cantidad;
+    } else {
+        carrito.push({ isbn, titulo, precio, cantidad });
+    }
+
+    // Limpiar búsqueda
+    document.getElementById("buscarLibro").value = "";
+    document.getElementById("isbnSeleccionado").value = "";
+    document.getElementById("precioSeleccionado").value = "";
+    document.getElementById("tituloSeleccionado").value = "";
+    document.getElementById("cantidadAgregar").value = "1";
+
+    renderCarrito();
+}
+
+function quitarDelCarrito(index) {
+    carrito.splice(index, 1);
+    renderCarrito();
+}
+
+// === BÚSQUEDA DE LIBROS ===
+let tempBusquedaLibro;
+
+function buscarLibrosVenta() {
+    clearTimeout(tempBusquedaLibro);
+    tempBusquedaLibro = setTimeout(async () => {
+        const texto = document.getElementById("buscarLibro").value.trim();
+        const contenedor = document.getElementById("resultadosLibro");
+
+        if (texto.length < 2) {
+            contenedor.style.display = "none";
+            return;
+        }
+
+        try {
+            const res = await fetch(`/libros?buscar=${encodeURIComponent(texto)}`);
+            const data = await res.json();
+            contenedor.innerHTML = "";
+
+            if (data.length === 0) {
+                contenedor.innerHTML = '<div style="padding:10px 14px; color:#64748b; font-size:0.85rem;">No se encontraron libros</div>';
+                contenedor.style.display = "block";
+                return;
+            }
+
+            data.slice(0, 15).forEach(libro => {
+                const precioTxt = libro.precio ? ` — $${Number(libro.precio).toFixed(2)}` : "";
+                const item = document.createElement("div");
+                item.style.cssText = "padding:10px 14px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:0.9rem;";
+                item.innerHTML = `<strong>${libro.titulo}</strong> <span style="color:#64748b;">— ${libro.autor}</span><span style="color:#a0784c; font-weight:600;">${precioTxt}</span>`;
+                item.onmouseover = () => item.style.background = "#f8f4f0";
+                item.onmouseout = () => item.style.background = "#fff";
+                item.onclick = () => {
+                    document.getElementById("isbnSeleccionado").value = libro.isbn;
+                    document.getElementById("precioSeleccionado").value = libro.precio || 0;
+                    document.getElementById("tituloSeleccionado").value = `${libro.titulo} — ${libro.autor}`;
+                    document.getElementById("buscarLibro").value = `${libro.titulo} — ${libro.autor}`;
+                    contenedor.style.display = "none";
+                };
+                contenedor.appendChild(item);
+            });
+
+            contenedor.style.display = "block";
+        } catch (e) {
+            console.error(e);
+        }
+    }, 300);
+}
+
+document.addEventListener("click", (e) => {
+    if (!e.target.closest("#buscarLibro") && !e.target.closest("#resultadosLibro")) {
+        document.getElementById("resultadosLibro").style.display = "none";
+    }
+});
+
+// === PUNTOS ===
 let puntosClienteActual = 0;
 
 async function consultarPuntosCliente() {
@@ -148,72 +295,100 @@ function calcularDescuento() {
     document.getElementById("descuentoTexto").textContent = `Descuento: $${descuento}`;
 }
 
+// === REGISTRAR VENTA ===
 async function registrarVenta() {
-    try {
-        const correoCliente = document.getElementById("correo_cliente").value.trim();
-        const puntosACanjear = parseInt(document.getElementById("puntos_canjear").value) || 0;
+    if (carrito.length === 0) {
+        mostrarMensaje("Agrega al menos un libro al carrito.");
+        return;
+    }
 
-        // Si hay puntos a canjear, primero canjearlos
-        let descuentoAplicado = 0;
-        if (correoCliente && puntosACanjear > 0) {
-            const resCanje = await fetch("/puntos/canjear", {
+    const metodo = document.getElementById("metodo_de_pago").value;
+    if (!metodo) {
+        mostrarMensaje("Selecciona un método de pago.");
+        return;
+    }
+
+    const correoCliente = document.getElementById("correo_cliente").value.trim();
+    const puntosACanjear = parseInt(document.getElementById("puntos_canjear").value) || 0;
+
+    // Calcular total del carrito
+    let totalCarrito = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+
+    // Canjear puntos si aplica
+    let descuentoAplicado = 0;
+    if (correoCliente && puntosACanjear > 0) {
+        const resCanje = await fetch("/puntos/canjear", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                correo_cliente: correoCliente,
+                puntos_a_canjear: puntosACanjear
+            })
+        });
+
+        const dataCanje = await resCanje.json();
+        if (dataCanje.error) {
+            mostrarMensaje(dataCanje.error);
+            return;
+        }
+        descuentoAplicado = dataCanje.descuento;
+    }
+
+    const totalFinal = Math.max(0, totalCarrito - descuentoAplicado);
+
+    // Registrar venta por cada libro del carrito
+    // Usamos el primer libro como principal para el endpoint actual
+    // (el endpoint maneja un libro por venta)
+    let ventasExitosas = 0;
+    let puntosGanadosTotal = 0;
+
+    for (const item of carrito) {
+        const totalProporcional = (item.precio * item.cantidad / totalCarrito) * totalFinal;
+
+        try {
+            const response = await fetch("/ventas", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    correo_cliente: correoCliente,
-                    puntos_a_canjear: puntosACanjear
+                    correo_electronico: correoBibliotecario,
+                    isbn: item.isbn,
+                    cantidad: item.cantidad,
+                    total_pagado: totalProporcional.toFixed(2),
+                    metodo_de_pago: metodo,
+                    correo_cliente: correoCliente || undefined
                 })
             });
 
-            const dataCanje = await resCanje.json();
-            if (dataCanje.error) {
-                mostrarMensaje(dataCanje.error);
+            const data = await response.json();
+            if (data.error) {
+                mostrarMensaje(`Error con "${item.titulo}": ${data.error}`);
                 return;
             }
-            descuentoAplicado = dataCanje.descuento;
+            ventasExitosas++;
+            puntosGanadosTotal += data.puntos_ganados || 0;
+        } catch (e) {
+            mostrarMensaje("Error al registrar venta.");
+            return;
         }
-
-        const totalOriginal = parseFloat(document.getElementById("total_pagado").value) || 0;
-        const totalFinal = Math.max(0, totalOriginal - descuentoAplicado);
-
-        const venta = {
-            correo_electronico: correoBibliotecario,
-            isbn:               document.getElementById("isbn").value,
-            cantidad:           document.getElementById("cantidad").value,
-            total_pagado:       totalFinal.toFixed(2),
-            metodo_de_pago:     document.getElementById("metodo_de_pago").value,
-            correo_cliente:     correoCliente || undefined
-        };
-
-        const response = await fetch("/ventas", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(venta)
-        });
-
-        const data = await response.json();
-        if (data.error) { mostrarMensaje(data.error); return; }
-
-        let msg = data.mensaje;
-        if (descuentoAplicado > 0) {
-            msg += ` Descuento por puntos: -$${descuentoAplicado.toFixed(2)}.`;
-        }
-        if (data.puntos_ganados > 0) {
-            msg += ` El cliente ganó ${data.puntos_ganados} punto(s) nuevo(s).`;
-        }
-
-        mostrarMensaje(msg, "success");
-        document.getElementById("isbn").value = "";
-        document.getElementById("cantidad").value = "1";
-        document.getElementById("total_pagado").value = "";
-        document.getElementById("metodo_de_pago").value = "";
-        document.getElementById("correo_cliente").value = "";
-        document.getElementById("puntos_canjear").value = "0";
-        document.getElementById("seccionCanje").style.display = "none";
-    } catch (error) {
-        console.error(error);
-        mostrarMensaje("Error al registrar venta.");
     }
+
+    let msg = `Venta registrada (${ventasExitosas} libro(s)). Total: $${totalFinal.toFixed(2)}.`;
+    if (descuentoAplicado > 0) {
+        msg += ` Descuento: -$${descuentoAplicado.toFixed(2)}.`;
+    }
+    if (puntosGanadosTotal > 0) {
+        msg += ` Puntos ganados: +${puntosGanadosTotal}.`;
+    }
+
+    mostrarMensaje(msg, "success");
+
+    // Limpiar todo
+    carrito = [];
+    renderCarrito();
+    document.getElementById("metodo_de_pago").value = "";
+    document.getElementById("correo_cliente").value = "";
+    document.getElementById("puntos_canjear").value = "0";
+    document.getElementById("seccionCanje").style.display = "none";
 }
 
 function mostrarMensaje(texto, tipo = "error") {
@@ -223,7 +398,7 @@ function mostrarMensaje(texto, tipo = "error") {
     setTimeout(() => {
         mensaje.textContent = "";
         mensaje.className = "mensaje";
-    }, 4000);
+    }, 5000);
 }
 </script>
 
