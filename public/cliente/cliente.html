@@ -63,7 +63,14 @@ const switchLibros  = document.getElementById("switchLibros");
 let temporizador;
 let fuenteActual = "db";
 
-window.onload = () => cargarLibros("");
+window.onload = () => {
+    const params = new URLSearchParams(window.location.search);
+    const buscarParam = params.get("buscar") || "";
+    if (buscarParam) {
+        inputBusqueda.value = buscarParam;
+    }
+    cargarLibros(inputBusqueda.value);
+};
 
 inputBusqueda.addEventListener("input", () => {
     clearTimeout(temporizador);

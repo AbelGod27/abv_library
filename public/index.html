@@ -16,10 +16,10 @@
         <span>ABV Library</span>
     </a>
 
-    <div class="navbar-search">
-        <input type="text" id="searchInput" placeholder="Buscar libros, autores, géneros…" aria-label="Buscar">
-        <button class="btn-search" aria-label="Buscar">🔍</button>
-    </div>
+    <form class="navbar-search" action="/cliente/cliente.html" method="get" role="search">
+        <input type="text" name="buscar" id="searchInput" placeholder="Buscar libros, autores, géneros…" aria-label="Buscar">
+        <button type="submit" class="btn-search" aria-label="Buscar">🔍</button>
+    </form>
 
     <div class="navbar-links">
         <a href="/cliente/cliente.html" class="nav-link">Cliente</a>
