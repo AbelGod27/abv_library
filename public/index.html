@@ -5,48 +5,266 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Abv Library</title>
     <link rel="stylesheet" href="/principal.css">
+    <link rel="stylesheet" href="/index.css">
 </head>
 <body>
 
-<div class="landing">
-    <div class="logo">📚</div>
-    <h1>Abv Library</h1>
-    <p id="mensaje" class="mensaje"></p>
-    <p>Selecciona tu perfil para continuar</p>
+<!-- OVERLAY para cerrar dropdown al hacer clic fuera -->
+<div class="overlay" id="overlay" onclick="cerrarDropdown()"></div>
 
-    <div class="landing-cards">
-
-        <a href="/cliente/cliente.html" class="landing-card">
-            <div class="icon">🔍</div>
-            <span>Cliente</span>
-            <button>Entrar</button>
-        </a>
-
-        <a href="/admin/login.html" class="landing-card">
-            <div class="icon">🛡️</div>
-            <span>Administrador</span>
-            <button>Entrar</button>
-        </a>
-
-        <a href="/bibliotecario/login.html" class="landing-card">
-            <div class="icon">📖</div>
-            <span>Bibliotecario</span>
-            <button>Entrar</button>
-        </a>
-
+<!-- NAVBAR -->
+<nav class="navbar">
+    <a class="navbar-logo" href="/">
+        📚 <span>Abv</span>&nbsp;Library
+    </a>
+    <div class="navbar-right">
+        <button class="btn-nav-login" onclick="toggleDropdown()" aria-expanded="false" id="btnNavLogin">
+            <span class="nav-hello">Hola, accede a tu cuenta</span>
+            <span class="nav-label">Iniciar sesión ▾</span>
+        </button>
     </div>
+</nav>
+
+<!-- DROPDOWN DE LOGIN -->
+<div class="login-dropdown" id="loginDropdown" role="dialog" aria-label="Iniciar sesión">
+
+    <h3>Iniciar sesión</h3>
+
+    <!-- Tabs de perfil -->
+    <div class="role-tabs" role="tablist">
+        <button class="role-tab active" role="tab" aria-selected="true"
+                onclick="cambiarPerfil('admin', this)">
+            <span class="tab-icon">🛡️</span>Admin
+        </button>
+        <button class="role-tab" role="tab" aria-selected="false"
+                onclick="cambiarPerfil('bibliotecario', this)">
+            <span class="tab-icon">📖</span>Biblio
+        </button>
+        <button class="role-tab" role="tab" aria-selected="false"
+                onclick="cambiarPerfil('cliente', this)">
+            <span class="tab-icon">🔍</span>Cliente
+        </button>
+    </div>
+
+    <!-- Panel Admin -->
+    <div class="login-panel active" id="panel-admin">
+        <div>
+            <label for="adminPass">Contraseña</label>
+            <input type="password" id="adminPass" placeholder="Contraseña de administrador"
+                   onkeydown="if(event.key==='Enter') loginAdmin()">
+        </div>
+        <button class="btn-login-submit" onclick="loginAdmin()">Continuar</button>
+    </div>
+
+    <!-- Panel Bibliotecario -->
+    <div class="login-panel" id="panel-bibliotecario">
+        <div>
+            <label for="biblioCorreo">Correo electrónico</label>
+            <input type="email" id="biblioCorreo" placeholder="tu@correo.com"
+                   onkeydown="if(event.key==='Enter') loginBibliotecario()">
+        </div>
+        <div>
+            <label for="biblioPass">Contraseña</label>
+            <input type="password" id="biblioPass" placeholder="••••••••"
+                   onkeydown="if(event.key==='Enter') loginBibliotecario()">
+        </div>
+        <button class="btn-login-submit" onclick="loginBibliotecario()">Continuar</button>
+    </div>
+
+    <!-- Panel Cliente -->
+    <div class="login-panel" id="panel-cliente">
+        <div>
+            <label for="clienteCorreo">Correo electrónico</label>
+            <input type="email" id="clienteCorreo" placeholder="tu@correo.com"
+                   onkeydown="if(event.key==='Enter') loginCliente()">
+        </div>
+        <div>
+            <label for="clientePass">Contraseña</label>
+            <input type="password" id="clientePass" placeholder="••••••••"
+                   onkeydown="if(event.key==='Enter') loginCliente()">
+        </div>
+        <button class="btn-login-submit" onclick="loginCliente()">Continuar</button>
+    </div>
+
+    <div class="dropdown-msg" id="dropdownMsg"></div>
+
 </div>
 
+<!-- HERO -->
+<main class="hero">
+    <div class="hero-badge">📚 Tu biblioteca digital</div>
+    <h1>Bienvenido a<br><span>Abv Library</span></h1>
+    <p>Gestiona libros, préstamos y ventas desde un solo lugar. Selecciona tu perfil para comenzar.</p>
+
+    <div class="profile-cards">
+
+        <div class="profile-card" onclick="abrirDropdownPerfil('admin')">
+            <div class="p-icon">🛡️</div>
+            <div class="p-name">Administrador</div>
+            <div class="p-desc">Gestiona libros, empleados, clientes y proveedores.</div>
+            <button class="btn-profile">Iniciar sesión</button>
+        </div>
+
+        <div class="profile-card" onclick="abrirDropdownPerfil('bibliotecario')">
+            <div class="p-icon">📖</div>
+            <div class="p-name">Bibliotecario</div>
+            <div class="p-desc">Registra ventas, préstamos y consulta el historial.</div>
+            <button class="btn-profile">Iniciar sesión</button>
+        </div>
+
+        <div class="profile-card" onclick="abrirDropdownPerfil('cliente')">
+            <div class="p-icon">�</div>
+            <div class="p-name">Cliente</div>
+            <div class="p-desc">Consulta el catálogo de libros disponibles.</div>
+            <button class="btn-profile">Entrar</button>
+        </div>
+
+    </div>
+</main>
+
 <script>
-function mostrarMensaje(texto, tipo = "error") {
-    const mensaje = document.getElementById("mensaje");
-    mensaje.textContent = texto;
-    mensaje.className = `mensaje mostrar ${tipo}`;
-    setTimeout(() => {
-        mensaje.textContent = "";
-        mensaje.className = "mensaje";
-    }, 4000);
-}
+    // ── Dropdown toggle ──
+    function toggleDropdown() {
+        const dd = document.getElementById("loginDropdown");
+        const ov = document.getElementById("overlay");
+        const btn = document.getElementById("btnNavLogin");
+        const isOpen = dd.classList.contains("open");
+        if (isOpen) {
+            cerrarDropdown();
+        } else {
+            dd.classList.add("open");
+            ov.classList.add("open");
+            btn.setAttribute("aria-expanded", "true");
+        }
+    }
+
+    function cerrarDropdown() {
+        document.getElementById("loginDropdown").classList.remove("open");
+        document.getElementById("overlay").classList.remove("open");
+        document.getElementById("btnNavLogin").setAttribute("aria-expanded", "false");
+        limpiarMsg();
+    }
+
+    // Abrir dropdown y seleccionar pestaña desde las cards
+    function abrirDropdownPerfil(perfil) {
+        const dd = document.getElementById("loginDropdown");
+        const ov = document.getElementById("overlay");
+        dd.classList.add("open");
+        ov.classList.add("open");
+        document.getElementById("btnNavLogin").setAttribute("aria-expanded", "true");
+
+        // Activar la pestaña correcta
+        const tabs = document.querySelectorAll(".role-tab");
+        const perfiles = ["admin", "bibliotecario", "cliente"];
+        tabs.forEach((t, i) => {
+            const activo = perfiles[i] === perfil;
+            t.classList.toggle("active", activo);
+            t.setAttribute("aria-selected", activo);
+        });
+        document.querySelectorAll(".login-panel").forEach(p => p.classList.remove("active"));
+        document.getElementById("panel-" + perfil).classList.add("active");
+        limpiarMsg();
+    }
+
+    // ── Cambiar pestaña ──
+    function cambiarPerfil(perfil, tabEl) {
+        document.querySelectorAll(".role-tab").forEach(t => {
+            t.classList.remove("active");
+            t.setAttribute("aria-selected", "false");
+        });
+        tabEl.classList.add("active");
+        tabEl.setAttribute("aria-selected", "true");
+
+        document.querySelectorAll(".login-panel").forEach(p => p.classList.remove("active"));
+        document.getElementById("panel-" + perfil).classList.add("active");
+        limpiarMsg();
+    }
+
+    // ── Mensajes ──
+    function mostrarMsg(texto, tipo) {
+        const el = document.getElementById("dropdownMsg");
+        el.textContent = texto;
+        el.className = "dropdown-msg " + tipo;
+    }
+
+    function limpiarMsg() {
+        const el = document.getElementById("dropdownMsg");
+        el.textContent = "";
+        el.className = "dropdown-msg";
+    }
+
+    // ── Login Admin ──
+    async function loginAdmin() {
+        const pass = document.getElementById("adminPass").value.trim();
+        if (!pass) { mostrarMsg("Ingresa la contraseña.", "error"); return; }
+
+        try {
+            const res = await fetch("/login-admin", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ password: pass })
+            });
+            const data = await res.json();
+            if (data.acceso) {
+                mostrarMsg("Acceso concedido. Redirigiendo…", "success");
+                setTimeout(() => window.location.href = "/admin/panel.html", 800);
+            } else {
+                mostrarMsg(data.error || "Contraseña incorrecta.", "error");
+            }
+        } catch {
+            mostrarMsg("Error de conexión.", "error");
+        }
+    }
+
+    // ── Login Bibliotecario ──
+    async function loginBibliotecario() {
+        const correo = document.getElementById("biblioCorreo").value.trim();
+        const password = document.getElementById("biblioPass").value;
+        if (!correo || !password) { mostrarMsg("Ingresa tu correo y contraseña.", "error"); return; }
+
+        try {
+            const res = await fetch("/login-vendedor", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ correo_electronico: correo, password })
+            });
+            const data = await res.json();
+            if (data.acceso) {
+                sessionStorage.setItem("empleado", JSON.stringify(data.empleado));
+                mostrarMsg("Bienvenido, " + data.empleado.nombre + ". Redirigiendo…", "success");
+                setTimeout(() => window.location.href = "/bibliotecario/panel.html", 800);
+            } else {
+                mostrarMsg(data.error || "Sin permiso de acceso.", "error");
+            }
+        } catch {
+            mostrarMsg("Error de conexión.", "error");
+        }
+    }
+
+    // ── Login Cliente ──
+    async function loginCliente() {
+        const correo = document.getElementById("clienteCorreo").value.trim();
+        const password = document.getElementById("clientePass").value;
+        if (!correo || !password) { mostrarMsg("Ingresa tu correo y contraseña.", "error"); return; }
+
+        try {
+            const res = await fetch("/login-cliente", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ correo_electronico: correo, password })
+            });
+            const data = await res.json();
+            if (data.acceso) {
+                sessionStorage.setItem("cliente", JSON.stringify(data.cliente));
+                mostrarMsg("Bienvenido, " + data.cliente.nombre + ". Redirigiendo…", "success");
+                setTimeout(() => window.location.href = "/cliente/cliente.html", 800);
+            } else {
+                mostrarMsg(data.error || "Correo o contraseña incorrectos.", "error");
+            }
+        } catch {
+            mostrarMsg("Error de conexión.", "error");
+        }
+    }
 </script>
 
 </body>

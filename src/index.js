@@ -2,7 +2,10 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const axios = require("axios");
+const bcrypt = require("bcrypt");
 const db = require("./db");
+
+const SALT_ROUNDS = 10;
 
 const app = express();
 
@@ -19,23 +22,35 @@ app.post("/login-admin", async (req, res) => {
     try {
         const { password } = req.body;
 
-        if (password === process.env.ADMIN_PASSWORD) {
-            return res.json({
-                acceso: true
-            });
+        if (!password) {
+            return res.status(400).json({ acceso: false, error: "La contraseña es obligatoria." });
         }
 
-        res.status(401).json({
-            acceso: false,
-            error: "Contraseña incorrecta"
-        });
+        // El admin usa una contraseña almacenada como hash en la variable de entorno.
+        // Para generar el hash inicial ejecuta en Node:
+        //   require('bcrypt').hash('TuContraseña', 10).then(console.log)
+        // y guarda el resultado en ADMIN_PASSWORD_HASH en el .env
+        const hash = process.env.ADMIN_PASSWORD_HASH;
+
+        if (!hash) {
+            // Fallback: comparación en texto plano (solo para desarrollo sin hash configurado)
+            if (password === process.env.ADMIN_PASSWORD) {
+                return res.json({ acceso: true });
+            }
+            return res.status(401).json({ acceso: false, error: "Contraseña incorrecta." });
+        }
+
+        const coincide = await bcrypt.compare(password, hash);
+
+        if (coincide) {
+            return res.json({ acceso: true });
+        }
+
+        res.status(401).json({ acceso: false, error: "Contraseña incorrecta." });
 
     } catch (error) {
-        console.error("Error en login:", error);
-
-        res.status(500).json({
-            error: "Error interno del servidor"
-        });
+        console.error("Error en login admin:", error);
+        res.status(500).json({ error: "Error interno del servidor." });
     }
 });
 
@@ -302,12 +317,19 @@ app.post("/empleados", async (req, res) => {
             ap_materno,
             fecha_de_nacimiento,
             telefono,
-            rol
+            rol,
+            password
         } = req.body;
 
-        if (!correo_electronico || !nombre || !ap_paterno || !fecha_de_nacimiento || !rol) {
+        if (!correo_electronico || !nombre || !ap_paterno || !fecha_de_nacimiento || !rol || !password) {
             return res.status(400).json({
-                error: "Correo, nombre, apellido paterno, fecha de nacimiento y rol son obligatorios."
+                error: "Correo, nombre, apellido paterno, fecha de nacimiento, rol y contraseña son obligatorios."
+            });
+        }
+
+        if (password.length < 8) {
+            return res.status(400).json({
+                error: "La contraseña debe tener al menos 8 caracteres."
             });
         }
 
@@ -322,6 +344,8 @@ app.post("/empleados", async (req, res) => {
             });
         }
 
+        const contrasena_hash = await bcrypt.hash(password, SALT_ROUNDS);
+
         await db.query("BEGIN");
 
         await db.query(
@@ -332,9 +356,10 @@ app.post("/empleados", async (req, res) => {
                 ap_paterno,
                 ap_materno,
                 fecha_de_nacimiento,
-                telefono
+                telefono,
+                contrasena_hash
             )
-            VALUES ($1, $2, $3, $4, $5, $6)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
             `,
             [
                 correo_electronico,
@@ -342,7 +367,8 @@ app.post("/empleados", async (req, res) => {
                 ap_paterno,
                 ap_materno || null,
                 fecha_de_nacimiento,
-                telefono || null
+                telefono || null,
+                contrasena_hash
             ]
         );
 
@@ -446,30 +472,33 @@ app.delete("/empleados/:correo", async (req, res) => {
 });
 
 // =========================
-// LOGIN VENDEDOR
+// LOGIN VENDEDOR / BIBLIOTECARIO
 // =========================
 
 app.post("/login-vendedor", async (req, res) => {
     try {
-        const { correo_electronico } = req.body;
-        if (!correo_electronico) {
+        const { correo_electronico, password } = req.body;
+
+        if (!correo_electronico || !password) {
             return res.status(400).json({
                 acceso: false,
-                error: "El correo es obligatorio."
+                error: "El correo y la contraseña son obligatorios."
             });
         }
+
         const result = await db.query(
             `
             SELECT
                 p.correo_electronico,
                 p.nombre,
                 p.ap_paterno,
+                p.contrasena_hash,
                 e.rol
             FROM persona p
             JOIN empleado e
             ON p.correo_electronico = e.correo_electronico
             WHERE p.correo_electronico = $1
-            AND e.rol IN ('Vendedor', 'Administrador', 'Dueno')
+            AND e.rol IN ('Vendedor', 'Administrador', 'Dueno', 'Bibliotecario')
             `,
             [correo_electronico]
         );
@@ -477,21 +506,166 @@ app.post("/login-vendedor", async (req, res) => {
         if (result.rows.length === 0) {
             return res.status(401).json({
                 acceso: false,
-                error: "No tienes permiso para entrar al módulo de vendedor."
+                error: "Correo o contraseña incorrectos."
             });
         }
+
+        const empleado = result.rows[0];
+
+        if (!empleado.contrasena_hash) {
+            return res.status(401).json({
+                acceso: false,
+                error: "Este usuario aún no tiene contraseña configurada."
+            });
+        }
+
+        const coincide = await bcrypt.compare(password, empleado.contrasena_hash);
+
+        if (!coincide) {
+            return res.status(401).json({
+                acceso: false,
+                error: "Correo o contraseña incorrectos."
+            });
+        }
+
+        // No devolver el hash al cliente
+        const { contrasena_hash, ...empleadoSeguro } = empleado;
+
         res.json({
             acceso: true,
-            empleado: result.rows[0]
+            empleado: empleadoSeguro
         });
 
     } catch (error) {
         console.error("Error en login vendedor:", error);
-
         res.status(500).json({
             acceso: false,
             error: "Error interno del servidor."
         });
+    }
+});
+
+// =========================
+// LOGIN CLIENTE
+// =========================
+
+app.post("/login-cliente", async (req, res) => {
+    try {
+        const { correo_electronico, password } = req.body;
+
+        if (!correo_electronico || !password) {
+            return res.status(400).json({
+                acceso: false,
+                error: "El correo y la contraseña son obligatorios."
+            });
+        }
+
+        const result = await db.query(
+            `
+            SELECT
+                p.correo_electronico,
+                p.nombre,
+                p.ap_paterno,
+                p.contrasena_hash,
+                c.fecha_de_registro
+            FROM persona p
+            JOIN cliente c
+            ON p.correo_electronico = c.correo_electronico
+            WHERE p.correo_electronico = $1
+            `,
+            [correo_electronico]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(401).json({
+                acceso: false,
+                error: "Correo o contraseña incorrectos."
+            });
+        }
+
+        const cliente = result.rows[0];
+
+        if (!cliente.contrasena_hash) {
+            return res.status(401).json({
+                acceso: false,
+                error: "Este usuario aún no tiene contraseña configurada."
+            });
+        }
+
+        const coincide = await bcrypt.compare(password, cliente.contrasena_hash);
+
+        if (!coincide) {
+            return res.status(401).json({
+                acceso: false,
+                error: "Correo o contraseña incorrectos."
+            });
+        }
+
+        const { contrasena_hash, ...clienteSeguro } = cliente;
+
+        res.json({
+            acceso: true,
+            cliente: clienteSeguro
+        });
+
+    } catch (error) {
+        console.error("Error en login cliente:", error);
+        res.status(500).json({
+            acceso: false,
+            error: "Error interno del servidor."
+        });
+    }
+});
+
+// =========================
+// ESTABLECER / CAMBIAR CONTRASEÑA
+// =========================
+
+app.put("/usuarios/:correo/password", async (req, res) => {
+    try {
+        const { correo } = req.params;
+        const { password_actual, password_nueva } = req.body;
+
+        if (!password_nueva || password_nueva.length < 8) {
+            return res.status(400).json({
+                error: "La nueva contraseña debe tener al menos 8 caracteres."
+            });
+        }
+
+        const result = await db.query(
+            "SELECT contrasena_hash FROM persona WHERE correo_electronico = $1",
+            [correo]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "Usuario no encontrado." });
+        }
+
+        const hashActual = result.rows[0].contrasena_hash;
+
+        // Si ya tiene contraseña, verificar la actual antes de cambiar
+        if (hashActual) {
+            if (!password_actual) {
+                return res.status(400).json({ error: "Debes proporcionar la contraseña actual." });
+            }
+            const coincide = await bcrypt.compare(password_actual, hashActual);
+            if (!coincide) {
+                return res.status(401).json({ error: "La contraseña actual es incorrecta." });
+            }
+        }
+
+        const nuevoHash = await bcrypt.hash(password_nueva, SALT_ROUNDS);
+
+        await db.query(
+            "UPDATE persona SET contrasena_hash = $1 WHERE correo_electronico = $2",
+            [nuevoHash, correo]
+        );
+
+        res.json({ mensaje: "Contraseña actualizada correctamente." });
+
+    } catch (error) {
+        console.error("Error al cambiar contraseña:", error);
+        res.status(500).json({ error: "Error interno al cambiar contraseña." });
     }
 });
 
@@ -1104,12 +1278,19 @@ app.post("/clientes", async (req, res) => {
             ap_paterno,
             ap_materno,
             fecha_de_nacimiento,
-            telefono
+            telefono,
+            password
         } = req.body;
 
-        if (!correo_electronico || !nombre || !ap_paterno || !fecha_de_nacimiento) {
+        if (!correo_electronico || !nombre || !ap_paterno || !fecha_de_nacimiento || !password) {
             return res.status(400).json({
-                error: "Correo, nombre, apellido paterno y fecha de nacimiento son obligatorios."
+                error: "Correo, nombre, apellido paterno, fecha de nacimiento y contraseña son obligatorios."
+            });
+        }
+
+        if (password.length < 8) {
+            return res.status(400).json({
+                error: "La contraseña debe tener al menos 8 caracteres."
             });
         }
 
@@ -1124,6 +1305,8 @@ app.post("/clientes", async (req, res) => {
             });
         }
 
+        const contrasena_hash = await bcrypt.hash(password, SALT_ROUNDS);
+
         await db.query("BEGIN");
 
         await db.query(
@@ -1134,9 +1317,10 @@ app.post("/clientes", async (req, res) => {
                 ap_paterno,
                 ap_materno,
                 fecha_de_nacimiento,
-                telefono
+                telefono,
+                contrasena_hash
             )
-            VALUES ($1, $2, $3, $4, $5, $6)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
             `,
             [
                 correo_electronico,
@@ -1144,7 +1328,8 @@ app.post("/clientes", async (req, res) => {
                 ap_paterno,
                 ap_materno || null,
                 fecha_de_nacimiento,
-                telefono || null
+                telefono || null,
+                contrasena_hash
             ]
         );
 
