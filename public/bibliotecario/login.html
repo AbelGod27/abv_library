@@ -13,13 +13,18 @@
 
         <div class="logo">📖</div>
         <h1>Acceso Bibliotecario</h1>
-        <p>Ingresa tu correo para continuar</p>
+        <p>Ingresa tus credenciales para continuar</p>
 
         <p id="mensaje" class="mensaje"></p>
 
         <div class="form-group">
             <label for="correoBibliotecario">Correo electrónico</label>
             <input type="email" id="correoBibliotecario" placeholder="correo@ejemplo.com" autocomplete="email">
+        </div>
+
+        <div class="form-group">
+            <label for="passwordBibliotecario">Contraseña</label>
+            <input type="password" id="passwordBibliotecario" placeholder="••••••••" autocomplete="current-password">
         </div>
 
         <button type="button" class="btn-login" onclick="loginBibliotecario()">Ingresar</button>
@@ -32,17 +37,18 @@
 <script>
 async function loginBibliotecario() {
     try {
-        const correo = document.getElementById("correoBibliotecario").value;
+        const correo = document.getElementById("correoBibliotecario").value.trim();
+        const password = document.getElementById("passwordBibliotecario").value;
 
-        if (!correo) {
-            mostrarMensaje("Ingresa un correo.");
+        if (!correo || !password) {
+            mostrarMensaje("Ingresa correo y contraseña.");
             return;
         }
 
         const response = await fetch("/login-vendedor", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ correo_electronico: correo })
+            body: JSON.stringify({ correo_electronico: correo, password })
         });
 
         const data = await response.json();
@@ -62,7 +68,7 @@ async function loginBibliotecario() {
     }
 }
 
-document.getElementById("correoBibliotecario").addEventListener("keydown", e => {
+document.getElementById("passwordBibliotecario").addEventListener("keydown", e => {
     if (e.key === "Enter") loginBibliotecario();
 });
 
