@@ -285,7 +285,8 @@ app.get("/empleados", async (req, res) => {
                 p.ap_materno,
                 p.fecha_de_nacimiento,
                 p.telefono,
-                e.rol
+                e.rol,
+                (p.contrasena_hash IS NOT NULL) AS tiene_password
             FROM persona p
             JOIN empleado e
             ON p.correo_electronico = e.correo_electronico
@@ -1238,7 +1239,8 @@ app.get("/clientes", async (req, res) => {
                 p.ap_materno,
                 p.fecha_de_nacimiento,
                 p.telefono,
-                c.fecha_de_registro
+                c.fecha_de_registro,
+                (p.contrasena_hash IS NOT NULL) AS tiene_password
 
             FROM persona p
 

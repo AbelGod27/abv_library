@@ -658,3 +658,71 @@ hr {
     .landing h1 { font-size: 1.8rem; }
     .login-box { padding: 32px 24px; }
 }
+
+/* =============================================
+   MODAL — Asignar / Cambiar Contraseña
+   ============================================= */
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .45);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-overlay.activo {
+    display: flex;
+}
+
+.modal {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: 2rem;
+    width: 100%;
+    max-width: 420px;
+    animation: modalIn .18s ease;
+}
+
+@keyframes modalIn {
+    from { opacity: 0; transform: translateY(-16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.modal h3 {
+    margin: 0 0 .25rem;
+    font-size: 1.1rem;
+    color: var(--text);
+}
+
+.modal .modal-sub {
+    font-size: .85rem;
+    color: var(--text-muted);
+    margin: 0 0 1.25rem;
+}
+
+.modal .form-group {
+    margin-bottom: 1rem;
+}
+
+.modal-actions {
+    display: flex;
+    gap: .75rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+}
+
+.badge-sin-pass {
+    display: inline-block;
+    font-size: .7rem;
+    font-weight: 600;
+    background: var(--color-warning-lt);
+    color: var(--color-warning);
+    border-radius: 999px;
+    padding: .15rem .55rem;
+    margin-left: .4rem;
+    vertical-align: middle;
+}

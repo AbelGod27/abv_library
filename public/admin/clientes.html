@@ -74,6 +74,7 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
                         <th>Ap. Materno</th>
                         <th>Teléfono</th>
                         <th>Registro</th>
+                        <th>Contraseña</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -83,6 +84,35 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
     </div>
 
 </main>
+
+<!-- MODAL CONTRASEÑA -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
+        <h3 id="modalTitulo">Asignar Contraseña</h3>
+        <p class="modal-sub" id="modalSub">Establece una contraseña para este usuario.</p>
+
+        <input type="hidden" id="modalCorreo">
+
+        <div class="form-group" id="grupoPassActual" style="display:none;">
+            <label for="passActual">Contraseña actual</label>
+            <input type="password" id="passActual" placeholder="Contraseña actual">
+        </div>
+        <div class="form-group">
+            <label for="passNueva">Nueva contraseña</label>
+            <input type="password" id="passNueva" placeholder="Mínimo 8 caracteres">
+        </div>
+        <div class="form-group">
+            <label for="passConfirmar">Confirmar contraseña</label>
+            <input type="password" id="passConfirmar" placeholder="Repite la contraseña">
+        </div>
+        <p id="modalMensaje" class="mensaje"></p>
+
+        <div class="modal-actions">
+            <button type="button" class="btn-secondary" onclick="cerrarModal()">Cancelar</button>
+            <button type="button" onclick="guardarPassword()">Guardar</button>
+        </div>
+    </div>
+</div>
 
 <script>
 window.onload = () => cargarClientes();
@@ -100,6 +130,10 @@ async function cargarClientes() {
         }
 
         data.forEach(c => {
+            const badgePass = c.tiene_password
+                ? ''
+                : '<span class="badge-sin-pass">Sin contraseña</span>';
+
             tabla.innerHTML += `
                 <tr>
                     <td>${c.correo_electronico}</td>
@@ -108,11 +142,16 @@ async function cargarClientes() {
                     <td>${c.ap_materno ?? "—"}</td>
                     <td>${c.telefono ?? "—"}</td>
                     <td class="fecha">${formatFecha(c.fecha_de_registro)}</td>
+                    <td>${c.tiene_password ? "✅ Configurada" : "⚠️ Sin contraseña"}</td>
                     <td>
                         <div class="td-actions">
                             <button class="btn-secondary btn-sm" type="button"
                                 onclick="cargarDatosEditarCliente('${c.correo_electronico}','${c.nombre}','${c.ap_paterno}','${c.ap_materno ?? ""}','${c.fecha_de_nacimiento ?? ""}','${c.telefono ?? ""}')">
                                 ✏️ Editar
+                            </button>
+                            <button class="btn-secondary btn-sm" type="button"
+                                onclick="abrirModalPassword('${c.correo_electronico}', ${c.tiene_password})">
+                                🔑 Contraseña
                             </button>
                             <button class="btn-danger btn-sm" type="button" onclick="eliminarCliente('${c.correo_electronico}')">
                                 🗑️ Eliminar
@@ -230,6 +269,84 @@ function mostrarMensaje(texto, tipo = "error") {
         mensaje.textContent = "";
         mensaje.className = "mensaje";
     }, 4000);
+}
+
+// ---- MODAL CONTRASEÑA ----
+
+function abrirModalPassword(correo, tienePassword) {
+    document.getElementById("modalCorreo").value = correo;
+    document.getElementById("passNueva").value = "";
+    document.getElementById("passConfirmar").value = "";
+    document.getElementById("passActual").value = "";
+    document.getElementById("modalMensaje").textContent = "";
+    document.getElementById("modalMensaje").className = "mensaje";
+
+    const grupoActual = document.getElementById("grupoPassActual");
+    if (tienePassword) {
+        document.getElementById("modalTitulo").textContent = "Cambiar Contraseña";
+        document.getElementById("modalSub").textContent = `Cambia la contraseña de ${correo}`;
+        grupoActual.style.display = "block";
+    } else {
+        document.getElementById("modalTitulo").textContent = "Asignar Contraseña";
+        document.getElementById("modalSub").textContent = `Asigna una contraseña a ${correo}`;
+        grupoActual.style.display = "none";
+    }
+
+    document.getElementById("modalOverlay").classList.add("activo");
+}
+
+function cerrarModal() {
+    document.getElementById("modalOverlay").classList.remove("activo");
+}
+
+// Cerrar al hacer clic fuera del modal
+document.getElementById("modalOverlay").addEventListener("click", function(e) {
+    if (e.target === this) cerrarModal();
+});
+
+async function guardarPassword() {
+    const correo       = document.getElementById("modalCorreo").value;
+    const passActual   = document.getElementById("passActual").value;
+    const passNueva    = document.getElementById("passNueva").value;
+    const passConfirmar= document.getElementById("passConfirmar").value;
+    const msgEl        = document.getElementById("modalMensaje");
+
+    if (!passNueva || passNueva.length < 8) {
+        msgEl.textContent = "La contraseña debe tener al menos 8 caracteres.";
+        msgEl.className = "mensaje mostrar";
+        return;
+    }
+    if (passNueva !== passConfirmar) {
+        msgEl.textContent = "Las contraseñas no coinciden.";
+        msgEl.className = "mensaje mostrar";
+        return;
+    }
+
+    try {
+        const body = { password_nueva: passNueva };
+        if (passActual) body.password_actual = passActual;
+
+        const response = await fetch(`/usuarios/${encodeURIComponent(correo)}/password`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+        });
+        const data = await response.json();
+
+        if (data.error) {
+            msgEl.textContent = data.error;
+            msgEl.className = "mensaje mostrar";
+            return;
+        }
+
+        cerrarModal();
+        mostrarMensaje(data.mensaje, "success");
+        cargarClientes();
+    } catch (error) {
+        console.error(error);
+        msgEl.textContent = "Error al guardar la contraseña.";
+        msgEl.className = "mensaje mostrar";
+    }
 }
 </script>
 
