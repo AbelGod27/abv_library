@@ -6,26 +6,26 @@
 
 /* --- Variables --- */
 :root {
-    --color-primary:     #4f46e5;
-    --color-primary-dk:  #3730a3;
-    --color-primary-lt:  #e0e7ff;
-    --color-success:     #16a34a;
-    --color-success-lt:  #dcfce7;
-    --color-danger:      #dc2626;
-    --color-danger-lt:   #fee2e2;
-    --color-warning:     #d97706;
-    --color-warning-lt:  #fef3c7;
+    --color-primary:     #8b5e3c;
+    --color-primary-dk:  #6b3f1f;
+    --color-primary-lt:  #f5ebe0;
+    --color-success:     #5a7a3a;
+    --color-success-lt:  #e8f0db;
+    --color-danger:      #b84233;
+    --color-danger-lt:   #fce4e0;
+    --color-warning:     #c47f17;
+    --color-warning-lt:  #fdf3d7;
 
-    --bg:        #f1f5f9;
+    --bg:        #faf6f1;
     --surface:   #ffffff;
-    --border:    #e2e8f0;
-    --text:      #1e293b;
-    --text-muted:#64748b;
+    --border:    #e8ddd3;
+    --text:      #3d2b1f;
+    --text-muted:#7a6555;
 
     --radius:    10px;
     --radius-lg: 16px;
-    --shadow:    0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
-    --shadow-lg: 0 8px 32px rgba(0,0,0,.12);
+    --shadow:    0 1px 3px rgba(60,40,20,.08), 0 4px 16px rgba(60,40,20,.06);
+    --shadow-lg: 0 8px 32px rgba(60,40,20,.12);
 
     --font:        'Montserrat', system-ui, sans-serif;
     --font-serif:  'Montserrat', system-ui, sans-serif;
@@ -136,12 +136,12 @@ button, .btn {
     transition: background .18s, transform .1s, box-shadow .18s;
     background: var(--color-primary);
     color: #fff;
-    box-shadow: 0 1px 4px rgba(79,70,229,.25);
+    box-shadow: 0 1px 4px rgba(139,94,60,.25);
 }
 
 button:hover, .btn:hover {
     background: var(--color-primary-dk);
-    box-shadow: 0 4px 12px rgba(79,70,229,.3);
+    box-shadow: 0 4px 12px rgba(139,94,60,.3);
     transform: translateY(-1px);
 }
 
@@ -228,7 +228,7 @@ input, select, textarea {
 
 input:focus, select:focus, textarea:focus {
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(79,70,229,.12);
+    box-shadow: 0 0 0 3px rgba(139,94,60,.12);
     background: var(--surface);
 }
 
@@ -406,7 +406,7 @@ body.marketplace::before {
 
 .navbar-search input:focus {
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(79,70,229,.1);
+    box-shadow: 0 0 0 3px rgba(139,94,60,.1);
     background: var(--surface);
 }
 
@@ -454,7 +454,7 @@ body.marketplace::before {
 /* Hero Banner */
 .hero-banner {
     width: 100%;
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dk) 100%);
+    background: linear-gradient(135deg, #8b5e3c 0%, #5c3a1e 100%);
     padding: 56px 32px;
     text-align: center;
 }
@@ -469,7 +469,7 @@ body.marketplace::before {
 }
 
 .hero-content h1 span {
-    color: #c7d2fe;
+    color: #f5dfc5;
 }
 
 .hero-content p {
@@ -522,7 +522,7 @@ body.marketplace::before {
 }
 
 .role-card-img {
-    background: linear-gradient(135deg, var(--color-primary-lt) 0%, #ddd6fe 100%);
+    background: linear-gradient(135deg, #f5ebe0 0%, #e6d5c3 100%);
     display: flex;
     align-items: center;
     justify-content: center;
