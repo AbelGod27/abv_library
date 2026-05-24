@@ -22,6 +22,88 @@ app.use(express.static(path.join(__dirname, "../public")));
 
 
 // =========================
+// LOGIN UNIFICADO
+// =========================
+
+app.post("/login", async (req, res) => {
+    try {
+        const { correo_electronico, password } = req.body;
+
+        if (!correo_electronico || !password) {
+            return res.status(400).json({ error: "Correo y contraseña son obligatorios." });
+        }
+
+        if (!esCorreoValido(correo_electronico)) {
+            return res.status(400).json({ error: "El correo no tiene un formato válido." });
+        }
+
+        // Buscar persona
+        const persona = await db.query(
+            "SELECT correo_electronico, nombre, ap_paterno, contrasena_hash FROM persona WHERE correo_electronico = $1",
+            [correo_electronico]
+        );
+
+        if (persona.rows.length === 0) {
+            return res.status(401).json({ error: "Correo o contraseña incorrectos." });
+        }
+
+        const user = persona.rows[0];
+
+        if (!user.contrasena_hash) {
+            return res.status(401).json({ error: "Este usuario no tiene contraseña configurada." });
+        }
+
+        const coincide = await bcrypt.compare(password, user.contrasena_hash);
+        if (!coincide) {
+            return res.status(401).json({ error: "Correo o contraseña incorrectos." });
+        }
+
+        // Determinar roles disponibles
+        const roles = [];
+
+        // Es empleado?
+        const empleado = await db.query(
+            "SELECT rol FROM empleado WHERE correo_electronico = $1",
+            [correo_electronico]
+        );
+        if (empleado.rows.length > 0) {
+            const rol = empleado.rows[0].rol;
+            if (["Administrador", "Dueno"].includes(rol)) {
+                roles.push({ tipo: "admin", label: "Administrador", rol });
+            }
+            if (["Vendedor", "Bibliotecario", "Administrador", "Dueno"].includes(rol)) {
+                roles.push({ tipo: "bibliotecario", label: "Bibliotecario", rol });
+            }
+        }
+
+        // Es cliente?
+        const cliente = await db.query(
+            "SELECT correo_electronico, fecha_de_registro FROM cliente WHERE correo_electronico = $1",
+            [correo_electronico]
+        );
+        if (cliente.rows.length > 0) {
+            roles.push({ tipo: "cliente", label: "Cliente" });
+        }
+
+        if (roles.length === 0) {
+            return res.status(401).json({ error: "No tienes un rol asignado en el sistema." });
+        }
+
+        res.json({
+            acceso: true,
+            nombre: user.nombre,
+            ap_paterno: user.ap_paterno,
+            correo_electronico: user.correo_electronico,
+            roles
+        });
+
+    } catch (error) {
+        console.error("Error en login unificado:", error);
+        res.status(500).json({ error: "Error interno del servidor." });
+    }
+});
+
+// =========================
 // LOGIN ADMIN
 // =========================
 
