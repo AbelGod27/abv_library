@@ -19,36 +19,41 @@
 .catalogo-controles {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     flex-wrap: wrap;
     gap: 16px;
-    margin-bottom: 24px;
+    margin-bottom: 32px;
 }
 
 .catalogo-controles .search-bar {
     flex: 1;
-    min-width: 220px;
+    min-width: 280px;
+    max-width: 600px;
     margin: 0;
+    position: relative;
 }
 
 .catalogo-controles .search-bar input {
     width: 100%;
-    padding: 10px 16px;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
+    padding: 12px 20px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 999px;
     font-size: 0.95rem;
-    transition: border-color .2s;
+    transition: border-color .2s, box-shadow .2s;
+    background: #fff;
 }
 
 .catalogo-controles .search-bar input:focus {
     outline: none;
     border-color: #a0784c;
+    box-shadow: 0 0 0 3px rgba(160, 120, 76, 0.1);
 }
 
 .catalogo-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 24px;
+    justify-items: center;
 }
 
 .libro-card {
@@ -59,6 +64,8 @@
     transition: transform .2s, box-shadow .2s;
     display: flex;
     flex-direction: column;
+    width: 100%;
+    max-width: 240px;
 }
 
 .libro-card:hover {

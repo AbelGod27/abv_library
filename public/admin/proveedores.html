@@ -25,7 +25,7 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
 
     <!-- FORMULARIO -->
     <div class="card">
-        <h2>Agregar Proveedor</h2>
+        <h2 id="formTitulo">Agregar Proveedor</h2>
         <div class="form-grid">
             <div class="form-group">
                 <label for="nombreProveedor">Nombre del proveedor</label>
@@ -33,7 +33,9 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
             </div>
         </div>
         <div class="form-actions">
-            <button type="button" onclick="agregarProveedor()">Agregar Proveedor</button>
+            <button type="button" id="btnAgregar" onclick="agregarProveedor()">Agregar Proveedor</button>
+            <button type="button" id="btnActualizar" onclick="actualizarProveedor()" style="display:none;">Guardar Cambios</button>
+            <button type="button" id="btnCancelar" class="btn-secondary" onclick="cancelarEdicion()" style="display:none;">Cancelar</button>
         </div>
     </div>
 
@@ -46,6 +48,7 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
                     <tr>
                         <th>ID</th>
                         <th>Nombre</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="tablaProveedores"></tbody>
@@ -56,6 +59,8 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
 </main>
 
 <script>
+let idEditando = null;
+
 window.onload = () => cargarProveedores();
 
 async function cargarProveedores() {
@@ -66,7 +71,7 @@ async function cargarProveedores() {
         tabla.innerHTML = "";
 
         if (data.length === 0) {
-            tabla.innerHTML = `<tr><td colspan="2" style="text-align:center;color:var(--text-muted)">No hay proveedores registrados</td></tr>`;
+            tabla.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--text-muted)">No hay proveedores registrados</td></tr>`;
             return;
         }
 
@@ -75,6 +80,16 @@ async function cargarProveedores() {
                 <tr>
                     <td>${p.id_proveedor}</td>
                     <td>${p.nombre}</td>
+                    <td>
+                        <div class="td-actions">
+                            <button class="btn-secondary btn-sm" onclick="editarProveedor(${p.id_proveedor}, '${p.nombre}')">
+                                <i class="bi bi-pencil"></i> Editar
+                            </button>
+                            <button class="btn-danger btn-sm" onclick="eliminarProveedor(${p.id_proveedor})">
+                                <i class="bi bi-trash"></i> Eliminar
+                            </button>
+                        </div>
+                    </td>
                 </tr>`;
         });
     } catch (error) {
@@ -84,12 +99,14 @@ async function cargarProveedores() {
 }
 
 async function agregarProveedor() {
+    const nombre = document.getElementById("nombreProveedor").value.trim();
+    if (!nombre) { mostrarMensaje("El nombre es obligatorio."); return; }
+
     try {
-        const proveedor = { nombre: document.getElementById("nombreProveedor").value };
         const response = await fetch("/proveedores", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(proveedor)
+            body: JSON.stringify({ nombre })
         });
         const data = await response.json();
         if (data.error) { mostrarMensaje(data.error); return; }
@@ -100,6 +117,61 @@ async function agregarProveedor() {
         console.error(error);
         mostrarMensaje("Error al agregar proveedor.");
     }
+}
+
+function editarProveedor(id, nombre) {
+    idEditando = id;
+    document.getElementById("nombreProveedor").value = nombre;
+    document.getElementById("formTitulo").textContent = "Editar Proveedor";
+    document.getElementById("btnAgregar").style.display = "none";
+    document.getElementById("btnActualizar").style.display = "inline-flex";
+    document.getElementById("btnCancelar").style.display = "inline-flex";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function actualizarProveedor() {
+    const nombre = document.getElementById("nombreProveedor").value.trim();
+    if (!nombre) { mostrarMensaje("El nombre es obligatorio."); return; }
+
+    try {
+        const response = await fetch(`/proveedores/${idEditando}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ nombre })
+        });
+        const data = await response.json();
+        if (data.error) { mostrarMensaje(data.error); return; }
+        mostrarMensaje(data.mensaje, "success");
+        cancelarEdicion();
+        cargarProveedores();
+    } catch (error) {
+        console.error(error);
+        mostrarMensaje("Error al actualizar proveedor.");
+    }
+}
+
+async function eliminarProveedor(id) {
+    if (!confirm("¿Seguro que quieres eliminar este proveedor?")) return;
+
+    try {
+        const response = await fetch(`/proveedores/${id}`, { method: "DELETE" });
+        const data = await response.json();
+        if (data.error) { mostrarMensaje(data.error); return; }
+        mostrarMensaje(data.mensaje, "success");
+        cargarProveedores();
+    } catch (error) {
+        console.error(error);
+        mostrarMensaje("Error al eliminar proveedor.");
+    }
+}
+
+function cancelarEdicion() {
+    idEditando = null;
+    document.getElementById("nombreProveedor").value = "";
+    document.getElementById("formTitulo").textContent = "Agregar Proveedor";
+    document.getElementById("btnAgregar").style.display = "inline-flex";
+    document.getElementById("btnActualizar").style.display = "none";
+    document.getElementById("btnCancelar").style.display = "none";
 }
 
 function mostrarMensaje(texto, tipo = "error") {

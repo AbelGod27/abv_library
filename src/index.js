@@ -192,13 +192,14 @@ app.get("/libros", async (req, res) => {
 
 app.get("/api/libros-externos", async (req, res) => {
     try {
-        const buscar = req.query.buscar || "literature";
+        const buscar = req.query.buscar || "programacion";
 
         const url = "https://openlibrary.org/search.json";
 
         const response = await axios.get(url, {
             params: {
                 q: buscar,
+                language: "spa",
                 limit: 20,
                 fields: "title,author_name,first_publish_year,isbn,publisher"
             }
@@ -361,6 +362,61 @@ app.post("/proveedores", async (req, res) => {
         res.status(500).json({
             error: "Error interno al agregar proveedor."
         });
+    }
+});
+
+// =========================
+// ACTUALIZAR PROVEEDOR
+// =========================
+
+app.put("/proveedores/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { nombre } = req.body;
+
+        if (!nombre) {
+            return res.status(400).json({ error: "El nombre es obligatorio." });
+        }
+
+        const result = await db.query(
+            "UPDATE proveedor SET nombre = $1 WHERE id_proveedor = $2 RETURNING *",
+            [nombre, id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "Proveedor no encontrado." });
+        }
+
+        res.json({ mensaje: "Proveedor actualizado correctamente." });
+
+    } catch (error) {
+        console.error("Error al actualizar proveedor:", error);
+        res.status(500).json({ error: "Error al actualizar proveedor." });
+    }
+});
+
+// =========================
+// ELIMINAR PROVEEDOR
+// =========================
+
+app.delete("/proveedores/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const result = await db.query(
+            "DELETE FROM proveedor WHERE id_proveedor = $1 RETURNING *",
+            [id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "Proveedor no encontrado." });
+        }
+
+        res.json({ mensaje: "Proveedor eliminado correctamente." });
+
+    } catch (error) {
+        console.error("Error al eliminar proveedor:", error);
+        res.status(500).json({ error: "Error al eliminar proveedor." });
     }
 });
 

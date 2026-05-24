@@ -8,21 +8,24 @@ Sistema web de gestion para una libreria/biblioteca, desarrollado como proyecto 
 
 ## Caracteristicas
 
-- **Catalogo de libros** con busqueda local y consulta a la API de Open Library.
-- **Gestion de ventas** con control de stock, registro de metodo de pago y sistema de puntos.
-- **Sistema de prestamos** con fechas de vencimiento, devolucion y calculo automatico de multas.
+- **Catalogo de libros** con busqueda local y consulta a la API de Open Library (filtrado en español).
+- **Gestion de ventas** con carrito multi-libro, control de stock y sistema de puntos.
+- **Sistema de prestamos** con fechas de vencimiento, devolucion, calculo automatico de multas y alertas al cliente.
 - **Sistema de puntos** — los clientes acumulan 1 punto por cada $10 de compra y pueden canjearlos por descuentos (10 puntos = $1).
 - **Donaciones de libros** — los clientes pueden donar libros a cambio de 20 puntos o intercambiar por otro libro donado.
 - **Libros favoritos** — los clientes pueden guardar libros favoritos (locales y de Open Library).
 - **Recomendaciones personalizadas** basadas en favoritos, compras y prestamos del cliente.
 - **Importacion masiva** desde Open Library al catalogo local.
-- **Administracion de empleados y clientes** con roles diferenciados.
+- **Login unificado** — un solo formulario de login que detecta los roles del usuario y permite elegir como entrar.
+- **CRUD completo** en todas las entidades del admin (libros, empleados, clientes, proveedores).
+- **Busqueda inteligente** de libros en ventas y prestamos (autocompletado en lugar de dropdown).
 - **Autenticacion segura** con bcrypt (hash de contrasenas).
 - **Validacion de correo electronico** en todos los formularios.
+- **Iconos Bootstrap Icons** en toda la interfaz.
 - **Tres roles de acceso:**
-  - **Administrador** — gestiona libros, empleados, clientes y proveedores.
-  - **Bibliotecario** — registra ventas, prestamos, donaciones y consulta historial/facturas.
-  - **Cliente** — consulta el catalogo, ve sus puntos, favoritos, prestamos y recomendaciones.
+  - **Administrador** — gestiona libros, empleados, clientes y proveedores (CRUD completo).
+  - **Bibliotecario** — registra ventas (carrito), prestamos, donaciones y consulta historial/facturas.
+  - **Cliente** — consulta el catalogo, ve sus puntos, favoritos, prestamos, donaciones y recomendaciones.
 
 ---
 
@@ -33,6 +36,7 @@ Sistema web de gestion para una libreria/biblioteca, desarrollado como proyecto 
 | Backend | Node.js + Express 5 |
 | Base de datos | PostgreSQL |
 | Frontend | HTML, CSS, JavaScript (vanilla) |
+| Iconos | Bootstrap Icons (CDN) |
 | Autenticacion | bcrypt |
 | API externa | Open Library API |
 | Hosting | Render (web service + PostgreSQL) |
@@ -43,30 +47,22 @@ Sistema web de gestion para una libreria/biblioteca, desarrollado como proyecto 
 
 ```
 Libreria_va/
-├── bd/                              # Scripts SQL y seeds
-│   ├── abv_library.sql
-│   ├── migration_add_password.sql
-│   ├── migration_favoritos.sql
-│   ├── migration_puntos.sql
-│   ├── migration_donaciones.sql
-│   ├── migration_precio_libro.sql
-│   ├── seed_libros.sql
-│   ├── seed_1000_libros.js
-│   ├── seed_10000_libros.js
-│   └── seed_stock.js
-├── public/                          # Frontend (archivos estaticos)
-│   ├── index.html                   # Pagina principal con catalogo
-│   ├── principal.css                # Estilos globales
-│   ├── index.css                    # Estilos del index
+├── bd/
+│   └── abv_library.sql              # Esquema completo de la BD
+├── public/
+│   ├── index.html                    # Pagina principal con catalogo
+│   ├── login.html                    # Login unificado
+│   ├── principal.css                 # Estilos globales
+│   ├── index.css                     # Estilos del catalogo
 │   ├── img/
-│   ├── admin/                       # Panel de administrador
+│   ├── admin/
 │   │   ├── login.html
 │   │   ├── panel.html
 │   │   ├── libros.html
 │   │   ├── empleados.html
 │   │   ├── clientes.html
 │   │   └── proveedores.html
-│   ├── bibliotecario/               # Panel de bibliotecario
+│   ├── bibliotecario/
 │   │   ├── login.html
 │   │   ├── panel.html
 │   │   ├── ventas.html
@@ -75,13 +71,13 @@ Libreria_va/
 │   │   ├── historial.html
 │   │   ├── historial-prestamos.html
 │   │   └── facturas.html
-│   └── cliente/                     # Vista de cliente
+│   └── cliente/
 │       ├── cliente.html
 │       └── registro.html
 ├── src/
-│   ├── index.js                     # Servidor Express (API REST)
-│   └── db.js                        # Conexion a PostgreSQL
-├── .env                             # Variables de entorno (no subir)
+│   ├── index.js                      # Servidor Express (API REST)
+│   └── db.js                         # Conexion a PostgreSQL
+├── .env                              # Variables de entorno (no subir)
 ├── .gitignore
 ├── package.json
 └── README.md
@@ -118,7 +114,7 @@ Crear un archivo `.env` en la raiz con:
 ```env
 DATABASE_URL=postgresql://usuario:contraseña@host:5432/nombre_bd
 ADMIN_PASSWORD=tu_contraseña_admin
-ADMIN_PASSWORD_HASH=$2b$10$...hash_bcrypt_de_la_contraseña...
+ADMIN_PASSWORD_HASH=$2b$10$...hash_bcrypt...
 ```
 
 Para generar el hash del admin:
@@ -127,33 +123,21 @@ Para generar el hash del admin:
 node -e "require('bcrypt').hash('TuContraseña', 10).then(console.log)"
 ```
 
-4. **Configurar la base de datos:**
+4. **Crear las tablas:**
 
-Ejecutar las migraciones en PostgreSQL:
-
-```bash
-psql -d tu_bd -f bd/migration_add_password.sql
-psql -d tu_bd -f bd/migration_favoritos.sql
-psql -d tu_bd -f bd/migration_puntos.sql
-psql -d tu_bd -f bd/migration_donaciones.sql
-psql -d tu_bd -f bd/migration_precio_libro.sql
-psql -d tu_bd -f bd/seed_libros.sql
-```
-
-5. **Poblar con libros (opcional):**
+Ejecutar el esquema en PostgreSQL:
 
 ```bash
-node bd/seed_10000_libros.js
-node bd/seed_stock.js
+psql -d tu_bd -f bd/abv_library.sql
 ```
 
-6. **Iniciar el servidor:**
+5. **Iniciar el servidor:**
 
 ```bash
 npm start
 ```
 
-El servidor se levanta en `http://localhost:3000` (o el puerto definido en el entorno).
+El servidor se levanta en `http://localhost:3000`.
 
 ---
 
@@ -163,6 +147,7 @@ El servidor se levanta en `http://localhost:3000` (o el puerto definido en el en
 
 | Metodo | Ruta | Descripcion |
 |--------|------|-------------|
+| POST | `/login` | Login unificado (detecta roles) |
 | POST | `/login-admin` | Login del administrador |
 | POST | `/login-vendedor` | Login de bibliotecario/empleado |
 | POST | `/login-cliente` | Login de cliente |
@@ -177,7 +162,7 @@ El servidor se levanta en `http://localhost:3000` (o el puerto definido en el en
 | POST | `/libros` | Agregar libro |
 | PUT | `/libros/:isbn` | Actualizar libro |
 | DELETE | `/libros/:isbn` | Eliminar libro |
-| GET | `/api/libros-externos?buscar=texto` | Buscar en Open Library |
+| GET | `/api/libros-externos?buscar=texto` | Buscar en Open Library (español) |
 | POST | `/libros/importar-openlibrary` | Importar libros desde Open Library |
 
 ### Empleados
@@ -194,9 +179,18 @@ El servidor se levanta en `http://localhost:3000` (o el puerto definido en el en
 | Metodo | Ruta | Descripcion |
 |--------|------|-------------|
 | GET | `/clientes` | Listar clientes |
-| POST | `/clientes` | Agregar cliente |
+| POST | `/clientes` | Agregar cliente (password opcional) |
 | PUT | `/clientes/:correo` | Actualizar cliente |
 | DELETE | `/clientes/:correo` | Eliminar cliente |
+
+### Proveedores
+
+| Metodo | Ruta | Descripcion |
+|--------|------|-------------|
+| GET | `/proveedores` | Listar proveedores |
+| POST | `/proveedores` | Agregar proveedor |
+| PUT | `/proveedores/:id` | Actualizar proveedor |
+| DELETE | `/proveedores/:id` | Eliminar proveedor |
 
 ### Ventas
 
@@ -245,32 +239,30 @@ El servidor se levanta en `http://localhost:3000` (o el puerto definido en el en
 | GET | `/recomendaciones/:correo` | Recomendaciones personalizadas |
 | GET | `/recomendaciones` | Recomendaciones generales |
 
-### Otros
+### Facturas
 
 | Metodo | Ruta | Descripcion |
 |--------|------|-------------|
-| GET | `/proveedores` | Listar proveedores |
-| POST | `/proveedores` | Agregar proveedor |
 | GET | `/facturas?fecha_inicio=...&fecha_fin=...` | Reporte de facturas |
 
 ---
 
 ## Base de datos
 
-Tablas principales:
+Tablas (ver `bd/abv_library.sql` para el esquema completo):
 
-- **persona** — datos personales (correo, nombre, apellidos, telefono, contrasena hash)
-- **empleado** — relacion con persona + rol (Vendedor, Bibliotecario, Administrador, Dueno)
-- **cliente** — relacion con persona + fecha de registro + puntos
-- **libro** — catalogo (ISBN, titulo, autor, editorial, version, ano, precio)
+- **persona** — datos personales + contrasena hash
+- **empleado** — rol (Vendedor, Bibliotecario, Administrador, Dueno)
+- **cliente** — fecha de registro + puntos acumulados
+- **libro** — catalogo con precio
 - **proveedor** — proveedores de libros
-- **venta** — registro de ventas (fecha, total, metodo de pago, vendedor)
-- **lib_venta** — libros vendidos / stock para venta
-- **prestamo** — prestamos (fechas, multa, cliente, empleado)
-- **lib_pres** — libros prestados / stock para prestamo
-- **libro_favorito** — libros favoritos de cada cliente
-- **historial_puntos** — registro de puntos ganados por compra
-- **donacion** — registro de libros donados por clientes
+- **venta** — registro de ventas
+- **lib_venta** — stock para venta y libros vendidos
+- **prestamo** — prestamos con multas
+- **lib_pres** — stock para prestamo y libros prestados
+- **libro_favorito** — favoritos de cada cliente
+- **historial_puntos** — puntos ganados por compra
+- **donacion** — libros donados por clientes
 
 ---
 
@@ -283,7 +275,7 @@ Tablas principales:
 | bcrypt | Hash de contrasenas |
 | dotenv | Variables de entorno |
 | cors | Cross-Origin Resource Sharing |
-| axios | Consultas a API externa (Open Library) |
+| axios | Consultas a Open Library API |
 
 ---
 
