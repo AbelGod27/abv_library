@@ -1537,6 +1537,101 @@ app.delete("/clientes/:correo", async (req, res) => {
 });
 
 // =========================
+// REGISTRO PÚBLICO DE CLIENTE
+// =========================
+
+app.post("/registro-cliente", async (req, res) => {
+    try {
+        const {
+            correo_electronico,
+            nombre,
+            ap_paterno,
+            ap_materno,
+            fecha_de_nacimiento,
+            telefono,
+            password
+        } = req.body;
+
+        if (!correo_electronico || !nombre || !ap_paterno || !fecha_de_nacimiento || !password) {
+            return res.status(400).json({
+                error: "Correo, nombre, apellido paterno, fecha de nacimiento y contraseña son obligatorios."
+            });
+        }
+
+        if (password.length < 8) {
+            return res.status(400).json({
+                error: "La contraseña debe tener al menos 8 caracteres."
+            });
+        }
+
+        const existePersona = await db.query(
+            "SELECT correo_electronico FROM persona WHERE correo_electronico = $1",
+            [correo_electronico]
+        );
+
+        if (existePersona.rows.length > 0) {
+            return res.status(409).json({
+                error: "Ya existe una cuenta con ese correo electrónico."
+            });
+        }
+
+        const contrasena_hash = await bcrypt.hash(password, SALT_ROUNDS);
+
+        await db.query("BEGIN");
+
+        await db.query(
+            `
+            INSERT INTO persona (
+                correo_electronico,
+                nombre,
+                ap_paterno,
+                ap_materno,
+                fecha_de_nacimiento,
+                telefono,
+                contrasena_hash
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            `,
+            [
+                correo_electronico,
+                nombre,
+                ap_paterno,
+                ap_materno || null,
+                fecha_de_nacimiento,
+                telefono || null,
+                contrasena_hash
+            ]
+        );
+
+        await db.query(
+            `
+            INSERT INTO cliente (
+                correo_electronico,
+                fecha_de_registro
+            )
+            VALUES ($1, CURRENT_DATE)
+            `,
+            [correo_electronico]
+        );
+
+        await db.query("COMMIT");
+
+        res.json({
+            mensaje: "Cuenta creada exitosamente. Ya puedes iniciar sesión."
+        });
+
+    } catch (error) {
+        await db.query("ROLLBACK");
+
+        console.error("Error en registro de cliente:", error);
+
+        res.status(500).json({
+            error: "Error interno al crear la cuenta."
+        });
+    }
+});
+
+// =========================
 // SERVIDOR
 // =========================
 
