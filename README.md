@@ -281,7 +281,7 @@ Tablas (ver `bd/abv_library.sql` para el esquema completo):
 
 ## Autor
 
-Desarrollado por **Abel God** como proyecto academico de Base de Datos.
+Desarrollado por **Abel Pineda** y **Vanya Castillo** como proyecto academico de Base de Datos.
 
 ---
 
