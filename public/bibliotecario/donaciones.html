@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar Donación — Abv Library</title>
+    <link rel="stylesheet" href="/principal.css">
+</head>
+<body>
+
+<script>
+if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
+    window.location.href = "/bibliotecario/login.html";
+}
+</script>
+
+<header class="page-header">
+    <h1>🎁 Registrar Donación</h1>
+    <a href="/bibliotecario/panel.html"><button class="btn-secondary btn-sm">← Regresar</button></a>
+</header>
+
+<main class="page-content">
+
+    <p id="mensaje" class="mensaje"></p>
+
+    <div class="card">
+        <h2>Datos de la donación</h2>
+        <p style="color:#64748b; font-size:0.9rem; margin-bottom:20px;">
+            El cliente dona un libro y puede elegir: <strong>20 puntos por libro</strong> o <strong>intercambiar por otro libro disponible</strong>.
+        </p>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="correo_cliente">Correo del cliente *</label>
+                <input type="email" id="correo_cliente" placeholder="cliente@correo.com">
+            </div>
+            <div class="form-group">
+                <label for="isbn">ISBN del libro donado *</label>
+                <input type="text" id="isbn" placeholder="978-...">
+            </div>
+            <div class="form-group">
+                <label for="titulo">Título del libro donado *</label>
+                <input type="text" id="titulo" placeholder="Título del libro">
+            </div>
+            <div class="form-group">
+                <label for="autor">Autor</label>
+                <input type="text" id="autor" placeholder="Nombre del autor">
+            </div>
+            <div class="form-group">
+                <label for="cantidad">Cantidad de ejemplares</label>
+                <input type="number" id="cantidad" min="1" value="1">
+            </div>
+        </div>
+
+        <!-- Tipo de recompensa -->
+        <div style="margin-top:20px; padding:16px; background:#fef9f3; border-radius:8px; border:1px solid #e8d5c0;">
+            <p style="margin:0 0 12px; font-weight:600; color:#a0784c;">Recompensa para el cliente:</p>
+
+            <div style="display:flex; gap:20px; flex-wrap:wrap;">
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                    <input type="radio" name="tipo_recompensa" value="puntos" checked onchange="cambiarRecompensa()">
+                    <span>⭐ Recibir puntos (<strong id="puntosPreview">20</strong> pts)</span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                    <input type="radio" name="tipo_recompensa" value="intercambio" onchange="cambiarRecompensa()">
+                    <span>📖 Intercambiar por otro libro</span>
+                </label>
+            </div>
+
+            <!-- Selector de libro para intercambio -->
+            <div id="seccionIntercambio" style="display:none; margin-top:16px;">
+                <label for="isbn_intercambio" style="font-size:0.9rem; font-weight:500;">Libro que se lleva el cliente:</label>
+                <select id="isbn_intercambio" style="width:100%; margin-top:8px; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
+                    <option value="">Cargando libros disponibles...</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-actions" style="margin-top:20px;">
+            <button type="button" onclick="registrarDonacion()">Registrar Donación</button>
+        </div>
+    </div>
+
+</main>
+
+<script>
+const cantidadInput = document.getElementById("cantidad");
+
+cantidadInput.addEventListener("input", () => {
+    const cant = parseInt(cantidadInput.value) || 0;
+    document.getElementById("puntosPreview").textContent = cant * 20;
+});
+
+function cambiarRecompensa() {
+    const tipo = document.querySelector('input[name="tipo_recompensa"]:checked').value;
+    const seccion = document.getElementById("seccionIntercambio");
+
+    if (tipo === "intercambio") {
+        seccion.style.display = "block";
+        cargarLibrosDisponibles();
+    } else {
+        seccion.style.display = "none";
+    }
+}
+
+async function cargarLibrosDisponibles() {
+    try {
+        const res = await fetch("/donaciones/libros-disponibles");
+        const data = await res.json();
+        const select = document.getElementById("isbn_intercambio");
+        select.innerHTML = '<option value="">Selecciona un libro</option>';
+
+        data.forEach(libro => {
+            select.innerHTML += `<option value="${libro.isbn}">${libro.titulo} — ${libro.autor ?? "Sin autor"}</option>`;
+        });
+    } catch (e) {
+        console.error("Error cargando libros disponibles:", e);
+    }
+}
+
+async function registrarDonacion() {
+    const correo_cliente = document.getElementById("correo_cliente").value.trim();
+    const isbn = document.getElementById("isbn").value.trim();
+    const titulo = document.getElementById("titulo").value.trim();
+    const autor = document.getElementById("autor").value.trim();
+    const cantidad = parseInt(document.getElementById("cantidad").value) || 1;
+    const tipo_recompensa = document.querySelector('input[name="tipo_recompensa"]:checked').value;
+    const isbn_intercambio = document.getElementById("isbn_intercambio").value;
+
+    if (!correo_cliente || !isbn || !titulo) {
+        mostrarMensaje("Correo, ISBN y título son obligatorios.");
+        return;
+    }
+
+    if (tipo_recompensa === "intercambio" && !isbn_intercambio) {
+        mostrarMensaje("Selecciona un libro para el intercambio.");
+        return;
+    }
+
+    try {
+        const body = { correo_cliente, isbn, titulo, autor, cantidad, tipo_recompensa };
+        if (tipo_recompensa === "intercambio") {
+            body.isbn_intercambio = isbn_intercambio;
+        }
+
+        const response = await fetch("/donaciones", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            mostrarMensaje(data.error);
+            return;
+        }
+
+        mostrarMensaje(data.mensaje, "success");
+        document.getElementById("correo_cliente").value = "";
+        document.getElementById("isbn").value = "";
+        document.getElementById("titulo").value = "";
+        document.getElementById("autor").value = "";
+        document.getElementById("cantidad").value = "1";
+        document.getElementById("puntosPreview").textContent = "20";
+        document.querySelector('input[name="tipo_recompensa"][value="puntos"]').checked = true;
+        document.getElementById("seccionIntercambio").style.display = "none";
+    } catch (error) {
+        console.error(error);
+        mostrarMensaje("Error al registrar donación.");
+    }
+}
+
+function mostrarMensaje(texto, tipo = "error") {
+    const mensaje = document.getElementById("mensaje");
+    mensaje.textContent = texto;
+    mensaje.className = `mensaje mostrar ${tipo}`;
+    setTimeout(() => {
+        mensaje.textContent = "";
+        mensaje.className = "mensaje";
+    }, 4000);
+}
+</script>
+
+</body>
+</html>

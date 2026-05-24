@@ -52,6 +52,21 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
                     <option value="Transferencia">Transferencia</option>
                 </select>
             </div>
+            <div class="form-group">
+                <label for="correo_cliente">Correo del cliente (opcional, para puntos)</label>
+                <input type="email" id="correo_cliente" placeholder="cliente@correo.com" onblur="consultarPuntosCliente()">
+            </div>
+        </div>
+
+        <!-- Sección de canje de puntos -->
+        <div id="seccionCanje" class="form-group" style="display:none; margin-top:16px; padding:16px; background:#fef9f3; border-radius:8px; border:1px solid #e8d5c0;">
+            <p style="margin:0 0 8px; font-weight:600; color:#a0784c;">⭐ Puntos disponibles: <span id="puntosDisponibles">0</span></p>
+            <p style="margin:0 0 12px; font-size:0.85rem; color:#64748b;">10 puntos = $1 de descuento</p>
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                <label for="puntos_canjear" style="font-size:0.9rem;">Puntos a canjear:</label>
+                <input type="number" id="puntos_canjear" min="0" value="0" style="width:100px;" oninput="calcularDescuento()">
+                <span id="descuentoTexto" style="font-weight:600; color:#16a34a;">Descuento: $0.00</span>
+            </div>
         </div>
 
         <div class="form-actions">
@@ -85,14 +100,89 @@ async function cargarLibros() {
     }
 }
 
+let puntosClienteActual = 0;
+
+async function consultarPuntosCliente() {
+    const correo = document.getElementById("correo_cliente").value.trim();
+    const seccion = document.getElementById("seccionCanje");
+
+    if (!correo) {
+        seccion.style.display = "none";
+        puntosClienteActual = 0;
+        return;
+    }
+
+    try {
+        const res = await fetch(`/puntos/${encodeURIComponent(correo)}`);
+        const data = await res.json();
+
+        if (data.error) {
+            seccion.style.display = "none";
+            puntosClienteActual = 0;
+            return;
+        }
+
+        puntosClienteActual = data.puntos || 0;
+        document.getElementById("puntosDisponibles").textContent = puntosClienteActual;
+        document.getElementById("puntos_canjear").max = puntosClienteActual;
+        document.getElementById("puntos_canjear").value = 0;
+        document.getElementById("descuentoTexto").textContent = "Descuento: $0.00";
+        seccion.style.display = "block";
+    } catch (e) {
+        seccion.style.display = "none";
+        puntosClienteActual = 0;
+    }
+}
+
+function calcularDescuento() {
+    let puntos = parseInt(document.getElementById("puntos_canjear").value) || 0;
+    if (puntos > puntosClienteActual) {
+        puntos = puntosClienteActual;
+        document.getElementById("puntos_canjear").value = puntos;
+    }
+    if (puntos < 0) {
+        puntos = 0;
+        document.getElementById("puntos_canjear").value = 0;
+    }
+    const descuento = (puntos / 10).toFixed(2);
+    document.getElementById("descuentoTexto").textContent = `Descuento: $${descuento}`;
+}
+
 async function registrarVenta() {
     try {
+        const correoCliente = document.getElementById("correo_cliente").value.trim();
+        const puntosACanjear = parseInt(document.getElementById("puntos_canjear").value) || 0;
+
+        // Si hay puntos a canjear, primero canjearlos
+        let descuentoAplicado = 0;
+        if (correoCliente && puntosACanjear > 0) {
+            const resCanje = await fetch("/puntos/canjear", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    correo_cliente: correoCliente,
+                    puntos_a_canjear: puntosACanjear
+                })
+            });
+
+            const dataCanje = await resCanje.json();
+            if (dataCanje.error) {
+                mostrarMensaje(dataCanje.error);
+                return;
+            }
+            descuentoAplicado = dataCanje.descuento;
+        }
+
+        const totalOriginal = parseFloat(document.getElementById("total_pagado").value) || 0;
+        const totalFinal = Math.max(0, totalOriginal - descuentoAplicado);
+
         const venta = {
             correo_electronico: correoBibliotecario,
             isbn:               document.getElementById("isbn").value,
             cantidad:           document.getElementById("cantidad").value,
-            total_pagado:       document.getElementById("total_pagado").value,
-            metodo_de_pago:     document.getElementById("metodo_de_pago").value
+            total_pagado:       totalFinal.toFixed(2),
+            metodo_de_pago:     document.getElementById("metodo_de_pago").value,
+            correo_cliente:     correoCliente || undefined
         };
 
         const response = await fetch("/ventas", {
@@ -104,11 +194,22 @@ async function registrarVenta() {
         const data = await response.json();
         if (data.error) { mostrarMensaje(data.error); return; }
 
-        mostrarMensaje(data.mensaje, "success");
+        let msg = data.mensaje;
+        if (descuentoAplicado > 0) {
+            msg += ` Descuento por puntos: -$${descuentoAplicado.toFixed(2)}.`;
+        }
+        if (data.puntos_ganados > 0) {
+            msg += ` El cliente ganó ${data.puntos_ganados} punto(s) nuevo(s).`;
+        }
+
+        mostrarMensaje(msg, "success");
         document.getElementById("isbn").value = "";
         document.getElementById("cantidad").value = "1";
         document.getElementById("total_pagado").value = "";
         document.getElementById("metodo_de_pago").value = "";
+        document.getElementById("correo_cliente").value = "";
+        document.getElementById("puntos_canjear").value = "0";
+        document.getElementById("seccionCanje").style.display = "none";
     } catch (error) {
         console.error(error);
         mostrarMensaje("Error al registrar venta.");

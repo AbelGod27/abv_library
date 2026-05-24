@@ -17,6 +17,109 @@
 
     <p id="mensaje" class="mensaje"></p>
 
+    <!-- SECCIÓN PUNTOS -->
+    <div class="card" id="seccionPuntos" style="display:none; margin-bottom:24px;">
+        <h2 style="margin:0 0 16px; font-size:1.2rem;">⭐ Mis Puntos</h2>
+        <p style="font-size:1.5rem; font-weight:700; color:#a0784c; margin:0 0 4px;">
+            <span id="totalPuntos">0</span> puntos
+        </p>
+        <p style="font-size:1.1rem; font-weight:600; color:#16a34a; margin:0 0 12px;">
+            Descuento disponible: $<span id="descuentoDisponible">0.00</span>
+        </p>
+        <p style="font-size:0.85rem; color:#64748b; margin:0 0 16px;">
+            Ganas 1 punto por cada $10 de compra. Canjea 10 puntos = $1 de descuento.<br>
+            Presenta tu correo al momento de pagar para acumular y canjear puntos.
+        </p>
+        <details>
+            <summary style="cursor:pointer; font-weight:500; margin-bottom:8px;">Ver historial de puntos</summary>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Monto de compra</th>
+                            <th>Puntos ganados</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaHistorialPuntos"></tbody>
+                </table>
+            </div>
+        </details>
+    </div>
+
+    <!-- SECCIÓN PRÉSTAMOS -->
+    <div class="card" id="seccionPrestamos" style="display:none; margin-bottom:24px;">
+        <h2 style="margin:0 0 16px; font-size:1.2rem;">📤 Mis Préstamos</h2>
+        <div id="alertaPrestamo" style="display:none; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:12px 16px; margin-bottom:16px;">
+            <p style="margin:0; color:#dc2626; font-weight:600;">⚠️ <span id="alertaTexto"></span></p>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Libro</th>
+                        <th>Inicio</th>
+                        <th>Vencimiento</th>
+                        <th>Entrega</th>
+                        <th>Estado</th>
+                        <th>Multa</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaPrestamos"></tbody>
+            </table>
+        </div>
+        <p id="prestamosVacio" style="text-align:center; color:#64748b; display:none;">No tienes préstamos registrados.</p>
+    </div>
+
+    <!-- SECCIÓN RECOMENDACIONES -->
+    <div class="card" id="seccionRecomendaciones" style="margin-bottom:24px;">
+        <h2 style="margin:0 0 16px; font-size:1.2rem;">📚 Libros Recomendados para Ti</h2>
+        <div id="gridRecomendaciones" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:16px;"></div>
+        <p id="recomendacionesVacio" style="text-align:center; color:#64748b; display:none;">No hay recomendaciones disponibles.</p>
+    </div>
+
+    <!-- SECCIÓN DONACIONES -->
+    <div class="card" id="seccionDonaciones" style="display:none; margin-bottom:24px;">
+        <h2 style="margin:0 0 16px; font-size:1.2rem;">🎁 Mis Donaciones</h2>
+        <p style="font-size:0.85rem; color:#64748b; margin:0 0 12px;">Ganas 20 puntos por cada libro que dones. ¡Gracias por contribuir!</p>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Título</th>
+                        <th>Autor</th>
+                        <th>Cantidad</th>
+                        <th>Puntos ganados</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaDonaciones"></tbody>
+            </table>
+        </div>
+        <p id="donacionesVacio" style="text-align:center; color:#64748b; display:none;">Aún no has donado libros.</p>
+    </div>
+
+    <!-- SECCIÓN FAVORITOS -->
+    <div class="card" id="seccionFavoritos" style="display:none; margin-bottom:24px;">
+        <h2 style="margin:0 0 16px; font-size:1.2rem;">❤️ Mis Libros Favoritos</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Portada</th>
+                        <th>ISBN</th>
+                        <th>Título</th>
+                        <th>Autor</th>
+                        <th>Fecha agregado</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaFavoritos"></tbody>
+            </table>
+        </div>
+        <p id="favoritosVacio" style="text-align:center; color:#64748b; display:none;">No tienes libros favoritos aún.</p>
+    </div>
+
     <div class="card">
 
         <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; margin-bottom:20px;">
@@ -63,6 +166,12 @@ const switchLibros  = document.getElementById("switchLibros");
 let temporizador;
 let fuenteActual = "db";
 
+function getClienteLogueado() {
+    const data = localStorage.getItem("cliente");
+    if (!data) return null;
+    try { return JSON.parse(data); } catch { return null; }
+}
+
 window.onload = () => {
     const params = new URLSearchParams(window.location.search);
     const buscarParam = params.get("buscar") || "";
@@ -70,7 +179,269 @@ window.onload = () => {
         inputBusqueda.value = buscarParam;
     }
     cargarLibros(inputBusqueda.value);
+    cargarFavoritos();
+    cargarPuntos();
+    cargarDonaciones();
+    cargarRecomendaciones();
+    cargarPrestamosCliente();
 };
+
+async function cargarPrestamosCliente() {
+    const cliente = getClienteLogueado();
+    if (!cliente) return;
+
+    const seccion = document.getElementById("seccionPrestamos");
+    seccion.style.display = "block";
+
+    try {
+        const res = await fetch(`/prestamos/cliente/${encodeURIComponent(cliente.correo_electronico)}`);
+        const data = await res.json();
+        const tabla = document.getElementById("tablaPrestamos");
+        const vacio = document.getElementById("prestamosVacio");
+        const alerta = document.getElementById("alertaPrestamo");
+        const alertaTexto = document.getElementById("alertaTexto");
+        tabla.innerHTML = "";
+
+        if (!data.length) {
+            vacio.style.display = "block";
+            return;
+        }
+
+        vacio.style.display = "none";
+
+        // Verificar si hay préstamos por vencer (1 día o menos)
+        const porVencer = data.filter(p => p.estado === "Por vencer");
+        const vencidos = data.filter(p => p.estado === "Vencido");
+
+        if (porVencer.length > 0 || vencidos.length > 0) {
+            alerta.style.display = "block";
+            let msgs = [];
+            if (porVencer.length > 0) {
+                msgs.push(`Tienes ${porVencer.length} préstamo(s) que vence(n) mañana.`);
+            }
+            if (vencidos.length > 0) {
+                msgs.push(`Tienes ${vencidos.length} préstamo(s) vencido(s). Devuélvelos para evitar multas.`);
+            }
+            alertaTexto.textContent = msgs.join(" ");
+        }
+
+        data.forEach(p => {
+            const inicio = p.dia_de_inicio ? new Date(p.dia_de_inicio).toLocaleDateString("es-MX") : "—";
+            const vencimiento = p.dia_de_vencimiento ? new Date(p.dia_de_vencimiento).toLocaleDateString("es-MX") : "—";
+            const entrega = p.dia_de_entrega ? new Date(p.dia_de_entrega).toLocaleDateString("es-MX") : "—";
+
+            let estadoClass = "";
+            if (p.estado === "Vencido") estadoClass = "color:#dc2626; font-weight:600;";
+            else if (p.estado === "Por vencer") estadoClass = "color:#f59e0b; font-weight:600;";
+            else if (p.estado === "Devuelto") estadoClass = "color:#16a34a;";
+            else estadoClass = "color:#2563eb;";
+
+            tabla.innerHTML += `
+                <tr>
+                    <td>${p.titulo ?? "—"} <br><small style="color:#64748b;">${p.autor ?? ""}</small></td>
+                    <td class="fecha">${inicio}</td>
+                    <td class="fecha">${vencimiento}</td>
+                    <td class="fecha">${entrega}</td>
+                    <td style="${estadoClass}">${p.estado}</td>
+                    <td>${p.multa > 0 ? "$" + Number(p.multa).toFixed(2) : "—"}</td>
+                </tr>`;
+        });
+    } catch (e) {
+        console.error("Error cargando préstamos:", e);
+    }
+}
+
+async function cargarRecomendaciones() {
+    const cliente = getClienteLogueado();
+    const grid = document.getElementById("gridRecomendaciones");
+    const vacio = document.getElementById("recomendacionesVacio");
+
+    try {
+        const url = cliente
+            ? `/recomendaciones/${encodeURIComponent(cliente.correo_electronico)}`
+            : "/recomendaciones";
+
+        const res = await fetch(url);
+        const data = await res.json();
+
+        grid.innerHTML = "";
+
+        if (!data.length) {
+            vacio.style.display = "block";
+            return;
+        }
+
+        vacio.style.display = "none";
+
+        data.forEach(libro => {
+            const portada = libro.isbn
+                ? `https://covers.openlibrary.org/b/isbn/${libro.isbn}-M.jpg`
+                : "https://via.placeholder.com/120x180?text=N/A";
+
+            grid.innerHTML += `
+                <div style="background:#fff; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,.06); overflow:hidden; text-align:center;">
+                    <img src="${portada}" alt="${libro.titulo}"
+                        style="width:100%; height:180px; object-fit:cover; background:#f1ebe4;"
+                        onerror="this.src='https://via.placeholder.com/120x180?text=N/A'">
+                    <div style="padding:10px 12px;">
+                        <p style="font-size:0.85rem; font-weight:600; margin:0 0 4px; line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${libro.titulo}</p>
+                        <p style="font-size:0.75rem; color:#64748b; margin:0 0 4px;">${libro.autor ?? ""}</p>
+                        ${libro.precio ? `<p style="font-size:0.8rem; font-weight:600; color:#a0784c; margin:0;">$${Number(libro.precio).toFixed(2)}</p>` : ""}
+                    </div>
+                </div>`;
+        });
+    } catch (e) {
+        console.error("Error cargando recomendaciones:", e);
+    }
+}
+
+async function cargarPuntos() {
+    const cliente = getClienteLogueado();
+    if (!cliente) return;
+
+    const seccion = document.getElementById("seccionPuntos");
+    seccion.style.display = "block";
+
+    try {
+        // Cargar puntos totales
+        const resPuntos = await fetch(`/puntos/${encodeURIComponent(cliente.correo_electronico)}`);
+        const dataPuntos = await resPuntos.json();
+        const puntos = dataPuntos.puntos || 0;
+        document.getElementById("totalPuntos").textContent = puntos;
+        document.getElementById("descuentoDisponible").textContent = (puntos / 10).toFixed(2);
+
+        // Cargar historial
+        const resHistorial = await fetch(`/puntos/${encodeURIComponent(cliente.correo_electronico)}/historial`);
+        const historial = await resHistorial.json();
+        const tabla = document.getElementById("tablaHistorialPuntos");
+        tabla.innerHTML = "";
+
+        if (historial.length === 0) {
+            tabla.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#64748b;">Aún no tienes puntos.</td></tr>`;
+            return;
+        }
+
+        historial.forEach(h => {
+            const fecha = new Date(h.fecha).toLocaleDateString("es-MX");
+            tabla.innerHTML += `
+                <tr>
+                    <td class="fecha">${fecha}</td>
+                    <td>$${Number(h.total_pagado).toFixed(2)}</td>
+                    <td style="font-weight:600; color:#a0784c;">+${h.puntos_ganados}</td>
+                </tr>`;
+        });
+    } catch (e) {
+        console.error("Error cargando puntos:", e);
+    }
+}
+
+async function cargarDonaciones() {
+    const cliente = getClienteLogueado();
+    if (!cliente) return;
+
+    const seccion = document.getElementById("seccionDonaciones");
+    seccion.style.display = "block";
+
+    try {
+        const res = await fetch(`/donaciones/${encodeURIComponent(cliente.correo_electronico)}`);
+        const data = await res.json();
+        const tabla = document.getElementById("tablaDonaciones");
+        const vacio = document.getElementById("donacionesVacio");
+        tabla.innerHTML = "";
+
+        if (!data.length) {
+            vacio.style.display = "block";
+            return;
+        }
+
+        vacio.style.display = "none";
+
+        data.forEach(d => {
+            const fecha = new Date(d.fecha).toLocaleDateString("es-MX");
+            tabla.innerHTML += `
+                <tr>
+                    <td class="fecha">${fecha}</td>
+                    <td>${d.titulo}</td>
+                    <td>${d.autor ?? "—"}</td>
+                    <td>${d.cantidad}</td>
+                    <td style="font-weight:600; color:#a0784c;">+${d.puntos_otorgados}</td>
+                </tr>`;
+        });
+    } catch (e) {
+        console.error("Error cargando donaciones:", e);
+    }
+}
+
+async function cargarFavoritos() {
+    const cliente = getClienteLogueado();
+    if (!cliente) return;
+
+    const seccion = document.getElementById("seccionFavoritos");
+    seccion.style.display = "block";
+
+    try {
+        const res = await fetch(`/favoritos/${encodeURIComponent(cliente.correo_electronico)}`);
+        const data = await res.json();
+        const tabla = document.getElementById("tablaFavoritos");
+        const vacio = document.getElementById("favoritosVacio");
+        tabla.innerHTML = "";
+
+        if (!data.length) {
+            vacio.style.display = "block";
+            return;
+        }
+
+        vacio.style.display = "none";
+
+        data.forEach(fav => {
+            const portada = fav.isbn && fav.isbn !== "Sin ISBN"
+                ? `https://covers.openlibrary.org/b/isbn/${fav.isbn}-M.jpg`
+                : "https://via.placeholder.com/56x80?text=N/A";
+
+            const fecha = fav.fecha_agregado
+                ? new Date(fav.fecha_agregado).toLocaleDateString("es-MX")
+                : "—";
+
+            tabla.innerHTML += `
+                <tr>
+                    <td style="width:72px; min-width:72px;">
+                        <img class="book-cover" src="${portada}"
+                            alt="Portada de ${fav.titulo}"
+                            width="56" height="80"
+                            style="display:block;"
+                            onerror="this.src='https://via.placeholder.com/56x80?text=N/A'">
+                    </td>
+                    <td>${fav.isbn}</td>
+                    <td>${fav.titulo}</td>
+                    <td>${fav.autor ?? "—"}</td>
+                    <td class="fecha">${fecha}</td>
+                    <td>
+                        <button class="btn-danger btn-sm" onclick="quitarFavorito('${fav.isbn}')">
+                            Quitar ♥
+                        </button>
+                    </td>
+                </tr>`;
+        });
+    } catch (e) {
+        console.error("Error cargando favoritos:", e);
+    }
+}
+
+async function quitarFavorito(isbn) {
+    const cliente = getClienteLogueado();
+    if (!cliente) return;
+
+    try {
+        await fetch(`/favoritos/${encodeURIComponent(cliente.correo_electronico)}/${encodeURIComponent(isbn)}`, {
+            method: "DELETE"
+        });
+        cargarFavoritos();
+        mostrarMensaje("Libro eliminado de favoritos.", "exito");
+    } catch (e) {
+        console.error("Error al quitar favorito:", e);
+        mostrarMensaje("Error al quitar favorito.", "error");
+    }
+}
 
 inputBusqueda.addEventListener("input", () => {
     clearTimeout(temporizador);

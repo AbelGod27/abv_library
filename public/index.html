@@ -36,52 +36,207 @@
     </div>
 </section>
 
-<!-- ROLE CARDS -->
+<!-- CATÁLOGO DE LIBROS -->
 <main class="marketplace-main">
-    <h2 class="section-title">Accede según tu rol</h2>
+    <h2 class="section-title">Catálogo de Libros</h2>
 
-    <div class="role-cards">
-
-        <a href="/cliente/cliente.html" class="role-card">
-            <div class="role-card-img">
-                <span class="role-icon">�</span>
-            </div>
-            <div class="role-card-body">
-                <h3>Cliente</h3>
-                <p>Consulta el catálogo de libros disponibles y tu historial.</p>
-            </div>
-            <span class="role-card-action">Entrar →</span>
-        </a>
-
-        <a href="/bibliotecario/login.html" class="role-card">
-            <div class="role-card-img">
-                <span class="role-icon">📖</span>
-            </div>
-            <div class="role-card-body">
-                <h3>Bibliotecario</h3>
-                <p>Registra ventas, préstamos y consulta el historial.</p>
-            </div>
-            <span class="role-card-action">Iniciar sesión →</span>
-        </a>
-
-        <a href="/admin/login.html" class="role-card">
-            <div class="role-card-img">
-                <span class="role-icon">🛡️</span>
-            </div>
-            <div class="role-card-body">
-                <h3>Administrador</h3>
-                <p>Gestiona libros, empleados, clientes y proveedores.</p>
-            </div>
-            <span class="role-card-action">Iniciar sesión →</span>
-        </a>
-
+    <div class="catalogo-controles">
+        <div class="search-bar">
+            <input type="text" id="buscarLibro" placeholder="🔍  Buscar por título, autor, ISBN...">
+        </div>
+        <div class="contenedor-switch">
+            <span>Local</span>
+            <label class="switch">
+                <input type="checkbox" id="switchLibros" checked aria-label="Cambiar fuente de libros">
+                <span class="slider"></span>
+            </label>
+            <span>Global</span>
+        </div>
     </div>
+
+    <div class="catalogo-grid" id="catalogoGrid">
+        <!-- Las tarjetas de libros se generan dinámicamente -->
+    </div>
+
+    <p id="catalogoMensaje" class="catalogo-mensaje"></p>
 </main>
 
 <!-- FOOTER -->
 <footer class="marketplace-footer">
     <p>© 2025 ABV Library. Todos los derechos reservados.</p>
 </footer>
+
+<script>
+const inputBusqueda = document.getElementById("buscarLibro");
+const searchNavbar = document.getElementById("searchInput");
+const switchLibros = document.getElementById("switchLibros");
+const catalogoGrid = document.getElementById("catalogoGrid");
+const catalogoMensaje = document.getElementById("catalogoMensaje");
+let temporizador;
+let fuenteActual = "api";
+let favoritos = new Set(); // ISBNs favoritos del cliente logueado
+
+// Obtener cliente logueado desde localStorage
+function getClienteLogueado() {
+    const data = localStorage.getItem("cliente");
+    if (!data) return null;
+    try { return JSON.parse(data); } catch { return null; }
+}
+
+async function cargarFavoritos() {
+    const cliente = getClienteLogueado();
+    if (!cliente) return;
+    try {
+        const res = await fetch(`/favoritos/${encodeURIComponent(cliente.correo_electronico)}`);
+        const data = await res.json();
+        favoritos = new Set(data.map(f => f.isbn));
+    } catch (e) {
+        console.error("Error cargando favoritos:", e);
+    }
+}
+
+async function toggleFavorito(isbn, titulo, autor, btn) {
+    const cliente = getClienteLogueado();
+    if (!cliente) {
+        alert("Inicia sesión como cliente para guardar favoritos.");
+        return;
+    }
+
+    if (!isbn || isbn === "Sin ISBN") {
+        alert("Este libro no tiene ISBN y no se puede agregar a favoritos.");
+        return;
+    }
+
+    const esFavorito = favoritos.has(isbn);
+
+    try {
+        if (esFavorito) {
+            await fetch(`/favoritos/${encodeURIComponent(cliente.correo_electronico)}/${encodeURIComponent(isbn)}`, {
+                method: "DELETE"
+            });
+            favoritos.delete(isbn);
+            btn.classList.remove("activo");
+            btn.title = "Agregar a favoritos";
+        } else {
+            await fetch("/favoritos", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    correo_cliente: cliente.correo_electronico,
+                    isbn,
+                    titulo,
+                    autor
+                })
+            });
+            favoritos.add(isbn);
+            btn.classList.add("activo");
+            btn.title = "Quitar de favoritos";
+        }
+    } catch (e) {
+        console.error("Error al actualizar favorito:", e);
+    }
+}
+
+window.onload = async () => {
+    const params = new URLSearchParams(window.location.search);
+    const buscarParam = params.get("buscar") || "";
+    if (buscarParam) {
+        inputBusqueda.value = buscarParam;
+    }
+    await cargarFavoritos();
+    cargarLibros(inputBusqueda.value);
+};
+
+// Búsqueda desde el input del catálogo
+inputBusqueda.addEventListener("input", () => {
+    clearTimeout(temporizador);
+    temporizador = setTimeout(() => cargarLibros(inputBusqueda.value), 500);
+});
+
+// Búsqueda desde el navbar (sin redirigir)
+document.querySelector(".navbar-search").addEventListener("submit", (e) => {
+    e.preventDefault();
+    inputBusqueda.value = searchNavbar.value;
+    cargarLibros(searchNavbar.value);
+});
+
+switchLibros.addEventListener("change", () => {
+    fuenteActual = switchLibros.checked ? "api" : "db";
+    inputBusqueda.value = "";
+    cargarLibros("");
+});
+
+async function cargarLibros(busqueda) {
+    try {
+        const url = fuenteActual === "db"
+            ? `/libros?buscar=${encodeURIComponent(busqueda)}`
+            : `/api/libros-externos?buscar=${encodeURIComponent(busqueda)}`;
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        catalogoGrid.innerHTML = "";
+        catalogoMensaje.textContent = "";
+
+        if (data.error) {
+            catalogoMensaje.textContent = data.error;
+            return;
+        }
+
+        if (data.length === 0) {
+            catalogoMensaje.textContent = "No se encontraron libros.";
+            return;
+        }
+
+        data.forEach(libro => {
+            const portada = libro.isbn && libro.isbn !== "Sin ISBN"
+                ? `https://covers.openlibrary.org/b/isbn/${libro.isbn}-M.jpg`
+                : "https://via.placeholder.com/120x180?text=N/A";
+
+            const anio = libro.anio_publicacion
+                ? (String(libro.anio_publicacion).includes("T")
+                    ? String(libro.anio_publicacion).split("T")[0]
+                    : libro.anio_publicacion)
+                : "";
+
+            const esFav = favoritos.has(libro.isbn);
+
+            const card = document.createElement("div");
+            card.className = "libro-card";
+            card.innerHTML = `
+                <div class="libro-card-img-wrapper">
+                    <img class="libro-card-img" src="${portada}"
+                        alt="Portada de ${libro.titulo}"
+                        onerror="this.src='https://via.placeholder.com/120x180?text=N/A'">
+                    <button class="btn-favorito ${esFav ? 'activo' : ''}"
+                        title="${esFav ? 'Quitar de favoritos' : 'Agregar a favoritos'}"
+                        aria-label="${esFav ? 'Quitar de favoritos' : 'Agregar a favoritos'}">
+                        ♥
+                    </button>
+                </div>
+                <div class="libro-card-body">
+                    <h3 class="libro-card-titulo">${libro.titulo ?? "Sin título"}</h3>
+                    <p class="libro-card-autor">${libro.autor ?? "Autor desconocido"}</p>
+                    <p class="libro-card-meta">${libro.editorial ?? ""} ${anio ? "· " + anio : ""}</p>
+                    ${libro.precio ? `<p class="libro-card-precio">$${Number(libro.precio).toFixed(2)}</p>` : ""}
+                </div>
+            `;
+
+            // Evento del botón favorito
+            const btnFav = card.querySelector(".btn-favorito");
+            btnFav.addEventListener("click", (e) => {
+                e.stopPropagation();
+                toggleFavorito(libro.isbn, libro.titulo, libro.autor, btnFav);
+            });
+
+            catalogoGrid.appendChild(card);
+        });
+    } catch (error) {
+        console.error(error);
+        catalogoMensaje.textContent = "Error al cargar los libros.";
+    }
+}
+</script>
 
 </body>
 </html>

@@ -52,12 +52,35 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
                 <label for="anio_publicacion">Año de publicación</label>
                 <input type="date" id="anio_publicacion">
             </div>
+            <div class="form-group">
+                <label for="precio">Precio ($)</label>
+                <input type="number" id="precio" step="0.01" min="0" placeholder="0.00">
+            </div>
         </div>
 
         <div class="form-actions">
             <button type="button" id="btnAgregarLibro" onclick="agregarLibro()">Agregar Libro</button>
             <button type="button" id="btnActualizarLibro" onclick="actualizarLibro()" style="display:none;">Guardar Cambios</button>
             <button type="button" id="btnCancelarEdicion" class="btn-secondary" onclick="cancelarEdicion()" style="display:none;">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- IMPORTAR DESDE OPEN LIBRARY -->
+    <div class="card">
+        <h2>📥 Importar desde Open Library</h2>
+        <p style="color:#64748b; margin-bottom:16px; font-size:0.9rem;">
+            Busca libros en Open Library e impórtalos a tu base de datos local. Se importan hasta 50 libros que tengan ISBN.
+        </p>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="buscarImportar">Término de búsqueda</label>
+                <input type="text" id="buscarImportar" placeholder="Ej: science fiction, Gabriel García Márquez...">
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" onclick="importarOpenLibrary()">Importar Libros</button>
         </div>
     </div>
 
@@ -79,6 +102,7 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
                         <th>Editorial</th>
                         <th>Versión</th>
                         <th>Año</th>
+                        <th>Precio</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -108,7 +132,7 @@ async function cargarLibros(busqueda) {
         tabla.innerHTML = "";
 
         if (data.length === 0) {
-            tabla.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">No se encontraron libros</td></tr>`;
+            tabla.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--text-muted)">No se encontraron libros</td></tr>`;
             return;
         }
 
@@ -121,10 +145,11 @@ async function cargarLibros(busqueda) {
                     <td>${libro.editorial ?? "—"}</td>
                     <td>${libro.version ?? "—"}</td>
                     <td class="fecha">${formatFecha(libro.anio_publicacion)}</td>
+                    <td>$${Number(libro.precio || 0).toFixed(2)}</td>
                     <td>
                         <div class="td-actions">
                             <button class="btn-secondary btn-sm" type="button"
-                                onclick="cargarDatosEditar('${libro.isbn}','${libro.titulo}','${libro.autor}','${libro.editorial ?? ""}','${libro.version ?? ""}','${libro.anio_publicacion ?? ""}')">
+                                onclick="cargarDatosEditar('${libro.isbn}','${libro.titulo}','${libro.autor}','${libro.editorial ?? ""}','${libro.version ?? ""}','${libro.anio_publicacion ?? ""}','${libro.precio ?? 0}')">
                                 ✏️ Editar
                             </button>
                             <button class="btn-danger btn-sm" type="button" onclick="eliminarLibro('${libro.isbn}')">
@@ -173,13 +198,14 @@ async function eliminarLibro(isbn) {
     }
 }
 
-function cargarDatosEditar(isbn, titulo, autor, editorial, version, anio_publicacion) {
+function cargarDatosEditar(isbn, titulo, autor, editorial, version, anio_publicacion, precio) {
     document.getElementById("isbn").value = isbn;
     document.getElementById("titulo").value = titulo;
     document.getElementById("autor").value = autor;
     document.getElementById("editorial").value = editorial;
     document.getElementById("version").value = version;
     document.getElementById("anio_publicacion").value = anio_publicacion?.split("T")[0] || "";
+    document.getElementById("precio").value = precio || "";
     document.getElementById("isbn").disabled = true;
     document.getElementById("formTitulo").textContent = "Editar Libro";
     document.getElementById("btnAgregarLibro").style.display = "none";
@@ -217,12 +243,13 @@ function obtenerDatosLibro() {
         autor:            document.getElementById("autor").value,
         editorial:        document.getElementById("editorial").value,
         version:          document.getElementById("version").value,
-        anio_publicacion: document.getElementById("anio_publicacion").value
+        anio_publicacion: document.getElementById("anio_publicacion").value,
+        precio:           document.getElementById("precio").value || 0
     };
 }
 
 function limpiarFormulario() {
-    ["isbn","titulo","autor","editorial","version","anio_publicacion"].forEach(id => {
+    ["isbn","titulo","autor","editorial","version","anio_publicacion","precio"].forEach(id => {
         document.getElementById(id).value = "";
     });
     document.getElementById("isbn").disabled = false;
@@ -245,6 +272,34 @@ function mostrarMensaje(texto, tipo = "error") {
         mensaje.textContent = "";
         mensaje.className = "mensaje";
     }, 4000);
+}
+
+async function importarOpenLibrary() {
+    const buscar = document.getElementById("buscarImportar").value.trim();
+    if (!buscar) {
+        mostrarMensaje("Ingresa un término de búsqueda para importar.");
+        return;
+    }
+
+    mostrarMensaje("Importando libros, espera...", "success");
+
+    try {
+        const response = await fetch("/libros/importar-openlibrary", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ buscar })
+        });
+
+        const data = await response.json();
+        if (data.error) { mostrarMensaje(data.error); return; }
+
+        mostrarMensaje(data.mensaje, "success");
+        document.getElementById("buscarImportar").value = "";
+        cargarLibros("");
+    } catch (error) {
+        console.error(error);
+        mostrarMensaje("Error al importar libros.");
+    }
 }
 </script>
 

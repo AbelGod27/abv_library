@@ -8,6 +8,12 @@ const db = require("./db");
 
 const SALT_ROUNDS = 10;
 
+// Validar formato de correo electrónico
+function esCorreoValido(correo) {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(correo);
+}
+
 const app = express();
 
 app.use(cors());
@@ -71,7 +77,8 @@ app.get("/libros", async (req, res) => {
                 autor,
                 editorial,
                 version,
-                anio_publicacion
+                anio_publicacion,
+                precio
             FROM libro
             WHERE
                 isbn ILIKE $1
@@ -152,7 +159,8 @@ app.post("/libros", async (req, res) => {
             autor,
             editorial,
             version,
-            anio_publicacion
+            anio_publicacion,
+            precio
         } = req.body;
 
         if (!isbn || !titulo || !autor) {
@@ -183,9 +191,10 @@ app.post("/libros", async (req, res) => {
                 autor,
                 editorial,
                 version,
-                anio_publicacion
+                anio_publicacion,
+                precio
             )
-            VALUES ($1, $2, $3, $4, $5, $6)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
         `;
 
         await db.query(insertarSql, [
@@ -194,7 +203,8 @@ app.post("/libros", async (req, res) => {
             autor,
             editorial || null,
             version || null,
-            anio_publicacion || null
+            anio_publicacion || null,
+            precio || 0
         ]);
 
         res.json({
@@ -326,6 +336,12 @@ app.post("/empleados", async (req, res) => {
         if (!correo_electronico || !nombre || !ap_paterno || !fecha_de_nacimiento || !rol || !password) {
             return res.status(400).json({
                 error: "Correo, nombre, apellido paterno, fecha de nacimiento, rol y contraseña son obligatorios."
+            });
+        }
+
+        if (!esCorreoValido(correo_electronico)) {
+            return res.status(400).json({
+                error: "El correo electrónico no tiene un formato válido."
             });
         }
 
@@ -488,6 +504,13 @@ app.post("/login-vendedor", async (req, res) => {
             });
         }
 
+        if (!esCorreoValido(correo_electronico)) {
+            return res.status(400).json({
+                acceso: false,
+                error: "El correo electrónico no tiene un formato válido."
+            });
+        }
+
         const result = await db.query(
             `
             SELECT
@@ -559,6 +582,13 @@ app.post("/login-cliente", async (req, res) => {
             return res.status(400).json({
                 acceso: false,
                 error: "El correo y la contraseña son obligatorios."
+            });
+        }
+
+        if (!esCorreoValido(correo_electronico)) {
+            return res.status(400).json({
+                acceso: false,
+                error: "El correo electrónico no tiene un formato válido."
             });
         }
 
@@ -725,7 +755,8 @@ app.post("/ventas", async (req, res) => {
             metodo_de_pago,
             correo_electronico,
             isbn,
-            cantidad
+            cantidad,
+            correo_cliente
         } = req.body;
         if (
             !total_pagado ||
@@ -739,6 +770,20 @@ app.post("/ventas", async (req, res) => {
                     "Todos los campos son obligatorios."
             });
         }
+
+        // Validar correo del cliente si se proporcionó
+        if (correo_cliente) {
+            const clienteExiste = await db.query(
+                "SELECT correo_electronico FROM cliente WHERE correo_electronico = $1",
+                [correo_cliente]
+            );
+            if (clienteExiste.rows.length === 0) {
+                return res.status(404).json({
+                    error: "El cliente no está registrado."
+                });
+            }
+        }
+
         await db.query("BEGIN");
 
         const stockVenta = await db.query(
@@ -832,13 +877,31 @@ if (
     [cantidad, isbn]
 );
 
+        // Sumar puntos al cliente si se asoció a la venta
+        let puntosGanados = 0;
+        if (correo_cliente) {
+            puntosGanados = Math.floor(Number(total_pagado) / 10);
+            if (puntosGanados > 0) {
+                await db.query(
+                    `UPDATE cliente SET puntos = puntos + $1 WHERE correo_electronico = $2`,
+                    [puntosGanados, correo_cliente]
+                );
+                await db.query(
+                    `INSERT INTO historial_puntos (correo_cliente, id_venta, puntos_ganados)
+                     VALUES ($1, $2, $3)`,
+                    [correo_cliente, idVenta, puntosGanados]
+                );
+            }
+        }
+
         await db.query("COMMIT");
 
         res.json({
             mensaje:
                 "Venta registrada correctamente.",
             id_venta:
-                idVenta
+                idVenta,
+            puntos_ganados: puntosGanados
         });
     }
 
@@ -1377,7 +1440,8 @@ app.put("/libros/:isbn", async (req, res) => {
             autor,
             editorial,
             version,
-            anio_publicacion
+            anio_publicacion,
+            precio
         } = req.body;
 
         if (!titulo || !autor) {
@@ -1394,8 +1458,9 @@ app.put("/libros/:isbn", async (req, res) => {
                 autor = $2,
                 editorial = $3,
                 version = $4,
-                anio_publicacion = $5
-            WHERE isbn = $6
+                anio_publicacion = $5,
+                precio = $6
+            WHERE isbn = $7
             RETURNING *
             `,
             [
@@ -1404,6 +1469,7 @@ app.put("/libros/:isbn", async (req, res) => {
                 editorial || null,
                 version || null,
                 anio_publicacion || null,
+                precio || 0,
                 isbn
             ]
         );
@@ -1558,6 +1624,12 @@ app.post("/registro-cliente", async (req, res) => {
             });
         }
 
+        if (!esCorreoValido(correo_electronico)) {
+            return res.status(400).json({
+                error: "El correo electrónico no tiene un formato válido."
+            });
+        }
+
         if (password.length < 8) {
             return res.status(400).json({
                 error: "La contraseña debe tener al menos 8 caracteres."
@@ -1628,6 +1700,617 @@ app.post("/registro-cliente", async (req, res) => {
         res.status(500).json({
             error: "Error interno al crear la cuenta."
         });
+    }
+});
+
+// =========================
+// IMPORTAR LIBROS DESDE OPEN LIBRARY
+// =========================
+
+app.post("/libros/importar-openlibrary", async (req, res) => {
+    try {
+        const { buscar } = req.body;
+
+        if (!buscar) {
+            return res.status(400).json({
+                error: "Debes proporcionar un término de búsqueda."
+            });
+        }
+
+        const url = "https://openlibrary.org/search.json";
+
+        const response = await axios.get(url, {
+            params: {
+                q: buscar,
+                limit: 50,
+                fields: "title,author_name,first_publish_year,isbn,publisher"
+            }
+        });
+
+        const libros = response.data.docs;
+        let importados = 0;
+        let omitidos = 0;
+
+        for (const libro of libros) {
+            const isbn = libro.isbn ? libro.isbn[0] : null;
+
+            // Solo importar libros que tengan ISBN
+            if (!isbn) {
+                omitidos++;
+                continue;
+            }
+
+            const titulo = libro.title || "Sin título";
+            const autor = libro.author_name
+                ? libro.author_name.join(", ")
+                : "Autor desconocido";
+            const editorial = libro.publisher
+                ? libro.publisher[0]
+                : null;
+            const anio = libro.first_publish_year || null;
+
+            // Verificar si ya existe
+            const existe = await db.query(
+                "SELECT isbn FROM libro WHERE isbn = $1",
+                [isbn]
+            );
+
+            if (existe.rows.length > 0) {
+                omitidos++;
+                continue;
+            }
+
+            await db.query(
+                `INSERT INTO libro (isbn, titulo, autor, editorial, version, anio_publicacion, precio)
+                 VALUES ($1, $2, $3, $4, NULL, $5, 0)`,
+                [isbn, titulo, autor, editorial, anio]
+            );
+
+            importados++;
+        }
+
+        res.json({
+            mensaje: `Importación completada. ${importados} libro(s) importados, ${omitidos} omitidos (sin ISBN o ya existentes).`,
+            importados,
+            omitidos
+        });
+
+    } catch (error) {
+        console.error("Error al importar desde Open Library:", error.message);
+        res.status(500).json({
+            error: "Error al importar libros desde Open Library."
+        });
+    }
+});
+
+// =========================
+// PUNTOS DEL CLIENTE
+// =========================
+
+// Consultar puntos actuales
+app.get("/puntos/:correo", async (req, res) => {
+    try {
+        const correo = req.params.correo;
+
+        const result = await db.query(
+            "SELECT puntos FROM cliente WHERE correo_electronico = $1",
+            [correo]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "Cliente no encontrado." });
+        }
+
+        res.json({ puntos: result.rows[0].puntos || 0 });
+
+    } catch (error) {
+        console.error("Error al consultar puntos:", error);
+        res.status(500).json({ error: "Error al consultar puntos." });
+    }
+});
+
+// Historial de puntos ganados
+app.get("/puntos/:correo/historial", async (req, res) => {
+    try {
+        const correo = req.params.correo;
+
+        const result = await db.query(
+            `
+            SELECT hp.puntos_ganados, hp.fecha, v.total_pagado
+            FROM historial_puntos hp
+            JOIN venta v ON hp.id_venta = v.id_venta
+            WHERE hp.correo_cliente = $1
+            ORDER BY hp.fecha DESC
+            `,
+            [correo]
+        );
+
+        res.json(result.rows);
+
+    } catch (error) {
+        console.error("Error al consultar historial de puntos:", error);
+        res.status(500).json({ error: "Error al consultar historial de puntos." });
+    }
+});
+
+// Canjear puntos (aplicar descuento en una venta)
+// 10 puntos = $1 de descuento
+app.post("/puntos/canjear", async (req, res) => {
+    try {
+        const { correo_cliente, puntos_a_canjear } = req.body;
+
+        if (!correo_cliente || !puntos_a_canjear || puntos_a_canjear <= 0) {
+            return res.status(400).json({
+                error: "Correo del cliente y cantidad de puntos son obligatorios."
+            });
+        }
+
+        const puntos = Math.floor(Number(puntos_a_canjear));
+
+        // Verificar puntos disponibles
+        const result = await db.query(
+            "SELECT puntos FROM cliente WHERE correo_electronico = $1",
+            [correo_cliente]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "Cliente no encontrado." });
+        }
+
+        const puntosDisponibles = result.rows[0].puntos || 0;
+
+        if (puntos > puntosDisponibles) {
+            return res.status(400).json({
+                error: `El cliente solo tiene ${puntosDisponibles} puntos disponibles.`
+            });
+        }
+
+        // Descontar puntos
+        await db.query(
+            "UPDATE cliente SET puntos = puntos - $1 WHERE correo_electronico = $2",
+            [puntos, correo_cliente]
+        );
+
+        const descuento = (puntos / 10).toFixed(2);
+
+        res.json({
+            mensaje: `Se canjearon ${puntos} puntos. Descuento aplicado: $${descuento}`,
+            puntos_canjeados: puntos,
+            descuento: Number(descuento),
+            puntos_restantes: puntosDisponibles - puntos
+        });
+
+    } catch (error) {
+        console.error("Error al canjear puntos:", error);
+        res.status(500).json({ error: "Error al canjear puntos." });
+    }
+});
+
+// =========================
+// PRÉSTAMOS DEL CLIENTE
+// =========================
+
+app.get("/prestamos/cliente/:correo", async (req, res) => {
+    try {
+        const correo = req.params.correo;
+
+        const result = await db.query(`
+            SELECT
+                pr.id_prestamo,
+                pr.dia_de_inicio,
+                pr.dia_de_vencimiento,
+                pr.dia_de_entrega,
+                pr.multa,
+                pr.cantidad_de_libros,
+                lp.isbn,
+                l.titulo,
+                l.autor,
+                CASE
+                    WHEN pr.dia_de_entrega IS NOT NULL THEN 'Devuelto'
+                    WHEN CURRENT_DATE > pr.dia_de_vencimiento THEN 'Vencido'
+                    WHEN (pr.dia_de_vencimiento - CURRENT_DATE) <= 1 THEN 'Por vencer'
+                    ELSE 'Activo'
+                END AS estado,
+                (pr.dia_de_vencimiento - CURRENT_DATE) AS dias_restantes
+            FROM prestamo pr
+            LEFT JOIN lib_pres lp ON lp.id_prestamo = pr.id_prestamo
+            LEFT JOIN libro l ON l.isbn = lp.isbn
+            WHERE pr.correo_cliente = $1
+            ORDER BY pr.id_prestamo DESC
+        `, [correo]);
+
+        res.json(result.rows);
+
+    } catch (error) {
+        console.error("Error al consultar préstamos del cliente:", error);
+        res.status(500).json({ error: "Error al consultar préstamos." });
+    }
+});
+
+// =========================
+// RECOMENDACIONES DE LIBROS
+// =========================
+
+// Recomendar libros basándose en los favoritos y compras del cliente
+// Si no está logueado, devuelve libros populares (más vendidos)
+app.get("/recomendaciones/:correo", async (req, res) => {
+    try {
+        const correo = req.params.correo;
+
+        // Obtener autores de los favoritos del cliente
+        const favAutores = await db.query(
+            `SELECT DISTINCT autor FROM libro_favorito WHERE correo_cliente = $1 AND autor IS NOT NULL`,
+            [correo]
+        );
+
+        // Obtener autores de libros que ha comprado (via ventas asociadas)
+        const compraAutores = await db.query(
+            `SELECT DISTINCT l.autor
+             FROM venta v
+             JOIN historial_puntos hp ON hp.id_venta = v.id_venta AND hp.correo_cliente = $1
+             JOIN lib_venta lv ON lv.id_venta = v.id_venta
+             JOIN libro l ON l.isbn = lv.isbn
+             WHERE l.autor IS NOT NULL`,
+            [correo]
+        );
+
+        // Obtener autores de préstamos del cliente
+        const presAutores = await db.query(
+            `SELECT DISTINCT l.autor
+             FROM prestamo p
+             JOIN lib_pres lp ON lp.id_prestamo = p.id_prestamo
+             JOIN libro l ON l.isbn = lp.isbn
+             WHERE p.correo_cliente = $1 AND l.autor IS NOT NULL`,
+            [correo]
+        );
+
+        // Combinar todos los autores
+        const autoresSet = new Set();
+        [...favAutores.rows, ...compraAutores.rows, ...presAutores.rows].forEach(r => {
+            if (r.autor) autoresSet.add(r.autor);
+        });
+
+        const autores = Array.from(autoresSet);
+
+        let recomendaciones = [];
+
+        if (autores.length > 0) {
+            // Buscar libros de esos autores que el cliente NO tiene en favoritos
+            const placeholders = autores.map((_, i) => `$${i + 2}`).join(", ");
+            const result = await db.query(
+                `SELECT l.isbn, l.titulo, l.autor, l.editorial, l.precio
+                 FROM libro l
+                 WHERE l.autor IN (${placeholders})
+                 AND l.isbn NOT IN (
+                     SELECT isbn FROM libro_favorito WHERE correo_cliente = $1
+                 )
+                 ORDER BY RANDOM()
+                 LIMIT 12`,
+                [correo, ...autores]
+            );
+            recomendaciones = result.rows;
+        }
+
+        // Si no hay suficientes, completar con libros populares
+        if (recomendaciones.length < 12) {
+            const faltan = 12 - recomendaciones.length;
+            const isbnExcluir = recomendaciones.map(r => r.isbn);
+            const excludePlaceholders = isbnExcluir.length > 0
+                ? `AND l.isbn NOT IN (${isbnExcluir.map((_, i) => `$${i + 1}`).join(", ")})`
+                : "";
+
+            const populares = await db.query(
+                `SELECT l.isbn, l.titulo, l.autor, l.editorial, l.precio
+                 FROM libro l
+                 WHERE l.precio > 0 ${excludePlaceholders}
+                 ORDER BY RANDOM()
+                 LIMIT $${isbnExcluir.length + 1}`,
+                [...isbnExcluir, faltan]
+            );
+
+            recomendaciones = [...recomendaciones, ...populares.rows];
+        }
+
+        res.json(recomendaciones);
+
+    } catch (error) {
+        console.error("Error al generar recomendaciones:", error);
+        res.status(500).json({ error: "Error al generar recomendaciones." });
+    }
+});
+
+// Recomendaciones generales (sin login)
+app.get("/recomendaciones", async (req, res) => {
+    try {
+        const result = await db.query(
+            `SELECT isbn, titulo, autor, editorial, precio
+             FROM libro
+             WHERE precio > 0
+             ORDER BY RANDOM()
+             LIMIT 12`
+        );
+
+        res.json(result.rows);
+
+    } catch (error) {
+        console.error("Error al obtener recomendaciones:", error);
+        res.status(500).json({ error: "Error al obtener recomendaciones." });
+    }
+});
+
+// =========================
+// DONACIONES DE LIBROS
+// =========================
+
+// Registrar donación (el bibliotecario registra que un cliente dona libros)
+// Opciones: recibir 20 puntos por libro O intercambiar por otro libro donado
+app.post("/donaciones", async (req, res) => {
+    try {
+        const { correo_cliente, isbn, titulo, autor, cantidad, tipo_recompensa, isbn_intercambio } = req.body;
+
+        if (!correo_cliente || !isbn || !titulo || !cantidad || cantidad < 1) {
+            return res.status(400).json({
+                error: "Correo del cliente, ISBN, título y cantidad son obligatorios."
+            });
+        }
+
+        if (!tipo_recompensa || !["puntos", "intercambio"].includes(tipo_recompensa)) {
+            return res.status(400).json({
+                error: "Debes elegir el tipo de recompensa: puntos o intercambio."
+            });
+        }
+
+        // Verificar que el cliente existe
+        const clienteExiste = await db.query(
+            "SELECT correo_electronico FROM cliente WHERE correo_electronico = $1",
+            [correo_cliente]
+        );
+
+        if (clienteExiste.rows.length === 0) {
+            return res.status(404).json({ error: "El cliente no está registrado." });
+        }
+
+        const cantidadNum = Math.floor(Number(cantidad));
+
+        // Si es intercambio, verificar que el libro solicitado existe en donaciones disponibles
+        if (tipo_recompensa === "intercambio") {
+            if (!isbn_intercambio) {
+                return res.status(400).json({ error: "Debes seleccionar un libro para el intercambio." });
+            }
+
+            const stockDonado = await db.query(
+                `SELECT cantidad FROM lib_venta WHERE isbn = $1 AND id_venta IS NULL`,
+                [isbn_intercambio]
+            );
+
+            if (stockDonado.rows.length === 0 || stockDonado.rows[0].cantidad < 1) {
+                return res.status(400).json({ error: "El libro seleccionado para intercambio no tiene stock disponible." });
+            }
+        }
+
+        await db.query("BEGIN");
+
+        let puntosOtorgados = 0;
+
+        if (tipo_recompensa === "puntos") {
+            puntosOtorgados = cantidadNum * 20;
+
+            // Sumar puntos al cliente
+            await db.query(
+                "UPDATE cliente SET puntos = puntos + $1 WHERE correo_electronico = $2",
+                [puntosOtorgados, correo_cliente]
+            );
+        } else {
+            // Intercambio: descontar 1 unidad del libro solicitado
+            await db.query(
+                "UPDATE lib_venta SET cantidad = cantidad - 1 WHERE isbn = $1 AND id_venta IS NULL",
+                [isbn_intercambio]
+            );
+        }
+
+        // Registrar la donación
+        await db.query(
+            `INSERT INTO donacion (correo_cliente, isbn, titulo, autor, cantidad, puntos_otorgados)
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [correo_cliente, isbn, titulo, autor || null, cantidadNum, puntosOtorgados]
+        );
+
+        // Agregar el libro donado a la base si no existe
+        const libroExiste = await db.query(
+            "SELECT isbn FROM libro WHERE isbn = $1",
+            [isbn]
+        );
+
+        if (libroExiste.rows.length === 0) {
+            await db.query(
+                `INSERT INTO libro (isbn, titulo, autor, editorial, version, anio_publicacion, precio)
+                 VALUES ($1, $2, $3, NULL, NULL, NULL, 0)`,
+                [isbn, titulo, autor || "Autor desconocido"]
+            );
+        }
+
+        // Agregar stock para venta
+        const stockVenta = await db.query(
+            "SELECT cantidad FROM lib_venta WHERE isbn = $1 AND id_venta IS NULL",
+            [isbn]
+        );
+
+        if (stockVenta.rows.length > 0) {
+            await db.query(
+                "UPDATE lib_venta SET cantidad = cantidad + $1 WHERE isbn = $2 AND id_venta IS NULL",
+                [cantidadNum, isbn]
+            );
+        } else {
+            await db.query(
+                "INSERT INTO lib_venta (cantidad, id_venta, isbn) VALUES ($1, NULL, $2)",
+                [cantidadNum, isbn]
+            );
+        }
+
+        // Agregar stock para préstamo
+        const stockPres = await db.query(
+            "SELECT cantidad FROM lib_pres WHERE isbn = $1 AND id_prestamo IS NULL",
+            [isbn]
+        );
+
+        if (stockPres.rows.length > 0) {
+            await db.query(
+                "UPDATE lib_pres SET cantidad = cantidad + $1 WHERE isbn = $2 AND id_prestamo IS NULL",
+                [cantidadNum, isbn]
+            );
+        } else {
+            await db.query(
+                "INSERT INTO lib_pres (cantidad, id_prestamo, isbn) VALUES ($1, NULL, $2)",
+                [cantidadNum, isbn]
+            );
+        }
+
+        await db.query("COMMIT");
+
+        if (tipo_recompensa === "puntos") {
+            res.json({
+                mensaje: `Donación registrada. El cliente recibió ${puntosOtorgados} puntos.`,
+                puntos_otorgados: puntosOtorgados,
+                tipo: "puntos"
+            });
+        } else {
+            res.json({
+                mensaje: `Donación registrada. El cliente recibió un libro a cambio.`,
+                tipo: "intercambio",
+                isbn_intercambio
+            });
+        }
+
+    } catch (error) {
+        await db.query("ROLLBACK");
+        console.error("Error al registrar donación:", error);
+        res.status(500).json({ error: "Error al registrar la donación." });
+    }
+});
+
+// Consultar libros disponibles para intercambio (solo libros que han sido donados)
+app.get("/donaciones/libros-disponibles", async (req, res) => {
+    try {
+        const result = await db.query(`
+            SELECT d.isbn, d.titulo, d.autor, SUM(d.cantidad) AS total_donado
+            FROM donacion d
+            GROUP BY d.isbn, d.titulo, d.autor
+            HAVING SUM(d.cantidad) > 0
+            ORDER BY d.titulo
+        `);
+
+        res.json(result.rows);
+
+    } catch (error) {
+        console.error("Error al consultar libros disponibles:", error);
+        res.status(500).json({ error: "Error al consultar libros disponibles." });
+    }
+});
+
+// Consultar donaciones de un cliente
+app.get("/donaciones/:correo", async (req, res) => {
+    try {
+        const correo = req.params.correo;
+
+        const result = await db.query(
+            `SELECT id_donacion, isbn, titulo, autor, cantidad, puntos_otorgados, fecha
+             FROM donacion
+             WHERE correo_cliente = $1
+             ORDER BY fecha DESC`,
+            [correo]
+        );
+
+        res.json(result.rows);
+
+    } catch (error) {
+        console.error("Error al consultar donaciones:", error);
+        res.status(500).json({ error: "Error al consultar donaciones." });
+    }
+});
+
+// =========================
+// LIBROS FAVORITOS
+// =========================
+
+// Consultar favoritos de un cliente
+app.get("/favoritos/:correo", async (req, res) => {
+    try {
+        const correo = req.params.correo;
+
+        const result = await db.query(
+            `
+            SELECT isbn, titulo, autor, fecha_agregado
+            FROM libro_favorito
+            WHERE correo_cliente = $1
+            ORDER BY fecha_agregado DESC
+            `,
+            [correo]
+        );
+
+        res.json(result.rows);
+
+    } catch (error) {
+        console.error("Error al consultar favoritos:", error);
+        res.status(500).json({ error: "Error al consultar favoritos." });
+    }
+});
+
+// Agregar libro a favoritos
+app.post("/favoritos", async (req, res) => {
+    try {
+        const { correo_cliente, isbn, titulo, autor } = req.body;
+
+        if (!correo_cliente || !isbn || !titulo) {
+            return res.status(400).json({
+                error: "Correo, ISBN y título son obligatorios."
+            });
+        }
+
+        // Verificar que el cliente existe
+        const existe = await db.query(
+            "SELECT correo_electronico FROM cliente WHERE correo_electronico = $1",
+            [correo_cliente]
+        );
+
+        if (existe.rows.length === 0) {
+            return res.status(404).json({ error: "El cliente no existe." });
+        }
+
+        await db.query(
+            `
+            INSERT INTO libro_favorito (correo_cliente, isbn, titulo, autor)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (correo_cliente, isbn) DO NOTHING
+            `,
+            [correo_cliente, isbn, titulo, autor || null]
+        );
+
+        res.json({ mensaje: "Libro agregado a favoritos." });
+
+    } catch (error) {
+        console.error("Error al agregar favorito:", error);
+        res.status(500).json({ error: "Error al agregar favorito." });
+    }
+});
+
+// Eliminar libro de favoritos
+app.delete("/favoritos/:correo/:isbn", async (req, res) => {
+    try {
+        const { correo, isbn } = req.params;
+
+        await db.query(
+            `
+            DELETE FROM libro_favorito
+            WHERE correo_cliente = $1 AND isbn = $2
+            `,
+            [correo, isbn]
+        );
+
+        res.json({ mensaje: "Libro eliminado de favoritos." });
+
+    } catch (error) {
+        console.error("Error al eliminar favorito:", error);
+        res.status(500).json({ error: "Error al eliminar favorito." });
     }
 });
 

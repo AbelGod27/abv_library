@@ -85,6 +85,12 @@ async function registrar() {
         return;
     }
 
+    const regexCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!regexCorreo.test(correo)) {
+        mostrarMensaje("Ingresa un correo electrónico válido.", "error");
+        return;
+    }
+
     if (password.length < 8) {
         mostrarMensaje("La contraseña debe tener al menos 8 caracteres.", "error");
         return;
