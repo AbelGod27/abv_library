@@ -1430,13 +1430,13 @@ app.post("/clientes", async (req, res) => {
             password
         } = req.body;
 
-        if (!correo_electronico || !nombre || !ap_paterno || !fecha_de_nacimiento || !password) {
+        if (!correo_electronico || !nombre || !ap_paterno || !fecha_de_nacimiento) {
             return res.status(400).json({
-                error: "Correo, nombre, apellido paterno, fecha de nacimiento y contraseña son obligatorios."
+                error: "Correo, nombre, apellido paterno y fecha de nacimiento son obligatorios."
             });
         }
 
-        if (password.length < 8) {
+        if (password && password.length < 8) {
             return res.status(400).json({
                 error: "La contraseña debe tener al menos 8 caracteres."
             });
@@ -1453,7 +1453,7 @@ app.post("/clientes", async (req, res) => {
             });
         }
 
-        const contrasena_hash = await bcrypt.hash(password, SALT_ROUNDS);
+        const contrasena_hash = password ? await bcrypt.hash(password, SALT_ROUNDS) : null;
 
         await db.query("BEGIN");
 
