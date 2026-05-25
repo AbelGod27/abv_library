@@ -183,6 +183,7 @@
                         <th>Editorial</th>
                         <th>Versión</th>
                         <th>Año</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody id="tablaLibros"></tbody>
@@ -390,7 +391,7 @@ async function cargarRecomendaciones() {
                     <img src="${portada}" alt="${libro.titulo}"
                         style="width:100%; height:180px; object-fit:cover; background:#f1ebe4;"
                         onerror="this.src='https://via.placeholder.com/120x180?text=N/A'">
-                    ${cliente ? `<button onclick="agregarFavoritoRecomendacion('${libro.isbn}','${(libro.titulo||'').replace(/'/g,"\\'")}','${(libro.autor||'').replace(/'/g,"\\'")}')" style="position:absolute; top:8px; right:8px; width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,.9); border:none; cursor:pointer; font-size:1rem; color:#e74c3c; box-shadow:0 2px 4px rgba(0,0,0,.1); display:flex; align-items:center; justify-content:center; min-width:auto; padding:0;">♥</button>` : ''}
+                    ${cliente ? `<button onclick="agregarFavoritoRecomendacion('${libro.isbn}','${(libro.titulo||'').replace(/'/g,"\\'")}','${(libro.autor||'').replace(/'/g,"\\'")}')" style="position:absolute; top:8px; right:8px; width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,.9); border:none; cursor:pointer; font-size:1rem; color:#cbd5e1; box-shadow:0 2px 4px rgba(0,0,0,.1); display:flex; align-items:center; justify-content:center; min-width:auto; padding:0; transition:color .2s;" onmouseover="this.style.color='#e74c3c'" onmouseout="this.style.color='#cbd5e1'">♥</button>` : ''}
                     <div style="padding:10px 12px;">
                         <p style="font-size:0.85rem; font-weight:600; margin:0 0 4px; line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${libro.titulo}</p>
                         <p style="font-size:0.75rem; color:#64748b; margin:0 0 4px;">${libro.autor ?? ""}</p>
@@ -580,19 +581,25 @@ async function cargarLibros(busqueda) {
         tabla.innerHTML = "";
 
         if (data.error) {
-            tabla.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">${data.error}</td></tr>`;
+            tabla.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--text-muted)">${data.error}</td></tr>`;
             return;
         }
 
         if (data.length === 0) {
-            tabla.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">No se encontraron libros</td></tr>`;
+            tabla.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--text-muted)">No se encontraron libros</td></tr>`;
             return;
         }
+
+        const cliente = getClienteLogueado();
 
         data.forEach(libro => {
             const portada = libro.isbn && libro.isbn !== "Sin ISBN"
                 ? `https://covers.openlibrary.org/b/isbn/${libro.isbn}-M.jpg`
                 : "https://via.placeholder.com/56x80?text=N/A";
+
+            const btnFav = cliente && libro.isbn && libro.isbn !== "Sin ISBN"
+                ? `<button onclick="agregarFavoritoRecomendacion('${libro.isbn}','${(libro.titulo||'').replace(/'/g,"\\'")}','${(libro.autor||'').replace(/'/g,"\\'")}')" style="background:none; border:none; cursor:pointer; font-size:1.2rem; color:#cbd5e1; min-width:auto; padding:4px; box-shadow:none; transition:color .2s;" onmouseover="this.style.color='#e74c3c'" onmouseout="this.style.color='#cbd5e1'">♥</button>`
+                : '';
 
             tabla.innerHTML += `
                 <tr>
@@ -609,6 +616,7 @@ async function cargarLibros(busqueda) {
                     <td>${libro.editorial ?? "—"}</td>
                     <td>${libro.version ?? "—"}</td>
                     <td class="fecha">${formatFecha(libro.anio_publicacion)}</td>
+                    <td>${btnFav}</td>
                 </tr>`;
         });
     } catch (error) {
