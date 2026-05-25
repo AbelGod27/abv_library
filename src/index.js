@@ -47,9 +47,9 @@ function esCorreoValido(correo) {
 }
 
 // Función auxiliar para validar que un nombre solo contenga letras, espacios y acentos
-// Además debe tener al menos 2 caracteres
+// Además debe tener al menos 3 caracteres
 function esNombreValido(nombre) {
-    if (nombre.length < 2) return false;
+    if (nombre.length < 3) return false;
     const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
     return regex.test(nombre);
 }
