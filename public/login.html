@@ -26,8 +26,13 @@
 
             <div class="form-group">
                 <label for="password">Contraseña</label>
-                <input type="password" id="password" placeholder="••••••••" autocomplete="current-password"
-                    onkeydown="if(event.key==='Enter') iniciarSesion()">
+                <div style="position:relative;">
+                    <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" style="padding-right:40px;"
+                        onkeydown="if(event.key==='Enter') iniciarSesion()">
+                    <button type="button" onclick="togglePass('password', this)" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; padding:4px; box-shadow:none; min-width:auto; color:#64748b;">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
             </div>
 
             <button type="button" class="btn-login" onclick="iniciarSesion()">Ingresar</button>
@@ -147,6 +152,13 @@ function volverPaso1() {
     datosLogin = null;
 }
 
+function togglePass(id, btn) {
+    const input = document.getElementById(id);
+    const icon = btn.querySelector('i');
+    if (input.type === 'password') { input.type = 'text'; icon.className = 'bi bi-eye-slash'; }
+    else { input.type = 'password'; icon.className = 'bi bi-eye'; }
+}
+
 function mostrarMensaje(texto, tipo = "error") {
     const el = document.getElementById("mensaje");
     el.textContent = texto;
@@ -158,5 +170,5 @@ function mostrarMensaje(texto, tipo = "error") {
 }
 </script>
 
-</body>
+<script src="/theme.js"></script></body>
 </html>

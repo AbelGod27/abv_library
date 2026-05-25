@@ -30,10 +30,15 @@
                 <label for="loginCorreo">Correo</label>
                 <input type="email" id="loginCorreo" placeholder="tu@correo.com">
             </div>
-            <div class="form-group" style="margin:0; flex:1; min-width:180px;">
+            <div class="form-group" style="margin:0; flex:1; min-width:180px; position:relative;">
                 <label for="loginPassword">Contraseña</label>
-                <input type="password" id="loginPassword" placeholder="••••••••"
-                    onkeydown="if(event.key==='Enter') loginCliente()">
+                <div style="position:relative;">
+                    <input type="password" id="loginPassword" placeholder="••••••••" style="padding-right:40px;"
+                        onkeydown="if(event.key==='Enter') loginCliente()">
+                    <button type="button" onclick="togglePass('loginPassword', this)" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; padding:4px; box-shadow:none; min-width:auto; color:#64748b;">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
             </div>
             <button onclick="loginCliente()" style="height:40px;">Entrar</button>
         </div>
@@ -600,6 +605,13 @@ function formatFecha(fecha) {
     return str.includes("T") ? str.split("T")[0] : str;
 }
 
+function togglePass(id, btn) {
+    const input = document.getElementById(id);
+    const icon = btn.querySelector('i');
+    if (input.type === 'password') { input.type = 'text'; icon.className = 'bi bi-eye-slash'; }
+    else { input.type = 'password'; icon.className = 'bi bi-eye'; }
+}
+
 function mostrarMensaje(texto, tipo = "error") {
     const mensaje = document.getElementById("mensaje");
     mensaje.textContent = texto;
@@ -611,5 +623,5 @@ function mostrarMensaje(texto, tipo = "error") {
 }
 </script>
 
-</body>
+<script src="/theme.js"></script></body>
 </html>

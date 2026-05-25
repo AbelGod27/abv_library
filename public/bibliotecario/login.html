@@ -24,7 +24,12 @@
 
         <div class="form-group">
             <label for="passwordBibliotecario">Contraseña</label>
-            <input type="password" id="passwordBibliotecario" placeholder="••••••••" autocomplete="current-password">
+            <div style="position:relative;">
+                <input type="password" id="passwordBibliotecario" placeholder="••••••••" autocomplete="current-password" style="padding-right:40px;">
+                <button type="button" onclick="togglePass('passwordBibliotecario', this)" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; padding:4px; box-shadow:none; min-width:auto; color:#64748b;">
+                    <i class="bi bi-eye"></i>
+                </button>
+            </div>
         </div>
 
         <button type="button" class="btn-login" onclick="loginBibliotecario()">Ingresar</button>
@@ -72,6 +77,13 @@ document.getElementById("passwordBibliotecario").addEventListener("keydown", e =
     if (e.key === "Enter") loginBibliotecario();
 });
 
+function togglePass(id, btn) {
+    const input = document.getElementById(id);
+    const icon = btn.querySelector('i');
+    if (input.type === 'password') { input.type = 'text'; icon.className = 'bi bi-eye-slash'; }
+    else { input.type = 'password'; icon.className = 'bi bi-eye'; }
+}
+
 function mostrarMensaje(texto, tipo = "error") {
     const mensaje = document.getElementById("mensaje");
     mensaje.textContent = texto;
@@ -83,5 +95,5 @@ function mostrarMensaje(texto, tipo = "error") {
 }
 </script>
 
-</body>
+<script src="/theme.js"></script></body>
 </html>

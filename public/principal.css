@@ -32,6 +32,65 @@
     --font-serif:  'Montserrat', system-ui, sans-serif;
 }
 
+/* Modo oscuro */
+[data-theme="dark"] {
+    --bg:        #1a1a2e;
+    --surface:   #16213e;
+    --border:    #2a2a4a;
+    --text:      #e0e0e0;
+    --text-muted:#9a9ab0;
+    --color-primary:     #c9956a;
+    --color-primary-dk:  #e0b08a;
+    --color-primary-lt:  #2a2040;
+    --color-success-lt:  #1a2e1a;
+    --color-danger-lt:   #2e1a1a;
+    --shadow:    0 1px 3px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.2);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,.4);
+}
+
+/* Night shift (tonos cálidos, menos luz azul) */
+[data-theme="night"] {
+    --bg:        #1f1a14;
+    --surface:   #2a2218;
+    --border:    #3d3228;
+    --text:      #e8d5c0;
+    --text-muted:#a08060;
+    --color-primary:     #c9956a;
+    --color-primary-dk:  #e0b08a;
+    --color-primary-lt:  #3a2a1a;
+    --color-success-lt:  #2a2a1a;
+    --color-danger-lt:   #3a1a1a;
+    --shadow:    0 1px 3px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.2);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,.4);
+}
+
+/* Botón flotante de tema */
+.theme-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9998;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: var(--shadow-lg);
+    font-size: 1.2rem;
+    color: var(--text);
+    transition: transform .2s;
+    padding: 0;
+    min-width: auto;
+}
+
+.theme-toggle:hover {
+    transform: scale(1.1);
+}
+
 /* --- Reset & Base --- */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -762,7 +821,7 @@ body.marketplace::before {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 16px;
-    justify-items: center;
+    justify-items: stretch;
     max-width: 900px;
     margin: 0 auto;
 }
@@ -775,10 +834,12 @@ body.marketplace::before {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 12px;
     box-shadow: var(--shadow);
     transition: transform .2s, box-shadow .2s;
     text-align: center;
+    min-height: 180px;
 }
 
 .panel-card:hover {
@@ -798,7 +859,8 @@ body.marketplace::before {
     width: 100%;
     justify-content: center;
     font-size: .85rem;
-    padding: 8px 12px;
+    padding: 8px 16px;
+    margin-top: auto;
 }
 
 .panel-info {
