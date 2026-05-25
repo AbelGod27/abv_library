@@ -23,10 +23,29 @@
         <button type="submit" class="btn-search" aria-label="Buscar"><i class="bi bi-search"></i></button>
     </form>
 
-    <div class="navbar-links">
-        <a href="/login.html" class="nav-link"><i class="bi bi-box-arrow-in-right"></i> Iniciar sesión</a>
+    <div class="navbar-links" id="navLinks">
+        <a href="/login.html" class="nav-link" id="btnLogin"><i class="bi bi-box-arrow-in-right"></i> Iniciar sesión</a>
+        <a href="/cliente/cliente.html" class="nav-link" id="btnMiCuenta" style="display:none;"><i class="bi bi-person"></i> Mi cuenta</a>
+        <a href="#" class="nav-link" id="btnLogout" style="display:none;" onclick="cerrarSesionIndex()"><i class="bi bi-box-arrow-right"></i> Cerrar sesión</a>
     </div>
 </nav>
+
+<script>
+// Mostrar/ocultar botones según sesión del cliente
+(function() {
+    const cliente = localStorage.getItem("cliente");
+    if (cliente) {
+        document.getElementById("btnLogin").style.display = "none";
+        document.getElementById("btnMiCuenta").style.display = "inline-flex";
+        document.getElementById("btnLogout").style.display = "inline-flex";
+    }
+})();
+
+function cerrarSesionIndex() {
+    localStorage.removeItem("cliente");
+    window.location.reload();
+}
+</script>
 
 <!-- Banner principal (hero) con mensaje de bienvenida -->
 <section class="hero-banner">
