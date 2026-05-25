@@ -71,6 +71,11 @@
     border-color: var(--border);
 }
 
+[data-theme="dark"] select option {
+    background: var(--surface);
+    color: var(--text);
+}
+
 [data-theme="dark"] .panel-card .icon {
     color: #e0b08a;
 }
@@ -112,6 +117,11 @@
     background: var(--bg);
     color: var(--text);
     border-color: var(--border);
+}
+
+[data-theme="night"] select option {
+    background: var(--surface);
+    color: var(--text);
 }
 
 [data-theme="night"] .panel-card .icon {
