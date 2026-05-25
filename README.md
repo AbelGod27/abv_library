@@ -371,7 +371,7 @@ $2b$10$ID8ndfLLHbTeTr8PzDew0u50U4MY7Psdb6Yi8aYVwzfbPHWkuKpnG
 
 ## Autor
 
-Desarrollado por **Abel God** como proyecto académico de Base de Datos.
+Desarrollado por **Abel Pineda** y **Vanya Castillo** como proyecto académico de Base de Datos.
 
 ---
 
