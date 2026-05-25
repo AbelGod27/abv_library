@@ -328,16 +328,27 @@ tbody tr:hover { background: #f8fafc; }
    ============================================= */
 .mensaje {
     display: none;
-    width: 100%;
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    width: auto;
     max-width: 600px;
-    margin: 0 auto;
-    padding: 13px 20px;
+    min-width: 300px;
+    padding: 14px 24px;
     border-radius: var(--radius);
     font-size: .92rem;
     font-weight: 600;
     text-align: center;
     border-left: 4px solid transparent;
-    transition: opacity .3s;
+    box-shadow: 0 4px 20px rgba(0,0,0,.15);
+    animation: slideDown .3s ease;
+}
+
+@keyframes slideDown {
+    from { transform: translateX(-50%) translateY(-20px); opacity: 0; }
+    to { transform: translateX(-50%) translateY(0); opacity: 1; }
 }
 
 .mensaje.mostrar { display: block; }
@@ -348,7 +359,7 @@ tbody tr:hover { background: #f8fafc; }
     border-left-color: var(--color-danger);
 }
 
-.mensaje.success {
+.mensaje.success, .mensaje.exito {
     background: var(--color-success-lt);
     color: var(--color-success);
     border-left-color: var(--color-success);
