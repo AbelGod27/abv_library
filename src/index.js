@@ -302,9 +302,8 @@ app.get("/api/libros-externos", async (req, res) => {
     } catch (error) {
         console.error("Error API externa:", error.message);
 
-        res.status(500).json({
-            error: "Error al consultar API externa."
-        });
+        // Devolver array vacío en vez de error 500 para que el frontend no se rompa
+        res.json([]);
     }
 });
 
