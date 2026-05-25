@@ -16,7 +16,10 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
 
 <header class="page-header">
     <h1><i class="bi bi-shield-lock"></i> Panel de Administrador</h1>
-    <button class="btn-secondary btn-sm" onclick="cerrarSesion()">Cerrar sesión</button>
+    <div style="display:flex; gap:8px;">
+        <button class="btn-secondary btn-sm" onclick="cambiarARol('bibliotecario')"><i class="bi bi-arrow-left-right"></i> Ir a Bibliotecario</button>
+        <button class="btn-secondary btn-sm" onclick="cerrarSesion()">Cerrar sesión</button>
+    </div>
 </header>
 
 <main class="page-content">
@@ -57,6 +60,18 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
 function cerrarSesion() {
     sessionStorage.removeItem("adminActivo");
     window.location.href = "/index.html";
+}
+
+function cambiarARol(rol) {
+    if (rol === "bibliotecario") {
+        sessionStorage.setItem("bibliotecarioActivo", "true");
+        if (!sessionStorage.getItem("correoBibliotecario")) {
+            sessionStorage.setItem("correoBibliotecario", "admin");
+            sessionStorage.setItem("nombreBibliotecario", "Administrador");
+            sessionStorage.setItem("rolBibliotecario", "Administrador");
+        }
+        window.location.href = "/bibliotecario/panel.html";
+    }
 }
 
 function mostrarMensaje(texto, tipo = "error") {

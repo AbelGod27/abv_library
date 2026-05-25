@@ -16,7 +16,10 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
 
 <header class="page-header">
     <h1><i class="bi bi-journal-bookmark"></i> Panel Bibliotecario</h1>
-    <button class="btn-secondary btn-sm" onclick="cerrarSesion()">Cerrar sesión</button>
+    <div style="display:flex; gap:8px;">
+        <button class="btn-secondary btn-sm" id="btnIrAdmin" onclick="cambiarARol('admin')" style="display:none;"><i class="bi bi-arrow-left-right"></i> Ir a Admin</button>
+        <button class="btn-secondary btn-sm" onclick="cerrarSesion()">Cerrar sesión</button>
+    </div>
 </header>
 
 <main class="page-content">
@@ -78,6 +81,18 @@ function cerrarSesion() {
     sessionStorage.removeItem("nombreBibliotecario");
     sessionStorage.removeItem("rolBibliotecario");
     window.location.href = "/index.html";
+}
+
+function cambiarARol(rol) {
+    if (rol === "admin") {
+        sessionStorage.setItem("adminActivo", "true");
+        window.location.href = "/admin/panel.html";
+    }
+}
+
+// Mostrar botón "Ir a Admin" solo si el rol es Administrador o Dueno
+if (["Administrador", "Dueno"].includes(rol)) {
+    document.getElementById("btnIrAdmin").style.display = "inline-flex";
 }
 
 function mostrarMensaje(texto, tipo = "error") {
