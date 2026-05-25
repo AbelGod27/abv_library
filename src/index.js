@@ -1,82 +1,127 @@
+// =========================================================
+// ARCHIVO: index.js
+// Descripción: Servidor principal de la aplicación ABV Library.
+// Contiene todas las rutas (endpoints) de la API REST para:
+// - Autenticación (login unificado, admin, vendedor, cliente)
+// - Gestión de libros (CRUD, importación desde Open Library)
+// - Control de stock (venta y préstamo)
+// - Proveedores (CRUD, suministro de libros, recepción de paquetes)
+// - Empleados (CRUD con roles)
+// - Ventas y préstamos (registro, consulta, devolución)
+// - Facturas y reportes financieros
+// - Clientes (CRUD, registro público)
+// - Sistema de puntos (acumulación, historial, canje)
+// - Donaciones de libros (con recompensa por puntos o intercambio)
+// - Recomendaciones personalizadas de libros
+// - Libros favoritos del cliente
+// =========================================================
+
+// =========================================================
+// SECCIÓN: CONFIGURACIÓN Y DEPENDENCIAS
+// Carga de variables de entorno, módulos necesarios y
+// configuración inicial del servidor Express
+// =========================================================
+
+// Carga las variables del archivo .env (credenciales, puerto, etc.)
 require("dotenv").config();
 const express = require("express");
+// CORS permite que el frontend haga peticiones al backend desde otro origen
 const cors = require("cors");
 const path = require("path");
+// Axios se usa para hacer peticiones HTTP a APIs externas (Open Library)
 const axios = require("axios");
+// bcrypt se usa para hashear contraseñas de forma segura (algoritmo de una vía)
+// Esto evita almacenar contraseñas en texto plano en la base de datos
 const bcrypt = require("bcrypt");
+// Módulo de conexión a la base de datos PostgreSQL
 const db = require("./db");
 
+// Número de rondas de sal para bcrypt (mayor = más seguro pero más lento)
 const SALT_ROUNDS = 10;
 
-// Validar formato de correo electrónico
+// Función auxiliar para validar formato de correo electrónico con expresión regular
 function esCorreoValido(correo) {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return regex.test(correo);
 }
 
+// Inicialización de la aplicación Express
 const app = express();
 
+// Middlewares globales
 app.use(cors());
 app.use(express.json());
+// Sirve archivos estáticos (HTML, CSS, JS del frontend) desde la carpeta public
 app.use(express.static(path.join(__dirname, "../public")));
 
 
-// =========================
-// LOGIN UNIFICADO
-// =========================
+// =========================================================
+// SECCIÓN: LOGIN UNIFICADO
+// Endpoint principal de autenticación que identifica el rol
+// del usuario (admin, bibliotecario, cliente) y devuelve
+// los roles disponibles para seleccionar panel de acceso
+// =========================================================
 
 app.post("/login", async (req, res) => {
     try {
         const { correo_electronico, password } = req.body;
 
+        // Validación: ambos campos son requeridos
         if (!correo_electronico || !password) {
             return res.status(400).json({ error: "Correo y contraseña son obligatorios." });
         }
 
+        // Validación: formato de correo válido
         if (!esCorreoValido(correo_electronico)) {
             return res.status(400).json({ error: "El correo no tiene un formato válido." });
         }
 
-        // Buscar persona
+        // Buscar persona en la base de datos por correo
+        // Retorna: datos básicos + hash de contraseña + flag de cambio obligatorio
         const persona = await db.query(
             "SELECT correo_electronico, nombre, ap_paterno, contrasena_hash, debe_cambiar_contrasena FROM persona WHERE correo_electronico = $1",
             [correo_electronico]
         );
 
+        // Si no existe la persona, devolver error genérico (no revelar si el correo existe)
         if (persona.rows.length === 0) {
             return res.status(401).json({ error: "Correo o contraseña incorrectos." });
         }
 
         const user = persona.rows[0];
 
+        // Verificar que el usuario tenga contraseña configurada
         if (!user.contrasena_hash) {
             return res.status(401).json({ error: "Este usuario no tiene contraseña configurada." });
         }
 
+        // Comparar contraseña ingresada con el hash almacenado usando bcrypt
         const coincide = await bcrypt.compare(password, user.contrasena_hash);
         if (!coincide) {
             return res.status(401).json({ error: "Correo o contraseña incorrectos." });
         }
 
-        // Determinar roles disponibles
+        // Determinar todos los roles disponibles para este usuario
         const roles = [];
 
-        // Es empleado?
+        // Verificar si es empleado y qué rol tiene
         const empleado = await db.query(
             "SELECT rol FROM empleado WHERE correo_electronico = $1",
             [correo_electronico]
         );
         if (empleado.rows.length > 0) {
             const rol = empleado.rows[0].rol;
+            // Administrador y Dueño tienen acceso al panel de admin
             if (["Administrador", "Dueno"].includes(rol)) {
                 roles.push({ tipo: "admin", label: "Administrador", rol });
             }
+            // Todos los empleados tienen acceso al panel de bibliotecario/vendedor
             if (["Vendedor", "Bibliotecario", "Administrador", "Dueno"].includes(rol)) {
                 roles.push({ tipo: "bibliotecario", label: "Bibliotecario", rol });
             }
         }
 
-        // Es cliente?
+        // Verificar si es cliente registrado
         const cliente = await db.query(
             "SELECT correo_electronico, fecha_de_registro FROM cliente WHERE correo_electronico = $1",
             [correo_electronico]
@@ -85,10 +130,12 @@ app.post("/login", async (req, res) => {
             roles.push({ tipo: "cliente", label: "Cliente" });
         }
 
+        // Si no tiene ningún rol asignado, no puede acceder
         if (roles.length === 0) {
             return res.status(401).json({ error: "No tienes un rol asignado en el sistema." });
         }
 
+        // Respuesta exitosa con datos del usuario y roles disponibles
         res.json({
             acceso: true,
             nombre: user.nombre,
@@ -104,9 +151,11 @@ app.post("/login", async (req, res) => {
     }
 });
 
-// =========================
-// LOGIN ADMIN
-// =========================
+// =========================================================
+// SECCIÓN: LOGIN ADMIN
+// Autenticación especial para el panel de administración
+// usando contraseña maestra almacenada en variables de entorno
+// =========================================================
 
 app.post("/login-admin", async (req, res) => {
     try {
@@ -130,6 +179,7 @@ app.post("/login-admin", async (req, res) => {
             return res.status(401).json({ acceso: false, error: "Contraseña incorrecta." });
         }
 
+        // Comparar contraseña con el hash almacenado en .env
         const coincide = await bcrypt.compare(password, hash);
 
         if (coincide) {
@@ -145,14 +195,18 @@ app.post("/login-admin", async (req, res) => {
 });
 
 
-// =========================
-// CONSULTAR LIBROS LOCALES
-// =========================
+// =========================================================
+// SECCIÓN: CONSULTAR LIBROS LOCALES
+// Búsqueda de libros en la base de datos local con filtro
+// por ISBN, título, autor o editorial (búsqueda parcial)
+// =========================================================
 
 app.get("/libros", async (req, res) => {
     try {
         const buscar = req.query.buscar || "";
 
+        // Consulta con ILIKE para búsqueda insensible a mayúsculas/minúsculas
+        // Busca coincidencias parciales en isbn, titulo, autor o editorial
         const sql = `
             SELECT
                 isbn,
@@ -172,6 +226,7 @@ app.get("/libros", async (req, res) => {
             LIMIT 50
         `;
 
+        // El comodín % permite coincidencias parciales (contiene el texto)
         const valor = `%${buscar}%`;
 
         const result = await db.query(sql, [valor]);
@@ -187,10 +242,11 @@ app.get("/libros", async (req, res) => {
     }
 });
 
-
-// =========================
-// CONSULTAR API EXTERNA
-// =========================
+// =========================================================
+// SECCIÓN: API EXTERNA (OPEN LIBRARY)
+// Consulta a la API pública de Open Library para buscar
+// libros que no están en la base de datos local
+// =========================================================
 
 app.get("/api/libros-externos", async (req, res) => {
     try {
@@ -198,6 +254,7 @@ app.get("/api/libros-externos", async (req, res) => {
 
         const url = "https://openlibrary.org/search.json";
 
+        // Petición a Open Library con filtros de idioma español y límite de 20 resultados
         const response = await axios.get(url, {
             params: {
                 q: buscar,
@@ -208,6 +265,7 @@ app.get("/api/libros-externos", async (req, res) => {
             timeout: 8000
         });
 
+        // Mapear la respuesta de Open Library al formato interno de la aplicación
         const libros = response.data.docs.map(libro => ({
             isbn: libro.isbn ? libro.isbn[0] : "Sin ISBN",
             titulo: libro.title || "Sin título",
@@ -233,9 +291,11 @@ app.get("/api/libros-externos", async (req, res) => {
 });
 
 
-// =========================
-// AGREGAR LIBRO
-// =========================
+// =========================================================
+// SECCIÓN: AGREGAR LIBRO
+// Registra un nuevo libro en la base de datos local
+// Valida que el ISBN no exista previamente (clave única)
+// =========================================================
 
 app.post("/libros", async (req, res) => {
     try {
@@ -249,12 +309,14 @@ app.post("/libros", async (req, res) => {
             precio
         } = req.body;
 
+        // Validación: campos mínimos obligatorios
         if (!isbn || !titulo || !autor) {
             return res.status(400).json({
                 error: "ISBN, título y autor son obligatorios."
             });
         }
 
+        // Verificar que el ISBN no exista ya en la base de datos
         const verificarSql = `
             SELECT isbn
             FROM libro
@@ -269,6 +331,7 @@ app.post("/libros", async (req, res) => {
             });
         }
 
+        // Insertar el nuevo libro con valores opcionales (null si no se proporcionan)
         const insertarSql = `
             INSERT INTO libro
             (
@@ -307,12 +370,19 @@ app.post("/libros", async (req, res) => {
 });
 
 
-// =========================
-// CONSULTAR STOCK DE LIBROS
-// =========================
+// =========================================================
+// SECCIÓN: STOCK
+// Consulta el inventario de libros mostrando las cantidades
+// disponibles para venta y para préstamo por separado.
+// El stock se calcula desde lib_venta y lib_pres donde
+// id_venta/id_prestamo es NULL (unidades no asignadas)
+// =========================================================
 
 app.get("/stock", async (req, res) => {
     try {
+        // Subconsultas correlacionadas para obtener stock disponible:
+        // - lib_venta con id_venta NULL = unidades disponibles para vender
+        // - lib_pres con id_prestamo NULL = unidades disponibles para prestar
         const result = await db.query(`
             SELECT
                 l.isbn,
@@ -336,10 +406,14 @@ app.get("/stock", async (req, res) => {
     }
 });
 
-// =========================
-// CONSULTAR PROVEEDORES
-// =========================
+// =========================================================
+// SECCIÓN: PROVEEDORES (CRUD + SUMINISTRO + RECEPCIÓN)
+// Gestión completa de proveedores: crear, consultar,
+// actualizar, eliminar, asignar libros que suministran
+// y registrar la recepción de paquetes (suma stock)
+// =========================================================
 
+// --- Consultar todos los proveedores ---
 app.get("/proveedores", async (req, res) => {
     try {
         const result = await db.query(`
@@ -361,11 +435,7 @@ app.get("/proveedores", async (req, res) => {
     }
 });
 
-
-// =========================
-// AGREGAR PROVEEDOR
-// =========================
-
+// --- Agregar un nuevo proveedor ---
 app.post("/proveedores", async (req, res) => {
     try {
         const { nombre } = req.body;
@@ -397,10 +467,7 @@ app.post("/proveedores", async (req, res) => {
     }
 });
 
-// =========================
-// ACTUALIZAR PROVEEDOR
-// =========================
-
+// --- Actualizar nombre de un proveedor ---
 app.put("/proveedores/:id", async (req, res) => {
     try {
         const { id } = req.params;
@@ -410,6 +477,7 @@ app.put("/proveedores/:id", async (req, res) => {
             return res.status(400).json({ error: "El nombre es obligatorio." });
         }
 
+        // RETURNING * permite verificar si se actualizó algún registro
         const result = await db.query(
             "UPDATE proveedor SET nombre = $1 WHERE id_proveedor = $2 RETURNING *",
             [nombre, id]
@@ -427,10 +495,7 @@ app.put("/proveedores/:id", async (req, res) => {
     }
 });
 
-// =========================
-// ELIMINAR PROVEEDOR
-// =========================
-
+// --- Eliminar un proveedor ---
 app.delete("/proveedores/:id", async (req, res) => {
     try {
         const { id } = req.params;
@@ -452,12 +517,10 @@ app.delete("/proveedores/:id", async (req, res) => {
     }
 });
 
-// =========================
-// PROVEEDOR - LIBROS (prov_suministra_lib)
-// =========================
-
+// --- Consultar relación proveedor-libro (qué libros suministra cada proveedor) ---
 app.get("/proveedores-libros", async (req, res) => {
     try {
+        // JOIN entre prov_suministra_lib, proveedor y libro para obtener datos completos
         const result = await db.query(`
             SELECT
                 psl.id_proveedor,
@@ -479,6 +542,7 @@ app.get("/proveedores-libros", async (req, res) => {
     }
 });
 
+// --- Asignar un libro a un proveedor (crear relación de suministro) ---
 app.post("/proveedores-libros", async (req, res) => {
     try {
         const { id_proveedor, isbn } = req.body;
@@ -487,7 +551,7 @@ app.post("/proveedores-libros", async (req, res) => {
             return res.status(400).json({ error: "Proveedor e ISBN son obligatorios." });
         }
 
-        // Verificar que no exista ya la relación
+        // Verificar que no exista ya la relación para evitar duplicados
         const existe = await db.query(
             "SELECT 1 FROM prov_suministra_lib WHERE id_proveedor = $1 AND isbn = $2",
             [id_proveedor, isbn]
@@ -510,11 +574,14 @@ app.post("/proveedores-libros", async (req, res) => {
     }
 });
 
-// Recibir paquete de libros de un proveedor (suma stock)
+// --- Recibir paquete de libros de un proveedor (suma stock) ---
+// Este endpoint registra la llegada de libros y distribuye las unidades
+// entre stock de venta y stock de préstamo según lo indicado
 app.post("/proveedores/recibir-paquete", async (req, res) => {
     try {
         const { id_proveedor, isbn, cantidad, cantidad_venta, cantidad_prestamo, costo_total } = req.body;
 
+        // Validaciones básicas de campos obligatorios
         if (!id_proveedor || !isbn || !cantidad || cantidad < 1) {
             return res.status(400).json({ error: "Proveedor, ISBN y cantidad son obligatorios." });
         }
@@ -523,7 +590,7 @@ app.post("/proveedores/recibir-paquete", async (req, res) => {
             return res.status(400).json({ error: "El costo total del paquete es obligatorio." });
         }
 
-        // Verificar que el proveedor suministra ese libro
+        // Verificar que el proveedor tenga asignado ese libro (relación de suministro)
         const relacion = await db.query(
             "SELECT 1 FROM prov_suministra_lib WHERE id_proveedor = $1 AND isbn = $2",
             [id_proveedor, isbn]
@@ -533,25 +600,28 @@ app.post("/proveedores/recibir-paquete", async (req, res) => {
             return res.status(400).json({ error: "Este proveedor no suministra ese libro. Asígnalo primero." });
         }
 
+        // Convertir a enteros para evitar decimales en cantidades
         const cantidadNum = Math.floor(Number(cantidad));
         const cantVenta = Math.floor(Number(cantidad_venta) || 0);
         const cantPrestamo = Math.floor(Number(cantidad_prestamo) || 0);
 
+        // Validar que la distribución venta + préstamo sume el total recibido
         if ((cantVenta + cantPrestamo) !== cantidadNum) {
             return res.status(400).json({
                 error: `Las unidades para venta (${cantVenta}) + préstamo (${cantPrestamo}) deben sumar ${cantidadNum}.`
             });
         }
 
+        // Transacción: todas las operaciones deben completarse o ninguna
         await db.query("BEGIN");
 
-        // Registrar la recepción en el historial
+        // Registrar la recepción en el historial para reportes financieros
         await db.query(
             "INSERT INTO recepcion_paquete (id_proveedor, isbn, cantidad, costo_total) VALUES ($1, $2, $3, $4)",
             [id_proveedor, isbn, cantidadNum, Number(costo_total)]
         );
 
-        // Sumar stock para venta
+        // Sumar stock para venta (actualizar si ya existe, insertar si no)
         if (cantVenta > 0) {
             const stockVenta = await db.query(
                 "SELECT cantidad FROM lib_venta WHERE isbn = $1 AND id_venta IS NULL",
@@ -571,7 +641,7 @@ app.post("/proveedores/recibir-paquete", async (req, res) => {
             }
         }
 
-        // Sumar stock para préstamo
+        // Sumar stock para préstamo (misma lógica: actualizar o insertar)
         if (cantPrestamo > 0) {
             const stockPres = await db.query(
                 "SELECT cantidad FROM lib_pres WHERE isbn = $1 AND id_prestamo IS NULL",
@@ -604,11 +674,12 @@ app.post("/proveedores/recibir-paquete", async (req, res) => {
     }
 });
 
-// Consultar libros que suministra un proveedor específico
+// --- Consultar libros que suministra un proveedor específico ---
 app.get("/proveedores/:id/libros", async (req, res) => {
     try {
         const { id } = req.params;
 
+        // Retorna los libros asociados a un proveedor mediante la tabla intermedia
         const result = await db.query(`
             SELECT l.isbn, l.titulo, l.autor
             FROM prov_suministra_lib psl
@@ -625,12 +696,19 @@ app.get("/proveedores/:id/libros", async (req, res) => {
     }
 });
 
-// =========================
-// CONSULTAR EMPLEADOS
-// =========================
+// =========================================================
+// SECCIÓN: EMPLEADOS (CRUD)
+// Gestión de empleados: consultar, agregar, actualizar y
+// eliminar. Cada empleado tiene un rol (Vendedor,
+// Bibliotecario, Administrador, Dueno) y una contraseña
+// temporal que debe cambiar en su primer inicio de sesión
+// =========================================================
 
+// --- Consultar todos los empleados ---
 app.get("/empleados", async (req, res) => {
     try {
+        // JOIN entre persona y empleado para obtener datos personales + rol
+        // tiene_password indica si ya configuró su contraseña
         const result = await db.query(`
             SELECT
                 p.correo_electronico,
@@ -658,11 +736,8 @@ app.get("/empleados", async (req, res) => {
     }
 });
 
-
-// =========================
-// AGREGAR EMPLEADO
-// =========================
-
+// --- Agregar un nuevo empleado ---
+// Se crea con contraseña temporal (nombre+1234) y flag debe_cambiar_contrasena=TRUE
 app.post("/empleados", async (req, res) => {
     try {
         const {
@@ -675,18 +750,21 @@ app.post("/empleados", async (req, res) => {
             rol
         } = req.body;
 
+        // Validación de campos obligatorios
         if (!correo_electronico || !nombre || !ap_paterno || !fecha_de_nacimiento || !rol) {
             return res.status(400).json({
                 error: "Correo, nombre, apellido paterno, fecha de nacimiento y rol son obligatorios."
             });
         }
 
+        // Validar formato de correo
         if (!esCorreoValido(correo_electronico)) {
             return res.status(400).json({
                 error: "El correo electrónico no tiene un formato válido."
             });
         }
 
+        // Verificar que no exista otra persona con ese correo
         const existePersona = await db.query(
             "SELECT correo_electronico FROM persona WHERE correo_electronico = $1",
             [correo_electronico]
@@ -698,10 +776,12 @@ app.post("/empleados", async (req, res) => {
             });
         }
 
-        // Contraseña predefinida: nombre+1234
+        // Generar contraseña temporal: nombre en minúsculas sin espacios + "1234"
+        // El empleado deberá cambiarla en su primer inicio de sesión
         const passwordPredefinida = nombre.toLowerCase().replace(/\s/g, '') + "1234";
         const contrasena_hash = await bcrypt.hash(passwordPredefinida, SALT_ROUNDS);
 
+        // Transacción: insertar en persona y empleado de forma atómica
         await db.query("BEGIN");
 
         await db.query(
@@ -738,10 +818,7 @@ app.post("/empleados", async (req, res) => {
     }
 });
 
-// =========================
-// ACTUALIZAR EMPLEADO
-// =========================
-
+// --- Actualizar datos de un empleado ---
 app.put("/empleados/:correo", async (req, res) => {
     try {
         const correo = req.params.correo;
@@ -751,6 +828,7 @@ app.put("/empleados/:correo", async (req, res) => {
             return res.status(400).json({ error: "Nombre, apellido paterno, fecha de nacimiento y rol son obligatorios." });
         }
 
+        // Transacción: actualizar datos personales en persona y rol en empleado
         await db.query("BEGIN");
 
         await db.query(`
@@ -779,14 +857,13 @@ app.put("/empleados/:correo", async (req, res) => {
     }
 });
 
-// =========================
-// ELIMINAR EMPLEADO
-// =========================
-
+// --- Eliminar un empleado ---
+// Al eliminar de persona, se elimina en cascada de empleado (FK)
 app.delete("/empleados/:correo", async (req, res) => {
     try {
         const correo = req.params.correo;
 
+        // Verificar que el empleado existe antes de intentar eliminar
         const existe = await db.query(
             "SELECT correo_electronico FROM empleado WHERE correo_electronico = $1",
             [correo]
@@ -796,6 +873,7 @@ app.delete("/empleados/:correo", async (req, res) => {
             return res.status(404).json({ error: "El empleado no existe." });
         }
 
+        // Eliminar de persona (cascada elimina de empleado automáticamente)
         await db.query("DELETE FROM persona WHERE correo_electronico = $1", [correo]);
 
         res.json({ mensaje: "Empleado eliminado correctamente." });
@@ -806,9 +884,12 @@ app.delete("/empleados/:correo", async (req, res) => {
     }
 });
 
-// =========================
-// LOGIN VENDEDOR / BIBLIOTECARIO
-// =========================
+// =========================================================
+// SECCIÓN: LOGIN VENDEDOR / BIBLIOTECARIO
+// Autenticación para empleados con roles de Vendedor,
+// Bibliotecario, Administrador o Dueño. Permite acceso
+// al panel de operaciones (ventas, préstamos, etc.)
+// =========================================================
 
 app.post("/login-vendedor", async (req, res) => {
     try {
@@ -828,6 +909,7 @@ app.post("/login-vendedor", async (req, res) => {
             });
         }
 
+        // Buscar empleado con rol autorizado para el panel de bibliotecario
         const result = await db.query(
             `
             SELECT
@@ -861,6 +943,7 @@ app.post("/login-vendedor", async (req, res) => {
             });
         }
 
+        // Verificar contraseña con bcrypt
         const coincide = await bcrypt.compare(password, empleado.contrasena_hash);
 
         if (!coincide) {
@@ -870,7 +953,7 @@ app.post("/login-vendedor", async (req, res) => {
             });
         }
 
-        // No devolver el hash al cliente
+        // No devolver el hash al cliente por seguridad (desestructuración)
         const { contrasena_hash, ...empleadoSeguro } = empleado;
 
         res.json({
@@ -887,9 +970,11 @@ app.post("/login-vendedor", async (req, res) => {
     }
 });
 
-// =========================
-// LOGIN CLIENTE
-// =========================
+// =========================================================
+// SECCIÓN: LOGIN CLIENTE
+// Autenticación para clientes registrados. Verifica
+// credenciales y devuelve datos del cliente sin el hash
+// =========================================================
 
 app.post("/login-cliente", async (req, res) => {
     try {
@@ -909,6 +994,7 @@ app.post("/login-cliente", async (req, res) => {
             });
         }
 
+        // Buscar cliente: JOIN persona + cliente para verificar que sea cliente registrado
         const result = await db.query(
             `
             SELECT
@@ -941,6 +1027,7 @@ app.post("/login-cliente", async (req, res) => {
             });
         }
 
+        // Verificar contraseña con bcrypt
         const coincide = await bcrypt.compare(password, cliente.contrasena_hash);
 
         if (!coincide) {
@@ -950,6 +1037,7 @@ app.post("/login-cliente", async (req, res) => {
             });
         }
 
+        // Excluir el hash de la respuesta por seguridad
         const { contrasena_hash, ...clienteSeguro } = cliente;
 
         res.json({
@@ -966,21 +1054,27 @@ app.post("/login-cliente", async (req, res) => {
     }
 });
 
-// =========================
-// ESTABLECER / CAMBIAR CONTRASEÑA
-// =========================
+// =========================================================
+// SECCIÓN: CAMBIAR CONTRASEÑA
+// Permite a cualquier usuario cambiar su contraseña.
+// Si es el primer cambio obligatorio (debe_cambiar_contrasena=TRUE),
+// no se requiere la contraseña actual. En cambios posteriores
+// sí se valida la contraseña actual antes de permitir el cambio.
+// =========================================================
 
 app.put("/usuarios/:correo/password", async (req, res) => {
     try {
         const { correo } = req.params;
         const { password_actual, password_nueva } = req.body;
 
+        // La nueva contraseña debe tener mínimo 8 caracteres
         if (!password_nueva || password_nueva.length < 8) {
             return res.status(400).json({
                 error: "La nueva contraseña debe tener al menos 8 caracteres."
             });
         }
 
+        // Obtener hash actual y flag de cambio obligatorio
         const result = await db.query(
             "SELECT contrasena_hash, debe_cambiar_contrasena FROM persona WHERE correo_electronico = $1",
             [correo]
@@ -994,18 +1088,22 @@ app.put("/usuarios/:correo/password", async (req, res) => {
         const esPrimerCambio = result.rows[0].debe_cambiar_contrasena;
 
         // Si es primer cambio obligatorio, no pedir contraseña actual
+        // (el empleado nuevo solo conoce la temporal generada por el sistema)
         if (hashActual && !esPrimerCambio) {
             if (!password_actual) {
                 return res.status(400).json({ error: "Debes proporcionar la contraseña actual." });
             }
+            // Verificar que la contraseña actual sea correcta
             const coincide = await bcrypt.compare(password_actual, hashActual);
             if (!coincide) {
                 return res.status(401).json({ error: "La contraseña actual es incorrecta." });
             }
         }
 
+        // Hashear la nueva contraseña y actualizar en la base de datos
         const nuevoHash = await bcrypt.hash(password_nueva, SALT_ROUNDS);
 
+        // Actualizar hash y desactivar flag de cambio obligatorio
         await db.query(
             "UPDATE persona SET contrasena_hash = $1, debe_cambiar_contrasena = FALSE WHERE correo_electronico = $2",
             [nuevoHash, correo]
@@ -1019,12 +1117,18 @@ app.put("/usuarios/:correo/password", async (req, res) => {
     }
 });
 
-// =========================
-// CONSULTAR VENTAS
-// =========================
+// =========================================================
+// SECCIÓN: VENTAS
+// Consultar historial de ventas y registrar nuevas ventas.
+// Al registrar una venta se descuenta stock, se genera
+// registro en lib_venta y se suman puntos al cliente
+// si la venta está asociada a uno.
+// =========================================================
 
+// --- Consultar todas las ventas ---
 app.get("/ventas", async (req, res) => {
     try {
+        // Retorna ventas con datos del vendedor (nombre + rol)
         const result = await db.query(`
 
         SELECT
@@ -1061,11 +1165,7 @@ app.get("/ventas", async (req, res) => {
     }
 });
 
-
-// =========================
-// REGISTRAR VENTA
-// =========================
-
+// --- Registrar una nueva venta ---
 app.post("/ventas", async (req, res) => {
     try {
         const {
@@ -1076,6 +1176,8 @@ app.post("/ventas", async (req, res) => {
             cantidad,
             correo_cliente
         } = req.body;
+
+        // Validación de campos obligatorios para la venta
         if (
             !total_pagado ||
             !metodo_de_pago ||
@@ -1089,7 +1191,7 @@ app.post("/ventas", async (req, res) => {
             });
         }
 
-        // Validar correo del cliente si se proporcionó
+        // Si se asocia un cliente, verificar que exista en la base de datos
         if (correo_cliente) {
             const clienteExiste = await db.query(
                 "SELECT correo_electronico FROM cliente WHERE correo_electronico = $1",
@@ -1104,6 +1206,8 @@ app.post("/ventas", async (req, res) => {
 
         await db.query("BEGIN");
 
+        // Verificar que hay suficiente stock disponible para venta
+        // (registros en lib_venta con id_venta NULL = stock no vendido)
         const stockVenta = await db.query(
     `
     SELECT cantidad
@@ -1128,10 +1232,7 @@ if (
 
 }
 
-        // =========================
-        // INSERTAR VENTA
-        // =========================
-
+        // Insertar el registro de la venta con fecha y hora actuales
         const ventaResult = await db.query(
             `
             INSERT INTO venta (
@@ -1160,11 +1261,7 @@ if (
         const idVenta =
             ventaResult.rows[0].id_venta;
 
-
-        // =========================
-        // INSERTAR LIBRO VENDIDO
-        // =========================
-
+        // Registrar qué libro y cantidad se vendió (detalle de la venta)
         await db.query(
             `
             INSERT INTO lib_venta (
@@ -1185,6 +1282,7 @@ if (
             ]
         );
 
+        // Descontar del stock disponible (restar de la fila con id_venta NULL)
         await db.query(
     `
     UPDATE lib_venta
@@ -1195,15 +1293,17 @@ if (
     [cantidad, isbn]
 );
 
-        // Sumar puntos al cliente si se asoció a la venta
+        // Sistema de puntos: por cada $10 de compra, el cliente gana 1 punto
         let puntosGanados = 0;
         if (correo_cliente) {
             puntosGanados = Math.floor(Number(total_pagado) / 10);
             if (puntosGanados > 0) {
+                // Sumar puntos al saldo del cliente
                 await db.query(
                     `UPDATE cliente SET puntos = puntos + $1 WHERE correo_electronico = $2`,
                     [puntosGanados, correo_cliente]
                 );
+                // Registrar en historial para trazabilidad
                 await db.query(
                     `INSERT INTO historial_puntos (correo_cliente, id_venta, puntos_ganados)
                      VALUES ($1, $2, $3)`,
@@ -1237,10 +1337,14 @@ if (
     }
 });
 
-// CONSULTAR CLIENTES — ver ruta completa más abajo
+// =========================================================
+// SECCIÓN: PRÉSTAMOS
+// Registro, consulta y devolución de préstamos de libros.
+// Al prestar se descuenta stock de préstamo. Al devolver
+// se calcula multa si hay retraso ($10 por día de atraso).
+// =========================================================
 
-
-// REGISTRAR PRÉSTAMO
+// --- Registrar un nuevo préstamo ---
 app.post("/prestamos", async (req, res) => {
     try {
         const {
@@ -1259,6 +1363,7 @@ app.post("/prestamos", async (req, res) => {
 
         await db.query("BEGIN");
 
+        // Verificar stock disponible para préstamo (lib_pres con id_prestamo NULL)
         const stockPrestamo = await db.query(
             `
             SELECT cantidad
@@ -1277,6 +1382,8 @@ app.post("/prestamos", async (req, res) => {
             });
         }
 
+        // Crear el registro del préstamo con multa inicial en 0
+        // dia_de_entrega queda NULL hasta que se devuelva
         const prestamoResult = await db.query(`
             INSERT INTO prestamo (
                 multa,
@@ -1306,6 +1413,7 @@ app.post("/prestamos", async (req, res) => {
 
         const idPrestamo = prestamoResult.rows[0].id_prestamo;
 
+        // Registrar detalle: qué libro y cantidad se prestó
         await db.query(`
             INSERT INTO lib_pres (
                 cantidad,
@@ -1319,6 +1427,7 @@ app.post("/prestamos", async (req, res) => {
             isbn
         ]);
 
+        // Descontar del stock disponible para préstamo
         await db.query(
             `
             UPDATE lib_pres
@@ -1347,11 +1456,14 @@ app.post("/prestamos", async (req, res) => {
     }
 });
 
-// CONSULTAR PRÉSTAMOS
+// --- Consultar todos los préstamos ---
 app.get("/prestamos", async (req, res) => {
 
     try {
-
+        // Consulta con estado calculado dinámicamente:
+        // - Devuelto: si dia_de_entrega no es NULL
+        // - Vencido: si la fecha actual supera dia_de_vencimiento
+        // - Activo: en cualquier otro caso
         const result = await db.query(`
 
             SELECT
@@ -1428,14 +1540,13 @@ app.get("/prestamos", async (req, res) => {
 
 });
 
-// =========================
-// DEVOLVER PRÉSTAMO
-// =========================
-
+// --- Devolver un préstamo ---
+// Calcula multa automáticamente: $10 por cada día de retraso
 app.put("/prestamos/:id/devolver", async (req, res) => {
     try {
         const id_prestamo = req.params.id;
 
+        // Verificar que el préstamo existe y no ha sido devuelto
         const verificar = await db.query(
             `
             SELECT
@@ -1460,6 +1571,8 @@ app.put("/prestamos/:id/devolver", async (req, res) => {
             });
         }
 
+        // Actualizar: establecer fecha de entrega y calcular multa
+        // Multa = (días de retraso) * $10, o $0 si se devuelve a tiempo
         const result = await db.query(
             `
             UPDATE prestamo
@@ -1491,9 +1604,12 @@ app.put("/prestamos/:id/devolver", async (req, res) => {
     }
 });
 
-// =========================
-// REPORTE FACTURAS
-// =========================
+// =========================================================
+// SECCIÓN: FACTURAS
+// Reporte financiero que combina ventas, préstamos y
+// recepciones de proveedores en un rango de fechas.
+// Usado para generar reportes contables del negocio.
+// =========================================================
 
 app.get("/facturas", async (req, res) => {
 
@@ -1504,6 +1620,7 @@ app.get("/facturas", async (req, res) => {
             fecha_fin
         } = req.query;
 
+        // Ambas fechas son obligatorias para delimitar el reporte
         if (!fecha_inicio || !fecha_fin) {
 
             return res.status(400).json({
@@ -1515,11 +1632,7 @@ app.get("/facturas", async (req, res) => {
 
         }
 
-
-        // =========================
-        // VENTAS
-        // =========================
-
+        // Consultar ventas en el rango de fechas (ingresos)
         const ventas = await db.query(`
 
             SELECT
@@ -1542,11 +1655,7 @@ app.get("/facturas", async (req, res) => {
 
         ]);
 
-
-        // =========================
-        // PRÉSTAMOS
-        // =========================
-
+        // Consultar préstamos en el rango (multas = ingresos adicionales)
         const prestamos = await db.query(`
 
             SELECT
@@ -1576,11 +1685,7 @@ app.get("/facturas", async (req, res) => {
 
         ]);
 
-
-        // =========================
-        // RECEPCIONES DE PROVEEDORES
-        // =========================
-
+        // Consultar recepciones de proveedores (egresos/costos)
         const recepciones = await db.query(`
 
             SELECT
@@ -1606,7 +1711,7 @@ app.get("/facturas", async (req, res) => {
             fecha_fin
         ]);
 
-
+        // Respuesta con los tres tipos de movimientos financieros
         res.json({
 
             ventas:
@@ -1640,12 +1745,17 @@ app.get("/facturas", async (req, res) => {
 
 });
 
-// =========================
-// CONSULTAR CLIENTES
-// =========================
+// =========================================================
+// SECCIÓN: CLIENTES (CRUD + REGISTRO PÚBLICO)
+// Gestión de clientes: consultar, agregar (por admin),
+// actualizar, eliminar y registro público (auto-registro
+// desde la página web sin necesidad de un administrador)
+// =========================================================
 
+// --- Consultar todos los clientes ---
 app.get("/clientes", async (req, res) => {
     try {
+        // JOIN persona + cliente para datos completos incluyendo fecha de registro
         const result = await db.query(`
             SELECT
                 p.correo_electronico,
@@ -1682,11 +1792,8 @@ app.get("/clientes", async (req, res) => {
     }
 });
 
-
-// =========================
-// AGREGAR CLIENTE
-// =========================
-
+// --- Agregar cliente (desde panel de administración) ---
+// La contraseña es opcional cuando lo agrega un admin
 app.post("/clientes", async (req, res) => {
     try {
         const {
@@ -1705,12 +1812,14 @@ app.post("/clientes", async (req, res) => {
             });
         }
 
+        // Si se proporciona contraseña, validar longitud mínima
         if (password && password.length < 8) {
             return res.status(400).json({
                 error: "La contraseña debe tener al menos 8 caracteres."
             });
         }
 
+        // Verificar que no exista otra persona con ese correo
         const existePersona = await db.query(
             "SELECT correo_electronico FROM persona WHERE correo_electronico = $1",
             [correo_electronico]
@@ -1722,8 +1831,10 @@ app.post("/clientes", async (req, res) => {
             });
         }
 
+        // Hashear contraseña solo si se proporcionó (puede ser null)
         const contrasena_hash = password ? await bcrypt.hash(password, SALT_ROUNDS) : null;
 
+        // Transacción: insertar en persona y cliente
         await db.query("BEGIN");
 
         await db.query(
@@ -1778,10 +1889,7 @@ app.post("/clientes", async (req, res) => {
     }
 });
 
-// =========================
-// Editar un LIBRO
-// =========================
-
+// --- Editar un libro (actualizar datos) ---
 app.put("/libros/:isbn", async (req, res) => {
     try {
         const { isbn } = req.params;
@@ -1801,6 +1909,7 @@ app.put("/libros/:isbn", async (req, res) => {
             });
         }
 
+        // Actualizar y retornar el libro modificado para confirmar cambios
         const result = await db.query(
             `
             UPDATE libro
@@ -1845,10 +1954,7 @@ app.put("/libros/:isbn", async (req, res) => {
     }
 });
 
-// =========================
-// ACTUALIZAR CLIENTE
-// =========================
-
+// --- Actualizar datos de un cliente ---
 app.put("/clientes/:correo", async (req, res) => {
     try {
         const correoActual = req.params.correo;
@@ -1867,6 +1973,7 @@ app.put("/clientes/:correo", async (req, res) => {
             });
         }
 
+        // Actualizar datos personales en la tabla persona
         const result = await db.query(
             `
             UPDATE persona
@@ -1908,15 +2015,14 @@ app.put("/clientes/:correo", async (req, res) => {
     }
 });
 
-
-// =========================
-// ELIMINAR CLIENTE
-// =========================
-
+// --- Eliminar un cliente ---
+// Al eliminar de persona, se elimina en cascada de cliente (FK)
+// Puede fallar si tiene préstamos activos (integridad referencial)
 app.delete("/clientes/:correo", async (req, res) => {
     try {
         const correo = req.params.correo;
 
+        // Verificar que el cliente existe
         const existe = await db.query(
             `
             SELECT correo_electronico
@@ -1932,6 +2038,7 @@ app.delete("/clientes/:correo", async (req, res) => {
             });
         }
 
+        // Eliminar de persona (cascada elimina de cliente)
         await db.query(
             `
             DELETE FROM persona
@@ -1953,10 +2060,9 @@ app.delete("/clientes/:correo", async (req, res) => {
     }
 });
 
-// =========================
-// REGISTRO PÚBLICO DE CLIENTE
-// =========================
-
+// --- Registro público de cliente (auto-registro desde la web) ---
+// A diferencia de POST /clientes, aquí la contraseña es obligatoria
+// porque el cliente se registra a sí mismo
 app.post("/registro-cliente", async (req, res) => {
     try {
         const {
@@ -1969,6 +2075,7 @@ app.post("/registro-cliente", async (req, res) => {
             password
         } = req.body;
 
+        // Todos los campos principales son obligatorios en auto-registro
         if (!correo_electronico || !nombre || !ap_paterno || !fecha_de_nacimiento || !password) {
             return res.status(400).json({
                 error: "Correo, nombre, apellido paterno, fecha de nacimiento y contraseña son obligatorios."
@@ -1981,12 +2088,14 @@ app.post("/registro-cliente", async (req, res) => {
             });
         }
 
+        // Validar longitud mínima de contraseña por seguridad
         if (password.length < 8) {
             return res.status(400).json({
                 error: "La contraseña debe tener al menos 8 caracteres."
             });
         }
 
+        // Verificar que el correo no esté ya registrado
         const existePersona = await db.query(
             "SELECT correo_electronico FROM persona WHERE correo_electronico = $1",
             [correo_electronico]
@@ -1998,8 +2107,10 @@ app.post("/registro-cliente", async (req, res) => {
             });
         }
 
+        // Hashear la contraseña antes de almacenarla (nunca guardar en texto plano)
         const contrasena_hash = await bcrypt.hash(password, SALT_ROUNDS);
 
+        // Transacción: crear persona y cliente de forma atómica
         await db.query("BEGIN");
 
         await db.query(
@@ -2054,9 +2165,12 @@ app.post("/registro-cliente", async (req, res) => {
     }
 });
 
-// =========================
-// IMPORTAR LIBROS DESDE OPEN LIBRARY
-// =========================
+// =========================================================
+// SECCIÓN: IMPORTAR LIBROS DESDE OPEN LIBRARY
+// Importación masiva de libros desde la API de Open Library.
+// Busca libros por término y los inserta en la base local
+// si tienen ISBN y no existen previamente.
+// =========================================================
 
 app.post("/libros/importar-openlibrary", async (req, res) => {
     try {
@@ -2070,6 +2184,7 @@ app.post("/libros/importar-openlibrary", async (req, res) => {
 
         const url = "https://openlibrary.org/search.json";
 
+        // Buscar hasta 50 libros en Open Library
         const response = await axios.get(url, {
             params: {
                 q: buscar,
@@ -2085,7 +2200,7 @@ app.post("/libros/importar-openlibrary", async (req, res) => {
         for (const libro of libros) {
             const isbn = libro.isbn ? libro.isbn[0] : null;
 
-            // Solo importar libros que tengan ISBN
+            // Solo importar libros que tengan ISBN (es la clave primaria)
             if (!isbn) {
                 omitidos++;
                 continue;
@@ -2100,7 +2215,7 @@ app.post("/libros/importar-openlibrary", async (req, res) => {
                 : null;
             const anio = libro.first_publish_year || null;
 
-            // Verificar si ya existe
+            // Verificar si ya existe en la base local para evitar duplicados
             const existe = await db.query(
                 "SELECT isbn FROM libro WHERE isbn = $1",
                 [isbn]
@@ -2111,6 +2226,7 @@ app.post("/libros/importar-openlibrary", async (req, res) => {
                 continue;
             }
 
+            // Insertar con precio 0 (se debe actualizar manualmente después)
             await db.query(
                 `INSERT INTO libro (isbn, titulo, autor, editorial, version, anio_publicacion, precio)
                  VALUES ($1, $2, $3, $4, NULL, $5, 0)`,
@@ -2134,15 +2250,19 @@ app.post("/libros/importar-openlibrary", async (req, res) => {
     }
 });
 
-// =========================
-// PUNTOS DEL CLIENTE
-// =========================
+// =========================================================
+// SECCIÓN: PUNTOS (CONSULTAR, HISTORIAL, CANJEAR)
+// Sistema de fidelización: los clientes acumulan puntos
+// con cada compra ($10 = 1 punto) y pueden canjearlos
+// por descuentos (10 puntos = $1 de descuento)
+// =========================================================
 
-// Consultar puntos actuales
+// --- Consultar puntos actuales de un cliente ---
 app.get("/puntos/:correo", async (req, res) => {
     try {
         const correo = req.params.correo;
 
+        // Retorna el saldo actual de puntos del cliente
         const result = await db.query(
             "SELECT puntos FROM cliente WHERE correo_electronico = $1",
             [correo]
@@ -2160,11 +2280,12 @@ app.get("/puntos/:correo", async (req, res) => {
     }
 });
 
-// Historial de puntos ganados
+// --- Historial de puntos ganados por compras ---
 app.get("/puntos/:correo/historial", async (req, res) => {
     try {
         const correo = req.params.correo;
 
+        // Retorna cada registro de puntos ganados con la venta asociada
         const result = await db.query(
             `
             SELECT hp.puntos_ganados, hp.fecha, v.total_pagado
@@ -2184,8 +2305,8 @@ app.get("/puntos/:correo/historial", async (req, res) => {
     }
 });
 
-// Canjear puntos (aplicar descuento en una venta)
-// 10 puntos = $1 de descuento
+// --- Canjear puntos por descuento ---
+// Regla de negocio: 10 puntos = $1 de descuento
 app.post("/puntos/canjear", async (req, res) => {
     try {
         const { correo_cliente, puntos_a_canjear } = req.body;
@@ -2196,9 +2317,10 @@ app.post("/puntos/canjear", async (req, res) => {
             });
         }
 
+        // Redondear hacia abajo para evitar fracciones de puntos
         const puntos = Math.floor(Number(puntos_a_canjear));
 
-        // Verificar puntos disponibles
+        // Verificar puntos disponibles del cliente
         const result = await db.query(
             "SELECT puntos FROM cliente WHERE correo_electronico = $1",
             [correo_cliente]
@@ -2210,18 +2332,20 @@ app.post("/puntos/canjear", async (req, res) => {
 
         const puntosDisponibles = result.rows[0].puntos || 0;
 
+        // No se pueden canjear más puntos de los que tiene
         if (puntos > puntosDisponibles) {
             return res.status(400).json({
                 error: `El cliente solo tiene ${puntosDisponibles} puntos disponibles.`
             });
         }
 
-        // Descontar puntos
+        // Descontar puntos del saldo del cliente
         await db.query(
             "UPDATE cliente SET puntos = puntos - $1 WHERE correo_electronico = $2",
             [puntos, correo_cliente]
         );
 
+        // Calcular descuento: 10 puntos = $1
         const descuento = (puntos / 10).toFixed(2);
 
         res.json({
@@ -2237,14 +2361,22 @@ app.post("/puntos/canjear", async (req, res) => {
     }
 });
 
-// =========================
-// PRÉSTAMOS DEL CLIENTE
-// =========================
+// =========================================================
+// SECCIÓN: PRÉSTAMOS DEL CLIENTE
+// Consulta los préstamos de un cliente específico con
+// estado calculado (Activo, Vencido, Devuelto, Por vencer)
+// y días restantes para la devolución
+// =========================================================
 
 app.get("/prestamos/cliente/:correo", async (req, res) => {
     try {
         const correo = req.params.correo;
 
+        // Consulta con estado dinámico y días restantes:
+        // - Devuelto: ya se entregó
+        // - Vencido: pasó la fecha límite sin devolver
+        // - Por vencer: falta 1 día o menos para vencer
+        // - Activo: dentro del plazo normal
         const result = await db.query(`
             SELECT
                 pr.id_prestamo,
@@ -2278,23 +2410,27 @@ app.get("/prestamos/cliente/:correo", async (req, res) => {
     }
 });
 
-// =========================
-// RECOMENDACIONES DE LIBROS
-// =========================
+// =========================================================
+// SECCIÓN: RECOMENDACIONES
+// Sistema de recomendaciones personalizadas basado en:
+// 1. Autores de libros favoritos del cliente
+// 2. Autores de libros que ha comprado
+// 3. Autores de libros que ha tomado en préstamo
+// Si no hay suficientes, se completa con libros aleatorios
+// =========================================================
 
-// Recomendar libros basándose en los favoritos y compras del cliente
-// Si no está logueado, devuelve libros populares (más vendidos)
+// --- Recomendaciones personalizadas para un cliente logueado ---
 app.get("/recomendaciones/:correo", async (req, res) => {
     try {
         const correo = req.params.correo;
 
-        // Obtener autores de los favoritos del cliente
+        // Obtener autores de los libros favoritos del cliente
         const favAutores = await db.query(
             `SELECT DISTINCT autor FROM libro_favorito WHERE correo_cliente = $1 AND autor IS NOT NULL`,
             [correo]
         );
 
-        // Obtener autores de libros que ha comprado (via ventas asociadas)
+        // Obtener autores de libros que ha comprado (a través del historial de puntos)
         const compraAutores = await db.query(
             `SELECT DISTINCT l.autor
              FROM venta v
@@ -2305,7 +2441,7 @@ app.get("/recomendaciones/:correo", async (req, res) => {
             [correo]
         );
 
-        // Obtener autores de préstamos del cliente
+        // Obtener autores de libros que ha tomado en préstamo
         const presAutores = await db.query(
             `SELECT DISTINCT l.autor
              FROM prestamo p
@@ -2315,7 +2451,7 @@ app.get("/recomendaciones/:correo", async (req, res) => {
             [correo]
         );
 
-        // Combinar todos los autores
+        // Combinar todos los autores en un Set para eliminar duplicados
         const autoresSet = new Set();
         [...favAutores.rows, ...compraAutores.rows, ...presAutores.rows].forEach(r => {
             if (r.autor) autoresSet.add(r.autor);
@@ -2327,6 +2463,7 @@ app.get("/recomendaciones/:correo", async (req, res) => {
 
         if (autores.length > 0) {
             // Buscar libros de esos autores que el cliente NO tiene en favoritos
+            // (para no recomendar lo que ya conoce)
             const placeholders = autores.map((_, i) => `$${i + 2}`).join(", ");
             const result = await db.query(
                 `SELECT l.isbn, l.titulo, l.autor, l.editorial, l.precio
@@ -2342,7 +2479,7 @@ app.get("/recomendaciones/:correo", async (req, res) => {
             recomendaciones = result.rows;
         }
 
-        // Si no hay suficientes, completar con libros populares
+        // Si no hay suficientes recomendaciones personalizadas, completar con libros populares
         if (recomendaciones.length < 12) {
             const faltan = 12 - recomendaciones.length;
             const isbnExcluir = recomendaciones.map(r => r.isbn);
@@ -2370,7 +2507,8 @@ app.get("/recomendaciones/:correo", async (req, res) => {
     }
 });
 
-// Recomendaciones generales (sin login)
+// --- Recomendaciones generales (sin login) ---
+// Devuelve 12 libros aleatorios con precio > 0
 app.get("/recomendaciones", async (req, res) => {
     try {
         const result = await db.query(
@@ -2389,29 +2527,35 @@ app.get("/recomendaciones", async (req, res) => {
     }
 });
 
-// =========================
-// DONACIONES DE LIBROS
-// =========================
+// =========================================================
+// SECCIÓN: DONACIONES
+// Registro de donaciones de libros por parte de clientes.
+// El cliente puede elegir entre dos recompensas:
+// - "puntos": recibe 20 puntos por cada libro donado
+// - "intercambio": recibe otro libro disponible a cambio
+// Los libros donados se agregan al stock de venta y préstamo
+// =========================================================
 
-// Registrar donación (el bibliotecario registra que un cliente dona libros)
-// Opciones: recibir 20 puntos por libro O intercambiar por otro libro donado
+// --- Registrar una donación ---
 app.post("/donaciones", async (req, res) => {
     try {
         const { correo_cliente, isbn, titulo, autor, cantidad, tipo_recompensa, isbn_intercambio } = req.body;
 
+        // Validaciones de campos obligatorios
         if (!correo_cliente || !isbn || !titulo || !cantidad || cantidad < 1) {
             return res.status(400).json({
                 error: "Correo del cliente, ISBN, título y cantidad son obligatorios."
             });
         }
 
+        // Solo se aceptan dos tipos de recompensa
         if (!tipo_recompensa || !["puntos", "intercambio"].includes(tipo_recompensa)) {
             return res.status(400).json({
                 error: "Debes elegir el tipo de recompensa: puntos o intercambio."
             });
         }
 
-        // Verificar que el cliente existe
+        // Verificar que el cliente existe en la base de datos
         const clienteExiste = await db.query(
             "SELECT correo_electronico FROM cliente WHERE correo_electronico = $1",
             [correo_cliente]
@@ -2423,7 +2567,7 @@ app.post("/donaciones", async (req, res) => {
 
         const cantidadNum = Math.floor(Number(cantidad));
 
-        // Si es intercambio, verificar que el libro solicitado existe en donaciones disponibles
+        // Si es intercambio, verificar que el libro solicitado tenga stock disponible
         if (tipo_recompensa === "intercambio") {
             if (!isbn_intercambio) {
                 return res.status(400).json({ error: "Debes seleccionar un libro para el intercambio." });
@@ -2444,29 +2588,30 @@ app.post("/donaciones", async (req, res) => {
         let puntosOtorgados = 0;
 
         if (tipo_recompensa === "puntos") {
+            // Regla de negocio: 20 puntos por cada libro donado
             puntosOtorgados = cantidadNum * 20;
 
-            // Sumar puntos al cliente
+            // Sumar puntos al saldo del cliente
             await db.query(
                 "UPDATE cliente SET puntos = puntos + $1 WHERE correo_electronico = $2",
                 [puntosOtorgados, correo_cliente]
             );
         } else {
-            // Intercambio: descontar 1 unidad del libro solicitado
+            // Intercambio: descontar 1 unidad del libro que el cliente quiere recibir
             await db.query(
                 "UPDATE lib_venta SET cantidad = cantidad - 1 WHERE isbn = $1 AND id_venta IS NULL",
                 [isbn_intercambio]
             );
         }
 
-        // Registrar la donación
+        // Registrar la donación en la tabla de donaciones
         await db.query(
             `INSERT INTO donacion (correo_cliente, isbn, titulo, autor, cantidad, puntos_otorgados)
              VALUES ($1, $2, $3, $4, $5, $6)`,
             [correo_cliente, isbn, titulo, autor || null, cantidadNum, puntosOtorgados]
         );
 
-        // Agregar el libro donado a la base si no existe
+        // Si el libro donado no existe en la base, crearlo con precio 0
         const libroExiste = await db.query(
             "SELECT isbn FROM libro WHERE isbn = $1",
             [isbn]
@@ -2480,7 +2625,7 @@ app.post("/donaciones", async (req, res) => {
             );
         }
 
-        // Agregar stock para venta
+        // Agregar las unidades donadas al stock de venta
         const stockVenta = await db.query(
             "SELECT cantidad FROM lib_venta WHERE isbn = $1 AND id_venta IS NULL",
             [isbn]
@@ -2498,7 +2643,7 @@ app.post("/donaciones", async (req, res) => {
             );
         }
 
-        // Agregar stock para préstamo
+        // Agregar las unidades donadas al stock de préstamo
         const stockPres = await db.query(
             "SELECT cantidad FROM lib_pres WHERE isbn = $1 AND id_prestamo IS NULL",
             [isbn]
@@ -2539,9 +2684,11 @@ app.post("/donaciones", async (req, res) => {
     }
 });
 
-// Consultar libros disponibles para intercambio (solo libros que han sido donados)
+// --- Consultar libros disponibles para intercambio ---
+// Muestra libros que han sido donados previamente y tienen stock
 app.get("/donaciones/libros-disponibles", async (req, res) => {
     try {
+        // Agrupa donaciones por libro y muestra el total donado
         const result = await db.query(`
             SELECT d.isbn, d.titulo, d.autor, SUM(d.cantidad) AS total_donado
             FROM donacion d
@@ -2558,11 +2705,12 @@ app.get("/donaciones/libros-disponibles", async (req, res) => {
     }
 });
 
-// Consultar donaciones de un cliente
+// --- Consultar donaciones de un cliente específico ---
 app.get("/donaciones/:correo", async (req, res) => {
     try {
         const correo = req.params.correo;
 
+        // Retorna historial de donaciones del cliente ordenado por fecha
         const result = await db.query(
             `SELECT id_donacion, isbn, titulo, autor, cantidad, puntos_otorgados, fecha
              FROM donacion
@@ -2579,15 +2727,19 @@ app.get("/donaciones/:correo", async (req, res) => {
     }
 });
 
-// =========================
-// LIBROS FAVORITOS
-// =========================
+// =========================================================
+// SECCIÓN: FAVORITOS
+// Gestión de la lista de libros favoritos de cada cliente.
+// Permite consultar, agregar y eliminar libros de la lista.
+// Se usa ON CONFLICT para evitar duplicados al agregar.
+// =========================================================
 
-// Consultar favoritos de un cliente
+// --- Consultar favoritos de un cliente ---
 app.get("/favoritos/:correo", async (req, res) => {
     try {
         const correo = req.params.correo;
 
+        // Retorna la lista de favoritos ordenada por fecha (más recientes primero)
         const result = await db.query(
             `
             SELECT isbn, titulo, autor, fecha_agregado
@@ -2606,7 +2758,7 @@ app.get("/favoritos/:correo", async (req, res) => {
     }
 });
 
-// Agregar libro a favoritos
+// --- Agregar libro a favoritos ---
 app.post("/favoritos", async (req, res) => {
     try {
         const { correo_cliente, isbn, titulo, autor } = req.body;
@@ -2627,6 +2779,8 @@ app.post("/favoritos", async (req, res) => {
             return res.status(404).json({ error: "El cliente no existe." });
         }
 
+        // ON CONFLICT DO NOTHING evita error si el libro ya está en favoritos
+        // (la clave única es correo_cliente + isbn)
         await db.query(
             `
             INSERT INTO libro_favorito (correo_cliente, isbn, titulo, autor)
@@ -2644,11 +2798,12 @@ app.post("/favoritos", async (req, res) => {
     }
 });
 
-// Eliminar libro de favoritos
+// --- Eliminar libro de favoritos ---
 app.delete("/favoritos/:correo/:isbn", async (req, res) => {
     try {
         const { correo, isbn } = req.params;
 
+        // Eliminar la relación favorito por correo + isbn
         await db.query(
             `
             DELETE FROM libro_favorito
@@ -2665,9 +2820,11 @@ app.delete("/favoritos/:correo/:isbn", async (req, res) => {
     }
 });
 
-// =========================
-// SERVIDOR
-// =========================
+// =========================================================
+// SECCIÓN: SERVIDOR
+// Inicialización del servidor Express en el puerto
+// configurado en las variables de entorno (o 3000 por defecto)
+// =========================================================
 
 const PORT = process.env.PORT || 3000;
 
