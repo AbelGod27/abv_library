@@ -356,16 +356,18 @@ $2b$10$ID8ndfLLHbTeTr8PzDew0u50U4MY7Psdb6Yi8aYVwzfbPHWkuKpnG
 
 ## Capturas de pantalla
 
-> Se recomienda agregar capturas de:
-> 1. Página principal (catálogo con modo claro)
-> 2. Página principal (modo oscuro)
-> 3. Login unificado con selección de rol
-> 4. Panel del administrador
-> 5. Gestión de libros (tabla con stock)
-> 6. Panel del bibliotecario
-> 7. Carrito de ventas
-> 8. Portal del cliente (puntos, favoritos, préstamos)
-> 9. Reporte de facturas
+| Vista | Descripción |
+|-------|-------------|
+| ![Catálogo](docs/01-catalogo.png) | Página principal con catálogo de libros |
+| ![Modo oscuro](docs/02-modo-oscuro.png) | Catálogo en modo oscuro |
+| ![Login](docs/03-login.png) | Login unificado con selección de rol |
+| ![Admin panel](docs/04-admin-panel.png) | Panel del administrador |
+| ![Libros stock](docs/05-libros-stock.png) | Gestión de libros con stock |
+| ![Bibliotecario](docs/06-bibliotecario-panel.png) | Panel del bibliotecario |
+| ![Carrito](docs/07-carrito-ventas.png) | Carrito de ventas multi-libro |
+| ![Cliente](docs/08-portal-cliente.png) | Portal del cliente (puntos, favoritos) |
+| ![Facturas](docs/09-facturas.png) | Reporte de facturas con balance |
+| ![Proveedores](docs/10-proveedores.png) | Recepción de paquetes |
 
 ---
 

@@ -42,10 +42,37 @@
     --color-primary:     #c9956a;
     --color-primary-dk:  #e0b08a;
     --color-primary-lt:  #2a2040;
+    --color-success:     #4ade80;
     --color-success-lt:  #1a2e1a;
+    --color-danger:      #f87171;
     --color-danger-lt:   #2e1a1a;
     --shadow:    0 1px 3px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.2);
     --shadow-lg: 0 8px 32px rgba(0,0,0,.4);
+}
+
+[data-theme="dark"] body {
+    background-image: none;
+    background-color: var(--bg);
+}
+
+[data-theme="dark"] body::before {
+    display: none;
+}
+
+[data-theme="dark"] tbody tr:hover {
+    background: #1e2a4a;
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+    background: var(--bg);
+    color: var(--text);
+    border-color: var(--border);
+}
+
+[data-theme="dark"] .panel-card .icon {
+    color: #e0b08a;
 }
 
 /* Night shift (tonos cálidos, menos luz azul) */
@@ -58,10 +85,70 @@
     --color-primary:     #c9956a;
     --color-primary-dk:  #e0b08a;
     --color-primary-lt:  #3a2a1a;
+    --color-success:     #86efac;
     --color-success-lt:  #2a2a1a;
+    --color-danger:      #fca5a5;
     --color-danger-lt:   #3a1a1a;
     --shadow:    0 1px 3px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.2);
     --shadow-lg: 0 8px 32px rgba(0,0,0,.4);
+}
+
+[data-theme="night"] body {
+    background-image: none;
+    background-color: var(--bg);
+}
+
+[data-theme="night"] body::before {
+    display: none;
+}
+
+[data-theme="night"] tbody tr:hover {
+    background: #3a2a1a;
+}
+
+[data-theme="night"] input,
+[data-theme="night"] select,
+[data-theme="night"] textarea {
+    background: var(--bg);
+    color: var(--text);
+    border-color: var(--border);
+}
+
+[data-theme="night"] .panel-card .icon {
+    color: #e0b08a;
+}
+
+/* Forzar colores de texto en modos oscuros para elementos con estilos inline */
+[data-theme="dark"] [style*="color:#64748b"],
+[data-theme="dark"] [style*="color: #64748b"],
+[data-theme="dark"] [style*="color:#94a3b8"],
+[data-theme="dark"] [style*="color:#1e293b"] {
+    color: var(--text-muted) !important;
+}
+
+[data-theme="night"] [style*="color:#64748b"],
+[data-theme="night"] [style*="color: #64748b"],
+[data-theme="night"] [style*="color:#94a3b8"],
+[data-theme="night"] [style*="color:#1e293b"] {
+    color: var(--text-muted) !important;
+}
+
+[data-theme="dark"] [style*="background:#fff"],
+[data-theme="dark"] [style*="background: #fff"],
+[data-theme="dark"] [style*="background:#f1f5f9"],
+[data-theme="dark"] [style*="background:#f8f4f0"],
+[data-theme="dark"] [style*="background:#fef9f3"],
+[data-theme="dark"] [style*="background:#f0fdf4"] {
+    background: var(--surface) !important;
+}
+
+[data-theme="night"] [style*="background:#fff"],
+[data-theme="night"] [style*="background: #fff"],
+[data-theme="night"] [style*="background:#f1f5f9"],
+[data-theme="night"] [style*="background:#f8f4f0"],
+[data-theme="night"] [style*="background:#fef9f3"],
+[data-theme="night"] [style*="background:#f0fdf4"] {
+    background: var(--surface) !important;
 }
 
 /* Botón flotante de tema */
