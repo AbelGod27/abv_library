@@ -165,6 +165,7 @@ CREATE TABLE IF NOT EXISTS recepcion_paquete (
     id_proveedor    INTEGER NOT NULL,
     isbn            VARCHAR(50) NOT NULL,
     cantidad        INTEGER NOT NULL,
+    costo_total     NUMERIC(10,2) NOT NULL DEFAULT 0,
     fecha           DATE DEFAULT CURRENT_DATE,
     CONSTRAINT fk_recepcion_proveedor
         FOREIGN KEY (id_proveedor)

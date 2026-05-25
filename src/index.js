@@ -305,6 +305,34 @@ app.post("/libros", async (req, res) => {
 
 
 // =========================
+// CONSULTAR STOCK DE LIBROS
+// =========================
+
+app.get("/stock", async (req, res) => {
+    try {
+        const result = await db.query(`
+            SELECT
+                l.isbn,
+                l.titulo,
+                l.autor,
+                l.precio,
+                COALESCE(lv.cantidad, 0) AS stock_venta,
+                COALESCE(lp.cantidad, 0) AS stock_prestamo
+            FROM libro l
+            LEFT JOIN lib_venta lv ON l.isbn = lv.isbn AND lv.id_venta IS NULL
+            LEFT JOIN lib_pres lp ON l.isbn = lp.isbn AND lp.id_prestamo IS NULL
+            ORDER BY l.titulo
+        `);
+
+        res.json(result.rows);
+
+    } catch (error) {
+        console.error("Error al consultar stock:", error);
+        res.status(500).json({ error: "Error al consultar stock." });
+    }
+});
+
+// =========================
 // CONSULTAR PROVEEDORES
 // =========================
 
@@ -481,10 +509,14 @@ app.post("/proveedores-libros", async (req, res) => {
 // Recibir paquete de libros de un proveedor (suma stock)
 app.post("/proveedores/recibir-paquete", async (req, res) => {
     try {
-        const { id_proveedor, isbn, cantidad } = req.body;
+        const { id_proveedor, isbn, cantidad, cantidad_venta, cantidad_prestamo, costo_total } = req.body;
 
         if (!id_proveedor || !isbn || !cantidad || cantidad < 1) {
             return res.status(400).json({ error: "Proveedor, ISBN y cantidad son obligatorios." });
+        }
+
+        if (costo_total === undefined || costo_total === null || Number(costo_total) < 0) {
+            return res.status(400).json({ error: "El costo total del paquete es obligatorio." });
         }
 
         // Verificar que el proveedor suministra ese libro
@@ -498,55 +530,67 @@ app.post("/proveedores/recibir-paquete", async (req, res) => {
         }
 
         const cantidadNum = Math.floor(Number(cantidad));
+        const cantVenta = Math.floor(Number(cantidad_venta) || 0);
+        const cantPrestamo = Math.floor(Number(cantidad_prestamo) || 0);
+
+        if ((cantVenta + cantPrestamo) !== cantidadNum) {
+            return res.status(400).json({
+                error: `Las unidades para venta (${cantVenta}) + préstamo (${cantPrestamo}) deben sumar ${cantidadNum}.`
+            });
+        }
 
         await db.query("BEGIN");
 
         // Registrar la recepción en el historial
         await db.query(
-            "INSERT INTO recepcion_paquete (id_proveedor, isbn, cantidad) VALUES ($1, $2, $3)",
-            [id_proveedor, isbn, cantidadNum]
+            "INSERT INTO recepcion_paquete (id_proveedor, isbn, cantidad, costo_total) VALUES ($1, $2, $3, $4)",
+            [id_proveedor, isbn, cantidadNum, Number(costo_total)]
         );
 
         // Sumar stock para venta
-        const stockVenta = await db.query(
-            "SELECT cantidad FROM lib_venta WHERE isbn = $1 AND id_venta IS NULL",
-            [isbn]
-        );
+        if (cantVenta > 0) {
+            const stockVenta = await db.query(
+                "SELECT cantidad FROM lib_venta WHERE isbn = $1 AND id_venta IS NULL",
+                [isbn]
+            );
 
-        if (stockVenta.rows.length > 0) {
-            await db.query(
-                "UPDATE lib_venta SET cantidad = cantidad + $1 WHERE isbn = $2 AND id_venta IS NULL",
-                [cantidadNum, isbn]
-            );
-        } else {
-            await db.query(
-                "INSERT INTO lib_venta (cantidad, id_venta, isbn) VALUES ($1, NULL, $2)",
-                [cantidadNum, isbn]
-            );
+            if (stockVenta.rows.length > 0) {
+                await db.query(
+                    "UPDATE lib_venta SET cantidad = cantidad + $1 WHERE isbn = $2 AND id_venta IS NULL",
+                    [cantVenta, isbn]
+                );
+            } else {
+                await db.query(
+                    "INSERT INTO lib_venta (cantidad, id_venta, isbn) VALUES ($1, NULL, $2)",
+                    [cantVenta, isbn]
+                );
+            }
         }
 
         // Sumar stock para préstamo
-        const stockPres = await db.query(
-            "SELECT cantidad FROM lib_pres WHERE isbn = $1 AND id_prestamo IS NULL",
-            [isbn]
-        );
+        if (cantPrestamo > 0) {
+            const stockPres = await db.query(
+                "SELECT cantidad FROM lib_pres WHERE isbn = $1 AND id_prestamo IS NULL",
+                [isbn]
+            );
 
-        if (stockPres.rows.length > 0) {
-            await db.query(
-                "UPDATE lib_pres SET cantidad = cantidad + $1 WHERE isbn = $2 AND id_prestamo IS NULL",
-                [cantidadNum, isbn]
-            );
-        } else {
-            await db.query(
-                "INSERT INTO lib_pres (cantidad, id_prestamo, isbn) VALUES ($1, NULL, $2)",
-                [cantidadNum, isbn]
-            );
+            if (stockPres.rows.length > 0) {
+                await db.query(
+                    "UPDATE lib_pres SET cantidad = cantidad + $1 WHERE isbn = $2 AND id_prestamo IS NULL",
+                    [cantPrestamo, isbn]
+                );
+            } else {
+                await db.query(
+                    "INSERT INTO lib_pres (cantidad, id_prestamo, isbn) VALUES ($1, NULL, $2)",
+                    [cantPrestamo, isbn]
+                );
+            }
         }
 
         await db.query("COMMIT");
 
         res.json({
-            mensaje: `Paquete recibido: +${cantidadNum} unidades de stock (venta y préstamo).`
+            mensaje: `Paquete recibido: ${cantVenta} para venta, ${cantPrestamo} para préstamo (total: ${cantidadNum}). Costo: $${Number(costo_total).toFixed(2)}`
         });
 
     } catch (error) {
@@ -1565,10 +1609,9 @@ app.get("/facturas", async (req, res) => {
                 rp.id_recepcion AS id,
                 rp.fecha,
                 rp.cantidad,
+                rp.costo_total AS monto,
                 p.nombre AS proveedor,
-                l.titulo AS libro,
-                l.precio,
-                (rp.cantidad * COALESCE(l.precio, 0)) AS monto
+                l.titulo AS libro
 
             FROM recepcion_paquete rp
             JOIN proveedor p ON rp.id_proveedor = p.id_proveedor

@@ -103,6 +103,8 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
                         <th>Versión</th>
                         <th>Año</th>
                         <th>Precio</th>
+                        <th>Stock Venta</th>
+                        <th>Stock Préstamo</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -126,17 +128,30 @@ inputBusqueda.addEventListener("input", () => {
 
 async function cargarLibros(busqueda) {
     try {
-        const response = await fetch(`/libros?buscar=${encodeURIComponent(busqueda)}`);
-        const data = await response.json();
+        const response = await fetch(`/stock`);
+        const allData = await response.json();
+
+        // Filtrar localmente si hay búsqueda
+        const data = busqueda
+            ? allData.filter(l =>
+                l.isbn.toLowerCase().includes(busqueda.toLowerCase()) ||
+                l.titulo.toLowerCase().includes(busqueda.toLowerCase()) ||
+                l.autor.toLowerCase().includes(busqueda.toLowerCase())
+            )
+            : allData;
+
         const tabla = document.getElementById("tablaLibros");
         tabla.innerHTML = "";
 
         if (data.length === 0) {
-            tabla.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--text-muted)">No se encontraron libros</td></tr>`;
+            tabla.innerHTML = `<tr><td colspan="10" style="text-align:center;color:var(--text-muted)">No se encontraron libros</td></tr>`;
             return;
         }
 
         data.forEach(libro => {
+            const svStyle = Number(libro.stock_venta) === 0 ? "color:#dc2626; font-weight:600;" : "color:#16a34a;";
+            const spStyle = Number(libro.stock_prestamo) === 0 ? "color:#dc2626; font-weight:600;" : "color:#16a34a;";
+
             tabla.innerHTML += `
                 <tr>
                     <td>${libro.isbn}</td>
@@ -146,6 +161,8 @@ async function cargarLibros(busqueda) {
                     <td>${libro.version ?? "—"}</td>
                     <td class="fecha">${formatFecha(libro.anio_publicacion)}</td>
                     <td>$${Number(libro.precio || 0).toFixed(2)}</td>
+                    <td style="${svStyle}">${libro.stock_venta}</td>
+                    <td style="${spStyle}">${libro.stock_prestamo}</td>
                     <td>
                         <div class="td-actions">
                             <button class="btn-secondary btn-sm" type="button"

@@ -79,6 +79,18 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
                 <label for="cantidadPaquete">Cantidad recibida</label>
                 <input type="number" id="cantidadPaquete" min="1" value="1">
             </div>
+            <div class="form-group">
+                <label for="cantidadVenta">Unidades para venta</label>
+                <input type="number" id="cantidadVenta" min="0" value="0">
+            </div>
+            <div class="form-group">
+                <label for="cantidadPrestamo">Unidades para préstamo</label>
+                <input type="number" id="cantidadPrestamo" min="0" value="0">
+            </div>
+            <div class="form-group">
+                <label for="costoPaquete">Costo total del paquete ($)</label>
+                <input type="number" id="costoPaquete" step="0.01" min="0" placeholder="Monto que cobra el proveedor">
+            </div>
         </div>
         <div class="form-actions">
             <button type="button" onclick="recibirPaquete()">Recibir paquete</button>
@@ -423,16 +435,24 @@ async function recibirPaquete() {
     const id_proveedor = document.getElementById("selectProvPaquete").value;
     const isbn = document.getElementById("selectLibroPaquete").value;
     const cantidad = parseInt(document.getElementById("cantidadPaquete").value) || 0;
+    const cantidad_venta = parseInt(document.getElementById("cantidadVenta").value) || 0;
+    const cantidad_prestamo = parseInt(document.getElementById("cantidadPrestamo").value) || 0;
+    const costo_total = parseFloat(document.getElementById("costoPaquete").value);
 
     if (!id_proveedor) { mostrarMensaje("Selecciona un proveedor."); return; }
     if (!isbn) { mostrarMensaje("Selecciona un libro."); return; }
     if (cantidad < 1) { mostrarMensaje("La cantidad debe ser al menos 1."); return; }
+    if (isNaN(costo_total) || costo_total < 0) { mostrarMensaje("Ingresa el costo total del paquete."); return; }
+    if ((cantidad_venta + cantidad_prestamo) !== cantidad) {
+        mostrarMensaje(`Las unidades para venta (${cantidad_venta}) + préstamo (${cantidad_prestamo}) deben sumar ${cantidad}.`);
+        return;
+    }
 
     try {
         const res = await fetch("/proveedores/recibir-paquete", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id_proveedor, isbn, cantidad })
+            body: JSON.stringify({ id_proveedor, isbn, cantidad, cantidad_venta, cantidad_prestamo, costo_total })
         });
 
         const data = await res.json();
@@ -440,6 +460,9 @@ async function recibirPaquete() {
 
         mostrarMensaje(data.mensaje, "success");
         document.getElementById("cantidadPaquete").value = "1";
+        document.getElementById("cantidadVenta").value = "0";
+        document.getElementById("cantidadPrestamo").value = "0";
+        document.getElementById("costoPaquete").value = "";
     } catch (e) {
         console.error(e);
         mostrarMensaje("Error al recibir paquete.");
