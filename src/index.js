@@ -982,7 +982,7 @@ app.put("/usuarios/:correo/password", async (req, res) => {
         }
 
         const result = await db.query(
-            "SELECT contrasena_hash FROM persona WHERE correo_electronico = $1",
+            "SELECT contrasena_hash, debe_cambiar_contrasena FROM persona WHERE correo_electronico = $1",
             [correo]
         );
 
@@ -991,9 +991,10 @@ app.put("/usuarios/:correo/password", async (req, res) => {
         }
 
         const hashActual = result.rows[0].contrasena_hash;
+        const esPrimerCambio = result.rows[0].debe_cambiar_contrasena;
 
-        // Si ya tiene contraseña, verificar la actual antes de cambiar
-        if (hashActual) {
+        // Si es primer cambio obligatorio, no pedir contraseña actual
+        if (hashActual && !esPrimerCambio) {
             if (!password_actual) {
                 return res.status(400).json({ error: "Debes proporcionar la contraseña actual." });
             }
