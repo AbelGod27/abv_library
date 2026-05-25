@@ -22,20 +22,25 @@ function confirmar(mensaje) {
         overlay.appendChild(modal);
         document.body.appendChild(overlay);
 
-        // Eventos
-        document.getElementById("btnConfirmarSi").onclick = () => {
-            document.body.removeChild(overlay);
-            resolve(true);
+        // Quitar foco de cualquier botón previo
+        if (document.activeElement) document.activeElement.blur();
+
+        const cerrar = (resultado) => {
+            document.removeEventListener("keydown", manejarTecla);
+            if (document.body.contains(overlay)) document.body.removeChild(overlay);
+            resolve(resultado);
         };
-        document.getElementById("btnConfirmarNo").onclick = () => {
-            document.body.removeChild(overlay);
-            resolve(false);
+
+        // Manejar Enter y Escape
+        const manejarTecla = (e) => {
+            if (e.key === "Enter") { e.preventDefault(); cerrar(true); }
+            if (e.key === "Escape") { e.preventDefault(); cerrar(false); }
         };
-        overlay.onclick = (e) => {
-            if (e.target === overlay) {
-                document.body.removeChild(overlay);
-                resolve(false);
-            }
-        };
+        document.addEventListener("keydown", manejarTecla);
+
+        // Eventos de botones
+        document.getElementById("btnConfirmarSi").onclick = () => cerrar(true);
+        document.getElementById("btnConfirmarNo").onclick = () => cerrar(false);
+        overlay.onclick = (e) => { if (e.target === overlay) cerrar(false); };
     });
 }
