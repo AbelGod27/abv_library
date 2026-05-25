@@ -159,6 +159,23 @@ CREATE TABLE IF NOT EXISTS prov_suministra_lib (
         ON DELETE CASCADE
 );
 
+-- RECEPCION DE PAQUETES (historial de lo recibido de proveedores)
+CREATE TABLE IF NOT EXISTS recepcion_paquete (
+    id_recepcion    SERIAL PRIMARY KEY,
+    id_proveedor    INTEGER NOT NULL,
+    isbn            VARCHAR(50) NOT NULL,
+    cantidad        INTEGER NOT NULL,
+    fecha           DATE DEFAULT CURRENT_DATE,
+    CONSTRAINT fk_recepcion_proveedor
+        FOREIGN KEY (id_proveedor)
+        REFERENCES proveedor(id_proveedor)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_recepcion_libro
+        FOREIGN KEY (isbn)
+        REFERENCES libro(isbn)
+        ON DELETE CASCADE
+);
+
 -- DONACION
 CREATE TABLE IF NOT EXISTS donacion (
     id_donacion         SERIAL PRIMARY KEY,

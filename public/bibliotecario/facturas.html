@@ -83,6 +83,26 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
         </div>
     </div>
 
+    <!-- RECEPCIONES DE PROVEEDORES -->
+    <div class="card" id="seccionRecepciones" style="display:none;">
+        <h2>Recepciones de proveedores</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Fecha</th>
+                        <th>Proveedor</th>
+                        <th>Libro</th>
+                        <th>Cantidad</th>
+                        <th>Costo estimado</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaRecepciones"></tbody>
+            </table>
+        </div>
+    </div>
+
 </main>
 
 <script>
@@ -103,11 +123,13 @@ async function generarReporte() {
 
         mostrarVentas(data.ventas);
         mostrarPrestamos(data.prestamos);
-        mostrarResumen(data.ventas, data.prestamos);
+        mostrarRecepciones(data.recepciones || []);
+        mostrarResumen(data.ventas, data.prestamos, data.recepciones || []);
 
         document.getElementById("seccionResumen").style.display = "block";
         document.getElementById("seccionVentas").style.display = "block";
         document.getElementById("seccionPrestamos").style.display = "block";
+        document.getElementById("seccionRecepciones").style.display = "block";
     } catch (error) {
         console.error(error);
         mostrarMensaje("Error al generar reporte.");
@@ -153,34 +175,57 @@ function mostrarPrestamos(prestamos) {
     });
 }
 
-function mostrarResumen(ventas, prestamos) {
+function mostrarResumen(ventas, prestamos, recepciones) {
     const totalVentas = ventas.reduce((t, v) => t + Number(v.monto || 0), 0);
     const totalMultas = prestamos.reduce((t, p) => t + Number(p.monto || 0), 0);
+    const totalRecepciones = recepciones.reduce((t, r) => t + Number(r.monto || 0), 0);
     const pendientes  = prestamos.filter(p => p.estado === "Pendiente").length;
     const devueltos   = prestamos.filter(p => p.estado === "Devuelto").length;
 
     document.getElementById("resumenFacturas").innerHTML = `
         <div class="resumen-item">
-            <div class="label">Total ventas</div>
-            <div class="value">$${totalVentas.toFixed(2)}</div>
+            <div class="label">Ingresos por ventas</div>
+            <div class="value" style="color:#16a34a;">+$${totalVentas.toFixed(2)}</div>
         </div>
         <div class="resumen-item">
-            <div class="label">Total multas</div>
-            <div class="value">$${totalMultas.toFixed(2)}</div>
+            <div class="label">Ingresos por multas</div>
+            <div class="value" style="color:#16a34a;">+$${totalMultas.toFixed(2)}</div>
         </div>
         <div class="resumen-item">
-            <div class="label">Préstamos pendientes</div>
-            <div class="value">${pendientes}</div>
+            <div class="label">Gastos en recepciones (proveedores)</div>
+            <div class="value" style="color:#dc2626;">-$${totalRecepciones.toFixed(2)}</div>
         </div>
         <div class="resumen-item">
-            <div class="label">Préstamos devueltos</div>
-            <div class="value">${devueltos}</div>
+            <div class="label">Préstamos pendientes / devueltos</div>
+            <div class="value">${pendientes} / ${devueltos}</div>
         </div>
         <div class="resumen-item">
-            <div class="label">Total general</div>
-            <div class="value" style="color:var(--color-success)">$${(totalVentas + totalMultas).toFixed(2)}</div>
+            <div class="label">Balance neto</div>
+            <div class="value" style="font-weight:700; color:${(totalVentas + totalMultas - totalRecepciones) >= 0 ? '#16a34a' : '#dc2626'}">
+                $${(totalVentas + totalMultas - totalRecepciones).toFixed(2)}
+            </div>
         </div>
     `;
+}
+
+function mostrarRecepciones(recepciones) {
+    const tabla = document.getElementById("tablaRecepciones");
+    tabla.innerHTML = "";
+    if (recepciones.length === 0) {
+        tabla.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">No hay recepciones en este periodo</td></tr>`;
+        return;
+    }
+    recepciones.forEach(r => {
+        tabla.innerHTML += `
+            <tr>
+                <td>${r.id}</td>
+                <td class="fecha">${formatFecha(r.fecha)}</td>
+                <td>${r.proveedor}</td>
+                <td>${r.libro}</td>
+                <td>${r.cantidad}</td>
+                <td>$${Number(r.monto || 0).toFixed(2)}</td>
+            </tr>`;
+    });
 }
 
 function formatFecha(fecha) {
