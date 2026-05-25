@@ -238,7 +238,7 @@ async function actualizarEmpleado() {
 
 // Elimina un empleado con confirmación
 async function eliminarEmpleado(correo) {
-    if (!confirm("¿Seguro que quieres eliminar este empleado?")) return;
+    if (!(await confirmar("¿Seguro que quieres eliminar este empleado?"))) return;
     try {
         const response = await fetch(`/empleados/${correo}`, { method: "DELETE" });
         const data = await response.json();
@@ -367,5 +367,5 @@ async function guardarPassword() {
 }
 </script>
 
-<script src="/theme.js"></script></body>
+<script src="/confirmar.js"></script><script src="/theme.js"></script></body>
 </html>

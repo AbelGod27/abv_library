@@ -235,7 +235,7 @@ async function agregarLibro() {
 
 // Elimina un libro por ISBN con confirmación
 async function eliminarLibro(isbn) {
-    if (!confirm("¿Seguro que quieres eliminar este libro?")) return;
+    if (!(await confirmar("¿Seguro que quieres eliminar este libro?"))) return;
     try {
         const response = await fetch(`/libros/${isbn}`, { method: "DELETE" });
         const data = await response.json();
@@ -358,5 +358,5 @@ async function importarOpenLibrary() {
 }
 </script>
 
-<script src="/theme.js"></script></body>
+<script src="/confirmar.js"></script><script src="/theme.js"></script></body>
 </html>

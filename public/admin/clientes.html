@@ -230,7 +230,7 @@ async function actualizarCliente() {
 
 // Elimina un cliente con confirmación
 async function eliminarCliente(correo) {
-    if (!confirm("¿Seguro que quieres eliminar este cliente?")) return;
+    if (!(await confirmar("¿Seguro que quieres eliminar este cliente?"))) return;
     try {
         const response = await fetch(`/clientes/${correo}`, { method: "DELETE" });
         const data = await response.json();
@@ -363,5 +363,5 @@ async function guardarPassword() {
 }
 </script>
 
-<script src="/theme.js"></script></body>
+<script src="/confirmar.js"></script><script src="/theme.js"></script></body>
 </html>

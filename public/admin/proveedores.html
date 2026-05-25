@@ -248,7 +248,7 @@ async function actualizarProveedor() {
 
 // Elimina un proveedor con confirmación
 async function eliminarProveedor(id) {
-    if (!confirm("¿Seguro que quieres eliminar este proveedor?")) return;
+    if (!(await confirmar("¿Seguro que quieres eliminar este proveedor?"))) return;
 
     try {
         const response = await fetch(`/proveedores/${id}`, { method: "DELETE" });
@@ -502,5 +502,5 @@ async function recibirPaquete() {
 }
 </script>
 
-<script src="/theme.js"></script></body>
+<script src="/confirmar.js"></script><script src="/theme.js"></script></body>
 </html>
