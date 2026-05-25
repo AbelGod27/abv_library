@@ -57,9 +57,14 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
                 <select id="rol">
                     <option value="">Selecciona un rol</option>
                     <option value="Vendedor">Vendedor</option>
+                    <option value="Bibliotecario">Bibliotecario</option>
                     <option value="Administrador">Administrador</option>
                     <option value="Dueno">Dueño</option>
                 </select>
+            </div>
+            <div class="form-group" id="grupoPassword">
+                <label for="password">Contraseña (mín. 8 caracteres)</label>
+                <input type="password" id="password" placeholder="••••••••">
             </div>
         </div>
 
@@ -77,13 +82,11 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
             <table>
                 <thead>
                     <tr>
+                        <th>Empleado</th>
                         <th>Correo</th>
-                        <th>Nombre</th>
-                        <th>Ap. Paterno</th>
-                        <th>Ap. Materno</th>
-                        <th>Teléfono</th>
                         <th>Rol</th>
-                        <th>Contraseña</th>
+                        <th>Teléfono</th>
+                        <th>Estado</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -134,32 +137,35 @@ async function cargarEmpleados() {
         tabla.innerHTML = "";
 
         if (data.length === 0) {
-            tabla.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">No hay empleados registrados</td></tr>`;
+            tabla.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">No hay empleados registrados</td></tr>`;
             return;
         }
 
         data.forEach(e => {
+            const nombreCompleto = `${e.nombre} ${e.ap_paterno}${e.ap_materno ? ' ' + e.ap_materno : ''}`;
+            const estadoIcon = e.tiene_password
+                ? "<i class='bi bi-check-circle-fill' style='color:#16a34a;'></i>"
+                : "<i class='bi bi-exclamation-triangle-fill' style='color:#f59e0b;'></i>";
+
             tabla.innerHTML += `
                 <tr>
-                    <td>${e.correo_electronico}</td>
-                    <td>${e.nombre}</td>
-                    <td>${e.ap_paterno}</td>
-                    <td>${e.ap_materno ?? "—"}</td>
+                    <td><strong>${nombreCompleto}</strong></td>
+                    <td><small>${e.correo_electronico}</small></td>
+                    <td><span style="background:#f1ebe4; padding:2px 8px; border-radius:4px; font-size:.8rem; font-weight:600;">${e.rol}</span></td>
                     <td>${e.telefono ?? "—"}</td>
-                    <td>${e.rol}</td>
-                    <td>${e.tiene_password ? "<i class='bi bi-check-circle-fill' style='color:#16a34a;'></i> Configurada" : "<i class='bi bi-exclamation-triangle-fill' style='color:#f59e0b;'></i> Sin contraseña"}</td>
+                    <td>${estadoIcon}</td>
                     <td>
                         <div class="td-actions">
                             <button class="btn-secondary btn-sm" type="button"
                                 onclick="cargarDatosEditar('${e.correo_electronico}','${e.nombre}','${e.ap_paterno}','${e.ap_materno ?? ""}','${e.fecha_de_nacimiento ?? ""}','${e.telefono ?? ""}','${e.rol}')">
-                                <i class="bi bi-pencil"></i> Editar
+                                <i class="bi bi-pencil"></i>
                             </button>
                             <button class="btn-secondary btn-sm" type="button"
                                 onclick="abrirModalPassword('${e.correo_electronico}', ${e.tiene_password})">
-                                <i class="bi bi-key"></i> Contraseña
+                                <i class="bi bi-key"></i>
                             </button>
                             <button class="btn-danger btn-sm" type="button" onclick="eliminarEmpleado('${e.correo_electronico}')">
-                                <i class="bi bi-trash"></i> Eliminar
+                                <i class="bi bi-trash"></i>
                             </button>
                         </div>
                     </td>
@@ -199,6 +205,7 @@ function cargarDatosEditar(correo, nombre, ap_paterno, ap_materno, fecha_de_naci
     document.getElementById("telefono").value = telefono;
     document.getElementById("rol").value = rol;
     document.getElementById("correo_electronico").disabled = true;
+    document.getElementById("grupoPassword").style.display = "none";
     document.getElementById("formTitulo").textContent = "Editar Empleado";
     document.getElementById("btnAgregar").style.display = "none";
     document.getElementById("btnActualizar").style.display = "inline-flex";
@@ -248,15 +255,17 @@ function obtenerDatos() {
         ap_materno:          document.getElementById("ap_materno").value,
         fecha_de_nacimiento: document.getElementById("fecha_de_nacimiento").value,
         telefono:            document.getElementById("telefono").value,
-        rol:                 document.getElementById("rol").value
+        rol:                 document.getElementById("rol").value,
+        password:            document.getElementById("password").value
     };
 }
 
 function limpiarFormulario() {
-    ["correo_electronico","nombre","ap_paterno","ap_materno","fecha_de_nacimiento","telefono","rol"].forEach(id => {
+    ["correo_electronico","nombre","ap_paterno","ap_materno","fecha_de_nacimiento","telefono","rol","password"].forEach(id => {
         document.getElementById(id).value = "";
     });
     document.getElementById("correo_electronico").disabled = false;
+    document.getElementById("grupoPassword").style.display = "block";
     document.getElementById("formTitulo").textContent = "Agregar Empleado";
     document.getElementById("btnAgregar").style.display = "inline-flex";
     document.getElementById("btnActualizar").style.display = "none";
