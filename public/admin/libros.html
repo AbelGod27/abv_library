@@ -174,7 +174,7 @@ function renderPaginaLibros() {
                     <small style="color:#64748b;">${libro.autor}</small>
                     ${libro.editorial ? `<br><small style="color:#94a3b8;">${libro.editorial} ${libro.version ? '· ' + libro.version : ''}</small>` : ''}
                 </td>
-                <td><code style="font-size:.75rem;">${libro.isbn}</code></td>
+                <td><span style="font-family:'Montserrat',sans-serif; font-size:.8rem; font-weight:500; background:#f1f5f9; padding:2px 6px; border-radius:4px;">${libro.isbn}</span></td>
                 <td style="font-weight:600;">$${Number(libro.precio || 0).toFixed(2)}</td>
                 <td style="${svStyle}">${libro.stock_venta}</td>
                 <td style="${spStyle}">${libro.stock_prestamo}</td>
