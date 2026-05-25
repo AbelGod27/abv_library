@@ -96,15 +96,11 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
             <table>
                 <thead>
                     <tr>
+                        <th>Título / Autor</th>
                         <th>ISBN</th>
-                        <th>Título</th>
-                        <th>Autor</th>
-                        <th>Editorial</th>
-                        <th>Versión</th>
-                        <th>Año</th>
                         <th>Precio</th>
-                        <th>Stock Venta</th>
-                        <th>Stock Préstamo</th>
+                        <th>Venta</th>
+                        <th>Préstamo</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -162,34 +158,34 @@ function renderPaginaLibros() {
     const pagina = datosLibros.slice(inicio, fin);
 
     if (datosLibros.length === 0) {
-        tabla.innerHTML = `<tr><td colspan="10" style="text-align:center;color:var(--text-muted)">No se encontraron libros</td></tr>`;
+        tabla.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">No se encontraron libros</td></tr>`;
         document.getElementById("paginacionLibros").innerHTML = "";
         return;
     }
 
     pagina.forEach(libro => {
-        const svStyle = Number(libro.stock_venta) === 0 ? "color:#dc2626; font-weight:600;" : "color:#16a34a;";
-        const spStyle = Number(libro.stock_prestamo) === 0 ? "color:#dc2626; font-weight:600;" : "color:#16a34a;";
+        const svStyle = Number(libro.stock_venta) === 0 ? "color:#dc2626; font-weight:600;" : "color:#16a34a; font-weight:600;";
+        const spStyle = Number(libro.stock_prestamo) === 0 ? "color:#dc2626; font-weight:600;" : "color:#16a34a; font-weight:600;";
 
         tabla.innerHTML += `
             <tr>
-                <td>${libro.isbn}</td>
-                <td>${libro.titulo}</td>
-                <td>${libro.autor}</td>
-                <td>${libro.editorial ?? "—"}</td>
-                <td>${libro.version ?? "—"}</td>
-                <td class="fecha">${formatFecha(libro.anio_publicacion)}</td>
-                <td>$${Number(libro.precio || 0).toFixed(2)}</td>
+                <td>
+                    <strong>${libro.titulo}</strong><br>
+                    <small style="color:#64748b;">${libro.autor}</small>
+                    ${libro.editorial ? `<br><small style="color:#94a3b8;">${libro.editorial} ${libro.version ? '· ' + libro.version : ''}</small>` : ''}
+                </td>
+                <td><code style="font-size:.75rem;">${libro.isbn}</code></td>
+                <td style="font-weight:600;">$${Number(libro.precio || 0).toFixed(2)}</td>
                 <td style="${svStyle}">${libro.stock_venta}</td>
                 <td style="${spStyle}">${libro.stock_prestamo}</td>
                 <td>
                     <div class="td-actions">
                         <button class="btn-secondary btn-sm" type="button"
                             onclick="cargarDatosEditar('${libro.isbn}','${libro.titulo}','${libro.autor}','${libro.editorial ?? ""}','${libro.version ?? ""}','${libro.anio_publicacion ?? ""}','${libro.precio ?? 0}')">
-                            <i class="bi bi-pencil"></i> Editar
+                            <i class="bi bi-pencil"></i>
                         </button>
                         <button class="btn-danger btn-sm" type="button" onclick="eliminarLibro('${libro.isbn}')">
-                            <i class="bi bi-trash"></i> Eliminar
+                            <i class="bi bi-trash"></i>
                         </button>
                     </div>
                 </td>

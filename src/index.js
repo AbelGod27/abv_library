@@ -317,12 +317,13 @@ app.get("/stock", async (req, res) => {
                 l.isbn,
                 l.titulo,
                 l.autor,
+                l.editorial,
+                l.version,
+                l.anio_publicacion,
                 l.precio,
-                COALESCE(lv.cantidad, 0) AS stock_venta,
-                COALESCE(lp.cantidad, 0) AS stock_prestamo
+                COALESCE((SELECT SUM(cantidad) FROM lib_venta WHERE isbn = l.isbn AND id_venta IS NULL), 0) AS stock_venta,
+                COALESCE((SELECT SUM(cantidad) FROM lib_pres WHERE isbn = l.isbn AND id_prestamo IS NULL), 0) AS stock_prestamo
             FROM libro l
-            LEFT JOIN lib_venta lv ON l.isbn = lv.isbn AND lv.id_venta IS NULL
-            LEFT JOIN lib_pres lp ON l.isbn = lp.isbn AND lp.id_prestamo IS NULL
             ORDER BY l.titulo
         `);
 
