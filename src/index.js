@@ -40,20 +40,27 @@ const db = require("./db");
 const SALT_ROUNDS = 10;
 
 // Función auxiliar para validar formato de correo electrónico con expresión regular
+// Requiere al menos 3 caracteres antes del @, dominio válido con punto
 function esCorreoValido(correo) {
-    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const regex = /^[^\s@]{3,}@[^\s@]+\.[^\s@]{2,}$/;
     return regex.test(correo);
 }
 
 // Función auxiliar para validar que un nombre solo contenga letras, espacios y acentos
+// Además debe tener al menos 2 caracteres
 function esNombreValido(nombre) {
+    if (nombre.length < 2) return false;
     const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
     return regex.test(nombre);
 }
 
 // Función auxiliar para validar que un teléfono tenga exactamente 10 dígitos
+// y no sea un número repetido (ej: 1111111111)
 function esTelefonoValido(tel) {
-    return /^\d{10}$/.test(tel);
+    if (!/^\d{10}$/.test(tel)) return false;
+    // Rechazar números donde todos los dígitos son iguales
+    if (/^(\d)\1{9}$/.test(tel)) return false;
+    return true;
 }
 
 // Inicialización de la aplicación Express
