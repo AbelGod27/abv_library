@@ -45,7 +45,7 @@
         <div class="contenedor-switch">
             <span>Local</span>
             <label class="switch">
-                <input type="checkbox" id="switchLibros" checked aria-label="Cambiar fuente de libros">
+                <input type="checkbox" id="switchLibros" aria-label="Cambiar fuente de libros">
                 <span class="slider"></span>
             </label>
             <span>Global</span>
@@ -72,7 +72,7 @@ const switchLibros = document.getElementById("switchLibros");
 const catalogoGrid = document.getElementById("catalogoGrid");
 const catalogoMensaje = document.getElementById("catalogoMensaje");
 let temporizador;
-let fuenteActual = "api";
+let fuenteActual = "db";
 let favoritos = new Set(); // ISBNs favoritos del cliente logueado
 
 // Obtiene los datos del cliente logueado desde localStorage

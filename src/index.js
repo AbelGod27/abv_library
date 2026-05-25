@@ -262,7 +262,7 @@ app.get("/api/libros-externos", async (req, res) => {
                 limit: 20,
                 fields: "title,author_name,first_publish_year,isbn,publisher"
             },
-            timeout: 8000
+            timeout: 15000
         });
 
         // Mapear la respuesta de Open Library al formato interno de la aplicación
