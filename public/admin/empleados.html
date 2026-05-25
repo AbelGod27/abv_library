@@ -62,10 +62,6 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
                     <option value="Dueno">Dueño</option>
                 </select>
             </div>
-            <div class="form-group" id="grupoPassword">
-                <label for="password">Contraseña (mín. 8 caracteres)</label>
-                <input type="password" id="password" placeholder="••••••••">
-            </div>
         </div>
 
         <div class="form-actions">
@@ -205,7 +201,6 @@ function cargarDatosEditar(correo, nombre, ap_paterno, ap_materno, fecha_de_naci
     document.getElementById("telefono").value = telefono;
     document.getElementById("rol").value = rol;
     document.getElementById("correo_electronico").disabled = true;
-    document.getElementById("grupoPassword").style.display = "none";
     document.getElementById("formTitulo").textContent = "Editar Empleado";
     document.getElementById("btnAgregar").style.display = "none";
     document.getElementById("btnActualizar").style.display = "inline-flex";
@@ -255,17 +250,15 @@ function obtenerDatos() {
         ap_materno:          document.getElementById("ap_materno").value,
         fecha_de_nacimiento: document.getElementById("fecha_de_nacimiento").value,
         telefono:            document.getElementById("telefono").value,
-        rol:                 document.getElementById("rol").value,
-        password:            document.getElementById("password").value
+        rol:                 document.getElementById("rol").value
     };
 }
 
 function limpiarFormulario() {
-    ["correo_electronico","nombre","ap_paterno","ap_materno","fecha_de_nacimiento","telefono","rol","password"].forEach(id => {
+    ["correo_electronico","nombre","ap_paterno","ap_materno","fecha_de_nacimiento","telefono","rol"].forEach(id => {
         document.getElementById(id).value = "";
     });
     document.getElementById("correo_electronico").disabled = false;
-    document.getElementById("grupoPassword").style.display = "block";
     document.getElementById("formTitulo").textContent = "Agregar Empleado";
     document.getElementById("btnAgregar").style.display = "inline-flex";
     document.getElementById("btnActualizar").style.display = "none";

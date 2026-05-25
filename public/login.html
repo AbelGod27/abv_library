@@ -113,6 +113,13 @@ async function iniciarSesion() {
 }
 
 function redirigirPorRol(rol, data) {
+    // Si debe cambiar contraseña, redirigir al cambio obligatorio
+    if (data.debe_cambiar_contrasena) {
+        sessionStorage.setItem("correo_cambio_password", data.correo_electronico);
+        window.location.href = "/cambiar-password.html";
+        return;
+    }
+
     if (rol.tipo === "admin") {
         sessionStorage.setItem("adminActivo", "true");
         window.location.href = "/admin/panel.html";

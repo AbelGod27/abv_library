@@ -39,7 +39,7 @@ app.post("/login", async (req, res) => {
 
         // Buscar persona
         const persona = await db.query(
-            "SELECT correo_electronico, nombre, ap_paterno, contrasena_hash FROM persona WHERE correo_electronico = $1",
+            "SELECT correo_electronico, nombre, ap_paterno, contrasena_hash, debe_cambiar_contrasena FROM persona WHERE correo_electronico = $1",
             [correo_electronico]
         );
 
@@ -94,6 +94,7 @@ app.post("/login", async (req, res) => {
             nombre: user.nombre,
             ap_paterno: user.ap_paterno,
             correo_electronico: user.correo_electronico,
+            debe_cambiar_contrasena: user.debe_cambiar_contrasena || false,
             roles
         });
 
@@ -671,25 +672,18 @@ app.post("/empleados", async (req, res) => {
             ap_materno,
             fecha_de_nacimiento,
             telefono,
-            rol,
-            password
+            rol
         } = req.body;
 
-        if (!correo_electronico || !nombre || !ap_paterno || !fecha_de_nacimiento || !rol || !password) {
+        if (!correo_electronico || !nombre || !ap_paterno || !fecha_de_nacimiento || !rol) {
             return res.status(400).json({
-                error: "Correo, nombre, apellido paterno, fecha de nacimiento, rol y contraseña son obligatorios."
+                error: "Correo, nombre, apellido paterno, fecha de nacimiento y rol son obligatorios."
             });
         }
 
         if (!esCorreoValido(correo_electronico)) {
             return res.status(400).json({
                 error: "El correo electrónico no tiene un formato válido."
-            });
-        }
-
-        if (password.length < 8) {
-            return res.status(400).json({
-                error: "La contraseña debe tener al menos 8 caracteres."
             });
         }
 
@@ -704,52 +698,33 @@ app.post("/empleados", async (req, res) => {
             });
         }
 
-        const contrasena_hash = await bcrypt.hash(password, SALT_ROUNDS);
+        // Contraseña predefinida: nombre+1234
+        const passwordPredefinida = nombre.toLowerCase().replace(/\s/g, '') + "1234";
+        const contrasena_hash = await bcrypt.hash(passwordPredefinida, SALT_ROUNDS);
 
         await db.query("BEGIN");
 
         await db.query(
-            `
-            INSERT INTO persona (
-                correo_electronico,
-                nombre,
-                ap_paterno,
-                ap_materno,
-                fecha_de_nacimiento,
-                telefono,
-                contrasena_hash
-            )
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-            `,
+            `INSERT INTO persona (
+                correo_electronico, nombre, ap_paterno, ap_materno,
+                fecha_de_nacimiento, telefono, contrasena_hash, debe_cambiar_contrasena
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE)`,
             [
-                correo_electronico,
-                nombre,
-                ap_paterno,
-                ap_materno || null,
-                fecha_de_nacimiento,
-                telefono || null,
-                contrasena_hash
+                correo_electronico, nombre, ap_paterno,
+                ap_materno || null, fecha_de_nacimiento,
+                telefono || null, contrasena_hash
             ]
         );
 
         await db.query(
-            `
-            INSERT INTO empleado (
-                correo_electronico,
-                rol
-            )
-            VALUES ($1, $2)
-            `,
-            [
-                correo_electronico,
-                rol
-            ]
+            `INSERT INTO empleado (correo_electronico, rol) VALUES ($1, $2)`,
+            [correo_electronico, rol]
         );
 
         await db.query("COMMIT");
 
         res.json({
-            mensaje: "Empleado agregado correctamente."
+            mensaje: `Empleado agregado. Contraseña temporal: ${passwordPredefinida}`
         });
 
     } catch (error) {
@@ -1031,7 +1006,7 @@ app.put("/usuarios/:correo/password", async (req, res) => {
         const nuevoHash = await bcrypt.hash(password_nueva, SALT_ROUNDS);
 
         await db.query(
-            "UPDATE persona SET contrasena_hash = $1 WHERE correo_electronico = $2",
+            "UPDATE persona SET contrasena_hash = $1, debe_cambiar_contrasena = FALSE WHERE correo_electronico = $2",
             [nuevoHash, correo]
         );
 

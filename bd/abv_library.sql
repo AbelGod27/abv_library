@@ -5,13 +5,14 @@
 
 -- PERSONA (tabla base para empleados y clientes)
 CREATE TABLE IF NOT EXISTS persona (
-    correo_electronico  VARCHAR(100) PRIMARY KEY,
-    nombre              VARCHAR(100) NOT NULL,
-    ap_paterno          VARCHAR(100) NOT NULL,
-    ap_materno          VARCHAR(100),
-    fecha_de_nacimiento DATE NOT NULL,
-    telefono            VARCHAR(15),
-    contrasena_hash     VARCHAR(255)
+    correo_electronico      VARCHAR(100) PRIMARY KEY,
+    nombre                  VARCHAR(100) NOT NULL,
+    ap_paterno              VARCHAR(100) NOT NULL,
+    ap_materno              VARCHAR(100),
+    fecha_de_nacimiento     DATE NOT NULL,
+    telefono                VARCHAR(15),
+    contrasena_hash         VARCHAR(255),
+    debe_cambiar_contrasena BOOLEAN DEFAULT FALSE
 );
 
 -- EMPLEADO
