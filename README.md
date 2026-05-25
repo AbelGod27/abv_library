@@ -1,80 +1,98 @@
 # ABV Library
 
-Sistema web de gestion para una libreria/biblioteca, desarrollado como proyecto de la materia **Base de Datos**. Permite administrar libros, empleados, clientes, proveedores, ventas y prestamos desde una interfaz tipo marketplace.
+Sistema web completo de gestión para una librería/biblioteca, desarrollado como proyecto de la materia **Base de Datos**. Permite administrar libros, empleados, clientes, proveedores, ventas, préstamos y donaciones desde una interfaz moderna tipo marketplace.
 
-**Demo en produccion:** https://libreria-va.onrender.com
-
----
-
-## Caracteristicas
-
-- **Catalogo de libros** con busqueda local y consulta a la API de Open Library (filtrado en español).
-- **Gestion de ventas** con carrito multi-libro, control de stock y sistema de puntos.
-- **Sistema de prestamos** con fechas de vencimiento, devolucion, calculo automatico de multas y alertas al cliente.
-- **Sistema de puntos** — los clientes acumulan 1 punto por cada $10 de compra y pueden canjearlos por descuentos (10 puntos = $1).
-- **Donaciones de libros** — los clientes pueden donar libros a cambio de 20 puntos o intercambiar por otro libro donado.
-- **Libros favoritos** — los clientes pueden guardar libros favoritos (locales y de Open Library).
-- **Recomendaciones personalizadas** basadas en favoritos, compras y prestamos del cliente.
-- **Importacion masiva** desde Open Library al catalogo local.
-- **Proveedores con suministro de libros** — relacion proveedor-libro, recepcion de paquetes con distribucion de stock (venta/préstamo), costo del proveedor y reflejo en facturas con balance neto.
-- **Login unificado** — un solo formulario de login que detecta los roles del usuario y permite elegir como entrar.
-- **CRUD completo** en todas las entidades del admin (libros, empleados, clientes, proveedores).
-- **Busqueda inteligente** de libros en ventas, prestamos y asignacion de proveedores (autocompletado).
-- **Autenticacion segura** con bcrypt (hash de contrase�as).
-- **Validacion de correo electronico** en todos los formularios.
-- **Iconos Bootstrap Icons** en toda la interfaz.
-- **Tres roles de acceso:**
-  - **Administrador** — gestiona libros, empleados, clientes, proveedores y sus relaciones (CRUD completo).
-  - **Bibliotecario** — registra ventas (carrito), prestamos, donaciones y consulta historial/facturas.
-  - **Cliente** — consulta el catalogo, ve sus puntos, favoritos, prestamos, donaciones y recomendaciones.
+**Demo en producción:** https://libreria-va.onrender.com
 
 ---
 
-## Seguridad: Hasheo de contrase�as con bcrypt
+## Características principales
 
-El sistema nunca almacena contrase�as en texto plano. Se utiliza **bcrypt** para generar un hash seguro antes de guardar en la base de datos.
+### Catálogo y búsqueda
+- Catálogo de libros con búsqueda en tiempo real (debounce 300ms)
+- Integración con API de Open Library para buscar libros externos en español
+- Switch Local/Global para alternar entre base de datos propia y Open Library
+- Portadas de libros obtenidas automáticamente por ISBN
 
-### Como funciona
+### Sistema de ventas (carrito)
+- Carrito multi-libro: el bibliotecario puede agregar varios libros a una sola venta
+- Búsqueda inteligente de libros con autocompletado (sin dropdown gigante)
+- Control de stock automático (descuenta al vender)
+- Cálculo de total en tiempo real
+- Asociación opcional de cliente para acumular puntos
 
-1. **Registro/creacion de usuario:** cuando se crea un empleado o cliente con contrase�a, el servidor ejecuta `bcrypt.hash(password, 10)` que genera un hash unico e irreversible. El numero 10 es el "salt rounds" (factor de costo) que determina cuantas iteraciones de cifrado se aplican.
+### Sistema de préstamos
+- Registro de préstamos con fecha de vencimiento
+- Devolución con cálculo automático de multas ($10 por día de retraso)
+- Estados dinámicos: Activo, Por vencer, Vencido, Devuelto
+- Alertas visuales al cliente cuando tiene préstamos por vencer
 
-2. **Login:** cuando el usuario ingresa su contrase�a, el servidor ejecuta `bcrypt.compare(password, hash)` que compara la contrase�a ingresada contra el hash almacenado sin necesidad de descifrar.
+### Sistema de puntos (fidelización)
+- Acumulación: 1 punto por cada $10 de compra
+- Canje: 10 puntos = $1 de descuento en la siguiente compra
+- Historial completo de puntos ganados y canjeados
+- Visible para el cliente en su panel personal
 
-3. **Salt automatico:** bcrypt genera un salt aleatorio por cada hash, lo que significa que dos usuarios con la misma contrase�a tendran hashes diferentes. Esto protege contra ataques de tablas rainbow.
+### Donaciones de libros
+- Los clientes pueden donar libros a la biblioteca
+- Dos opciones de recompensa: 20 puntos por libro O intercambio por otro libro donado
+- Los libros donados se agregan automáticamente al stock
 
-4. **Admin:** la contrase�a del administrador se almacena como hash en la variable de entorno `ADMIN_PASSWORD_HASH`.
+### Proveedores y recepción de paquetes
+- CRUD completo de proveedores
+- Asignación de qué libros suministra cada proveedor (relación N:M)
+- Recepción de paquetes con distribución de stock (venta/préstamo)
+- Costo del paquete registrado para reportes financieros
+- Validación: solo se pueden recibir libros que el proveedor tiene asignados
 
-### Ejemplo practico
+### Facturas y reportes financieros
+- Reporte por rango de fechas con tres secciones:
+  - Ingresos por ventas (+)
+  - Ingresos por multas (+)
+  - Egresos por recepciones de proveedores (-)
+- Balance neto calculado automáticamente (verde si positivo, rojo si negativo)
 
-```bash
-# Generar un hash para una contrase�a:
-node -e "require('bcrypt').hash('Micontrase�a123', 10).then(console.log)"
-# Resultado: $2b$10$ID8ndfLLHbTeTr8PzDew0u50U4MY7Psdb6Yi8aYVwzfbPHWkuKpnG
+### Favoritos y recomendaciones
+- Los clientes pueden marcar libros como favoritos (locales y de Open Library)
+- Botón de corazón en catálogo, tabla de búsqueda y recomendaciones
+- Recomendaciones personalizadas basadas en autores de favoritos, compras y préstamos
+- Si no hay datos suficientes, muestra libros aleatorios del catálogo
 
-# Estructura del hash:
-# $2b$   -> version del algoritmo
-# 10$    -> salt rounds (factor de costo)
-# ID8... -> salt + hash combinados (60 caracteres)
-```
+### Autenticación y seguridad
+- Login unificado: un solo formulario que detecta roles y permite elegir panel
+- Contraseñas hasheadas con bcrypt (10 salt rounds, nunca texto plano)
+- Contraseña temporal para empleados nuevos (nombre+1234) con cambio obligatorio en primer login
+- Validación de formato de correo electrónico en todos los formularios
+- Sesión del cliente con expiración automática (7 días)
+- Botón para ver/ocultar contraseña en todos los formularios de login
 
-### Por que bcrypt y no SHA-256 u otro
+### Interfaz de usuario
+- Diseño responsivo con CSS custom (sin frameworks pesados)
+- Tres temas: Modo claro, Modo oscuro, Night shift (botón flotante)
+- Iconos Bootstrap Icons (CDN)
+- Mensajes toast flotantes (visibles sin importar el scroll)
+- Paginación en tablas grandes (15 filas por página)
+- Tablas colapsables en secciones secundarias
+- Fuente Montserrat en toda la aplicación
 
-- bcrypt es **deliberadamente lento** (configurable con salt rounds), lo que dificulta ataques de fuerza bruta.
-- Incluye salt automatico, no necesitas generarlo manualmente.
-- Es el estandar de la industria para almacenar contrase�as en aplicaciones web.
+### Roles de acceso
+- **Administrador** — CRUD de libros, empleados, clientes, proveedores. Recepción de paquetes. Cambio de rol a bibliotecario.
+- **Bibliotecario** — Ventas (carrito), préstamos, donaciones, historial, facturas. Cambio de rol a admin (si aplica).
+- **Cliente** — Catálogo, favoritos, puntos, préstamos activos, donaciones, recomendaciones.
 
 ---
 
-## Tecnologias
+## Tecnologías
 
-| Capa | Tecnologia |
+| Capa | Tecnología |
 |------|-----------|
 | Backend | Node.js + Express 5 |
-| Base de datos | PostgreSQL |
-| Frontend | HTML, CSS, JavaScript (vanilla) |
-| Iconos | Bootstrap Icons (CDN) |
-| Autenticacion | bcrypt |
-| API externa | Open Library API |
+| Base de datos | PostgreSQL (Render) |
+| Frontend | HTML, CSS, JavaScript vanilla |
+| Iconos | Bootstrap Icons 1.11 (CDN) |
+| Fuente | Montserrat (Google Fonts) |
+| Autenticación | bcrypt (10 salt rounds) |
+| API externa | Open Library Search API |
 | Hosting | Render (web service + PostgreSQL) |
 
 ---
@@ -84,36 +102,40 @@ node -e "require('bcrypt').hash('Micontrase�a123', 10).then(console.log)"
 ```
 Libreria_va/
 ├── bd/
-│   └── abv_library.sql              # Esquema completo de la BD
+│   ├── abv_library.sql           # Esquema completo (13 tablas + índices)
+│   ├── seed_libros.sql           # 127 libros reales con ISBN
+│   └── seed_libros_extra.sql     # 39 libros adicionales
 ├── public/
-│   ├── index.html                    # Pagina principal con catalogo
-│   ├── login.html                    # Login unificado
-│   ├── principal.css                 # Estilos globales
-│   ├── index.css                     # Estilos del catalogo
+│   ├── index.html                # Página principal (catálogo + búsqueda)
+│   ├── login.html                # Login unificado con selección de rol
+│   ├── cambiar-password.html     # Cambio obligatorio de contraseña
+│   ├── principal.css             # Design system (variables, temas, componentes)
+│   ├── index.css                 # Estilos del catálogo
+│   ├── theme.js                  # Lógica de cambio de tema (claro/oscuro/night)
 │   ├── img/
 │   ├── admin/
-│   │   ├── login.html
-│   │   ├── panel.html
-│   │   ├── libros.html
-│   │   ├── empleados.html
-│   │   ├── clientes.html
-│   │   └── proveedores.html
+│   │   ├── login.html            # Login admin (contraseña maestra)
+│   │   ├── panel.html            # Panel con módulos
+│   │   ├── libros.html           # CRUD libros + stock + importación
+│   │   ├── empleados.html        # CRUD empleados + contraseña
+│   │   ├── clientes.html         # CRUD clientes + contraseña
+│   │   └── proveedores.html      # CRUD + suministro + recepción
 │   ├── bibliotecario/
-│   │   ├── login.html
-│   │   ├── panel.html
-│   │   ├── ventas.html
-│   │   ├── prestamos.html
-│   │   ├── donaciones.html
-│   │   ├── historial.html
-│   │   ├── historial-prestamos.html
-│   │   └── facturas.html
+│   │   ├── login.html            # Login empleado
+│   │   ├── panel.html            # Panel con módulos
+│   │   ├── ventas.html           # Carrito multi-libro
+│   │   ├── prestamos.html        # Registro de préstamos
+│   │   ├── donaciones.html       # Registro de donaciones
+│   │   ├── historial.html        # Historial de ventas
+│   │   ├── historial-prestamos.html  # Historial + devolución
+│   │   └── facturas.html         # Reportes financieros
 │   └── cliente/
-│       ├── cliente.html
-│       └── registro.html
+│       ├── cliente.html          # Portal completo del cliente
+│       └── registro.html         # Auto-registro público
 ├── src/
-│   ├── index.js                      # Servidor Express (API REST)
-│   └── db.js                         # Conexion a PostgreSQL
-├── .env                              # Variables de entorno (no subir)
+│   ├── index.js                  # Servidor Express (~2800 líneas, comentado)
+│   └── db.js                     # Pool de conexión PostgreSQL
+├── .env                          # Variables de entorno (no se sube)
 ├── .gitignore
 ├── package.json
 └── README.md
@@ -121,217 +143,235 @@ Libreria_va/
 
 ---
 
-## Requisitos previos
+## Instalación y ejecución local
 
-- [Node.js](https://nodejs.org/) v18 o superior
-- [PostgreSQL](https://www.postgresql.org/) (local o remoto)
+### Requisitos
+- Node.js v18+
+- PostgreSQL (local o remoto)
 
----
-
-## Instalacion y ejecucion local
-
-1. **Clonar el repositorio:**
+### Pasos
 
 ```bash
+# 1. Clonar
 git clone https://github.com/AbelGod27/Libreria_va.git
 cd Libreria_va
-```
 
-2. **Instalar dependencias:**
-
-```bash
+# 2. Instalar dependencias
 npm install
-```
 
-3. **Configurar variables de entorno:**
-
-Crear un archivo `.env` en la raiz con:
-
-```env
+# 3. Configurar variables de entorno
+# Crear archivo .env con:
 DATABASE_URL=postgresql://usuario:contraseña@host:5432/nombre_bd
 ADMIN_PASSWORD=tu_contraseña_admin
 ADMIN_PASSWORD_HASH=$2b$10$...hash_bcrypt...
+
+# 4. Crear tablas en la base de datos
+psql -d tu_bd -f bd/abv_library.sql
+
+# 5. (Opcional) Poblar con libros de ejemplo
+psql -d tu_bd -f bd/seed_libros.sql
+psql -d tu_bd -f bd/seed_libros_extra.sql
+
+# 6. Iniciar servidor
+npm start
+# Servidor en http://localhost:3000
 ```
 
-Para generar el hash del admin:
+### Generar hash para contraseña del admin
 
 ```bash
 node -e "require('bcrypt').hash('TuContraseña', 10).then(console.log)"
 ```
 
-Copia el resultado y pegalo en `ADMIN_PASSWORD_HASH`.
-
-4. **Crear las tablas:**
-
-Ejecutar el esquema en PostgreSQL:
-
-```bash
-psql -d tu_bd -f bd/abv_library.sql
-```
-
-5. **Iniciar el servidor:**
-
-```bash
-npm start
-```
-
-El servidor se levanta en `http://localhost:3000`.
+Copia el resultado y pégalo en `ADMIN_PASSWORD_HASH` del `.env`.
 
 ---
 
-## Endpoints de la API
+## Seguridad: Hasheo con bcrypt
 
-### Autenticacion
+El sistema nunca almacena contraseñas en texto plano.
 
-| Metodo | Ruta | Descripcion |
+**Proceso de registro:**
+1. El usuario ingresa su contraseña
+2. bcrypt genera un salt aleatorio (único por usuario)
+3. Aplica 10 rondas de cifrado (2^10 = 1024 iteraciones)
+4. Almacena el hash resultante (60 caracteres)
+
+**Proceso de login:**
+1. El usuario ingresa su contraseña
+2. bcrypt compara contra el hash almacenado
+3. No necesita descifrar (comparación de una vía)
+
+**Estructura del hash:**
+```
+$2b$10$ID8ndfLLHbTeTr8PzDew0u50U4MY7Psdb6Yi8aYVwzfbPHWkuKpnG
+ │   │  └── salt + hash combinados (53 caracteres)
+ │   └── salt rounds (factor de costo)
+ └── versión del algoritmo
+```
+
+**Ventajas sobre SHA-256:**
+- Deliberadamente lento (configurable), dificulta fuerza bruta
+- Salt automático por cada hash (protege contra tablas rainbow)
+- Estándar de la industria para contraseñas web
+
+---
+
+## Base de datos (13 tablas)
+
+| Tabla | Descripción |
+|-------|-------------|
+| persona | Datos personales + contraseña hash + flag cambio obligatorio |
+| empleado | Rol (Vendedor, Bibliotecario, Administrador, Dueño) |
+| cliente | Fecha registro + puntos acumulados |
+| libro | Catálogo (ISBN, título, autor, editorial, versión, año, precio) |
+| proveedor | Nombre del proveedor |
+| prov_suministra_lib | Relación N:M proveedor-libro |
+| recepcion_paquete | Historial de paquetes recibidos + costo |
+| venta | Registro de ventas (fecha, total, método, vendedor) |
+| lib_venta | Stock para venta + detalle de libros vendidos |
+| prestamo | Préstamos (fechas, multa, cliente, empleado) |
+| lib_pres | Stock para préstamo + detalle de libros prestados |
+| libro_favorito | Favoritos de cada cliente (correo + isbn) |
+| historial_puntos | Puntos ganados por compra |
+| donacion | Libros donados por clientes |
+
+---
+
+## Endpoints de la API (40+)
+
+### Autenticación (6)
+| Método | Ruta | Descripción |
 |--------|------|-------------|
 | POST | `/login` | Login unificado (detecta roles) |
-| POST | `/login-admin` | Login del administrador |
-| POST | `/login-vendedor` | Login de bibliotecario/empleado |
-| POST | `/login-cliente` | Login de cliente |
-| POST | `/registro-cliente` | Registro publico de cliente |
-| PUT | `/usuarios/:correo/password` | Cambiar contrase�a |
+| POST | `/login-admin` | Login admin (contraseña maestra) |
+| POST | `/login-vendedor` | Login empleado |
+| POST | `/login-cliente` | Login cliente |
+| POST | `/registro-cliente` | Auto-registro público |
+| PUT | `/usuarios/:correo/password` | Cambiar contraseña |
 
-### Libros
-
-| Metodo | Ruta | Descripcion |
+### Libros (6)
+| Método | Ruta | Descripción |
 |--------|------|-------------|
-| GET | `/libros?buscar=texto` | Buscar libros locales |
+| GET | `/libros?buscar=texto` | Buscar libros locales (LIMIT 50) |
 | POST | `/libros` | Agregar libro |
 | PUT | `/libros/:isbn` | Actualizar libro |
 | DELETE | `/libros/:isbn` | Eliminar libro |
-| GET | `/api/libros-externos?buscar=texto` | Buscar en Open Library (español) |
-| POST | `/libros/importar-openlibrary` | Importar libros desde Open Library |
+| GET | `/api/libros-externos?buscar=texto` | Buscar en Open Library |
+| POST | `/libros/importar-openlibrary` | Importar masivo |
 
-### Empleados
-
-| Metodo | Ruta | Descripcion |
+### Stock (1)
+| Método | Ruta | Descripción |
 |--------|------|-------------|
-| GET | `/empleados` | Listar empleados |
-| POST | `/empleados` | Agregar empleado |
-| PUT | `/empleados/:correo` | Actualizar empleado |
-| DELETE | `/empleados/:correo` | Eliminar empleado |
+| GET | `/stock` | Stock de venta y préstamo por libro |
 
-### Clientes
-
-| Metodo | Ruta | Descripcion |
+### Proveedores (8)
+| Método | Ruta | Descripción |
 |--------|------|-------------|
-| GET | `/clientes` | Listar clientes |
-| POST | `/clientes` | Agregar cliente (password opcional) |
-| PUT | `/clientes/:correo` | Actualizar cliente |
-| DELETE | `/clientes/:correo` | Eliminar cliente |
-
-### Proveedores
-
-| Metodo | Ruta | Descripcion |
-|--------|------|-------------|
-| GET | `/proveedores` | Listar proveedores |
-| POST | `/proveedores` | Agregar proveedor |
-| PUT | `/proveedores/:id` | Actualizar proveedor |
-| DELETE | `/proveedores/:id` | Eliminar proveedor |
-| GET | `/proveedores-libros` | Listar relaciones proveedor-libro |
+| GET | `/proveedores` | Listar |
+| POST | `/proveedores` | Agregar |
+| PUT | `/proveedores/:id` | Actualizar |
+| DELETE | `/proveedores/:id` | Eliminar |
+| GET | `/proveedores-libros` | Relaciones proveedor-libro |
 | POST | `/proveedores-libros` | Asignar libro a proveedor |
-| GET | `/proveedores/:id/libros` | Libros que suministra un proveedor |
-| POST | `/proveedores/recibir-paquete` | Recibir paquete (stock venta/préstamo + costo) |
+| GET | `/proveedores/:id/libros` | Libros de un proveedor |
+| POST | `/proveedores/recibir-paquete` | Recibir paquete (stock + costo) |
 
-### Ventas
-
-| Metodo | Ruta | Descripcion |
+### Empleados (4)
+| Método | Ruta | Descripción |
 |--------|------|-------------|
-| GET | `/ventas` | Listar ventas |
-| POST | `/ventas` | Registrar venta (con puntos y canje opcional) |
+| GET | `/empleados` | Listar |
+| POST | `/empleados` | Agregar (contraseña temporal) |
+| PUT | `/empleados/:correo` | Actualizar |
+| DELETE | `/empleados/:correo` | Eliminar |
 
-### Prestamos
-
-| Metodo | Ruta | Descripcion |
+### Clientes (4)
+| Método | Ruta | Descripción |
 |--------|------|-------------|
-| GET | `/prestamos` | Listar prestamos |
-| POST | `/prestamos` | Registrar prestamo |
-| PUT | `/prestamos/:id/devolver` | Devolver prestamo |
-| GET | `/prestamos/cliente/:correo` | Prestamos de un cliente |
+| GET | `/clientes` | Listar |
+| POST | `/clientes` | Agregar (password opcional) |
+| PUT | `/clientes/:correo` | Actualizar |
+| DELETE | `/clientes/:correo` | Eliminar |
 
-### Puntos
-
-| Metodo | Ruta | Descripcion |
+### Ventas (2)
+| Método | Ruta | Descripción |
 |--------|------|-------------|
-| GET | `/puntos/:correo` | Consultar puntos del cliente |
-| GET | `/puntos/:correo/historial` | Historial de puntos ganados |
-| POST | `/puntos/canjear` | Canjear puntos por descuento |
+| GET | `/ventas` | Historial |
+| POST | `/ventas` | Registrar (con puntos y canje) |
 
-### Favoritos
-
-| Metodo | Ruta | Descripcion |
+### Préstamos (4)
+| Método | Ruta | Descripción |
 |--------|------|-------------|
-| GET | `/favoritos/:correo` | Listar favoritos del cliente |
-| POST | `/favoritos` | Agregar libro a favoritos |
-| DELETE | `/favoritos/:correo/:isbn` | Quitar de favoritos |
+| GET | `/prestamos` | Historial general |
+| POST | `/prestamos` | Registrar |
+| PUT | `/prestamos/:id/devolver` | Devolver (calcula multa) |
+| GET | `/prestamos/cliente/:correo` | Préstamos de un cliente |
 
-### Donaciones
-
-| Metodo | Ruta | Descripcion |
+### Puntos (3)
+| Método | Ruta | Descripción |
 |--------|------|-------------|
-| POST | `/donaciones` | Registrar donacion (puntos o intercambio) |
-| GET | `/donaciones/:correo` | Historial de donaciones del cliente |
-| GET | `/donaciones/libros-disponibles` | Libros donados disponibles para intercambio |
+| GET | `/puntos/:correo` | Saldo actual |
+| GET | `/puntos/:correo/historial` | Historial de puntos |
+| POST | `/puntos/canjear` | Canjear por descuento |
 
-### Recomendaciones
-
-| Metodo | Ruta | Descripcion |
+### Favoritos (3)
+| Método | Ruta | Descripción |
 |--------|------|-------------|
-| GET | `/recomendaciones/:correo` | Recomendaciones personalizadas |
-| GET | `/recomendaciones` | Recomendaciones generales |
+| GET | `/favoritos/:correo` | Listar favoritos |
+| POST | `/favoritos` | Agregar |
+| DELETE | `/favoritos/:correo/:isbn` | Quitar |
 
-### Stock
-
-| Metodo | Ruta | Descripcion |
+### Donaciones (3)
+| Método | Ruta | Descripción |
 |--------|------|-------------|
-| GET | `/stock` | Consultar stock de venta y préstamo de todos los libros |
+| POST | `/donaciones` | Registrar (puntos o intercambio) |
+| GET | `/donaciones/:correo` | Historial del cliente |
+| GET | `/donaciones/libros-disponibles` | Libros para intercambio |
 
-### Facturas
-
-| Metodo | Ruta | Descripcion |
+### Recomendaciones (2)
+| Método | Ruta | Descripción |
 |--------|------|-------------|
-| GET | `/facturas?fecha_inicio=...&fecha_fin=...` | Reporte de facturas |
+| GET | `/recomendaciones/:correo` | Personalizadas |
+| GET | `/recomendaciones` | Generales (aleatorias) |
 
----
-
-## Base de datos
-
-Tablas (ver `bd/abv_library.sql` para el esquema completo):
-
-- **persona** — datos personales + contrase�a hash (bcrypt)
-- **empleado** — rol (Vendedor, Bibliotecario, Administrador, Dueno)
-- **cliente** — fecha de registro + puntos acumulados
-- **libro** — catalogo con precio
-- **proveedor** — proveedores de libros
-- **prov_suministra_lib** — relacion N:M entre proveedor y libro
-- **recepcion_paquete** — historial de paquetes recibidos de proveedores
-- **venta** — registro de ventas
-- **lib_venta** — stock para venta y libros vendidos
-- **prestamo** — prestamos con multas
-- **lib_pres** — stock para prestamo y libros prestados
-- **libro_favorito** — favoritos de cada cliente
-- **historial_puntos** — puntos ganados por compra
-- **donacion** — libros donados por clientes
+### Facturas (1)
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/facturas?fecha_inicio=...&fecha_fin=...` | Reporte financiero |
 
 ---
 
 ## Dependencias
 
-| Paquete | Uso |
-|---------|-----|
-| express | Servidor web y API REST |
-| pg | Cliente PostgreSQL |
-| bcrypt | Hash de contrase�as (10 salt rounds) |
-| dotenv | Variables de entorno |
-| cors | Cross-Origin Resource Sharing |
-| axios | Consultas a Open Library API |
+| Paquete | Versión | Uso |
+|---------|---------|-----|
+| express | ^5.2.1 | Servidor web y API REST |
+| pg | ^8.21.0 | Cliente PostgreSQL |
+| bcrypt | ^6.0.0 | Hash de contraseñas |
+| dotenv | ^17.4.2 | Variables de entorno |
+| cors | ^2.8.6 | Cross-Origin Resource Sharing |
+| axios | ^1.16.1 | Peticiones HTTP (Open Library) |
+
+---
+
+## Capturas de pantalla
+
+> Se recomienda agregar capturas de:
+> 1. Página principal (catálogo con modo claro)
+> 2. Página principal (modo oscuro)
+> 3. Login unificado con selección de rol
+> 4. Panel del administrador
+> 5. Gestión de libros (tabla con stock)
+> 6. Panel del bibliotecario
+> 7. Carrito de ventas
+> 8. Portal del cliente (puntos, favoritos, préstamos)
+> 9. Reporte de facturas
 
 ---
 
 ## Autor
 
-Desarrollado por **Abel Pineda** y **Vanya Castillo** como proyecto academico de Base de Datos.
+Desarrollado por **Abel God** como proyecto académico de Base de Datos.
 
 ---
 
