@@ -72,11 +72,11 @@ function cerrarSesion() {
 function cambiarARol(rol) {
     if (rol === "bibliotecario") {
         sessionStorage.setItem("bibliotecarioActivo", "true");
-        if (!sessionStorage.getItem("correoBibliotecario")) {
-            sessionStorage.setItem("correoBibliotecario", "admin");
-            sessionStorage.setItem("nombreBibliotecario", "Administrador");
-            sessionStorage.setItem("rolBibliotecario", "Administrador");
-        }
+        const correo = sessionStorage.getItem("correoAdmin") || "admin";
+        const nombre = sessionStorage.getItem("nombreAdmin") || "Administrador";
+        sessionStorage.setItem("correoBibliotecario", correo);
+        sessionStorage.setItem("nombreBibliotecario", nombre);
+        sessionStorage.setItem("rolBibliotecario", "Administrador");
         window.location.href = "/bibliotecario/panel.html";
     }
 }

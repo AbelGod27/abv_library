@@ -131,6 +131,8 @@ function redirigirPorRol(rol, data) {
 
     if (rol.tipo === "admin") {
         sessionStorage.setItem("adminActivo", "true");
+        sessionStorage.setItem("correoAdmin", data.correo_electronico);
+        sessionStorage.setItem("nombreAdmin", data.nombre);
         window.location.href = "/admin/panel.html";
 
     } else if (rol.tipo === "bibliotecario") {
