@@ -2554,6 +2554,42 @@ app.post("/puntos/canjear", async (req, res) => {
 });
 
 // =========================================================
+// SECCIÓN: COMPRAS DEL CLIENTE
+// Consulta las compras asociadas a un cliente específico
+// (ventas donde se registró su correo para puntos)
+// =========================================================
+
+app.get("/compras/cliente/:correo", async (req, res) => {
+    try {
+        const correo = req.params.correo;
+
+        const result = await db.query(`
+            SELECT
+                v.id_venta,
+                v.fecha,
+                v.total_pagado,
+                v.metodo_de_pago,
+                lv.isbn,
+                lv.cantidad,
+                l.titulo,
+                l.autor
+            FROM historial_puntos hp
+            JOIN venta v ON hp.id_venta = v.id_venta
+            JOIN lib_venta lv ON lv.id_venta = v.id_venta
+            JOIN libro l ON l.isbn = lv.isbn
+            WHERE hp.correo_cliente = $1
+            ORDER BY v.fecha DESC
+        `, [correo]);
+
+        res.json(result.rows);
+
+    } catch (error) {
+        console.error("Error al consultar compras del cliente:", error);
+        res.status(500).json({ error: "Error al consultar compras." });
+    }
+});
+
+// =========================================================
 // SECCIÓN: PRÉSTAMOS DEL CLIENTE
 // Consulta los préstamos de un cliente específico con
 // estado calculado (Activo, Vencido, Devuelto, Por vencer)

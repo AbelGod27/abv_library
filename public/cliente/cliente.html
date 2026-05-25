@@ -103,6 +103,26 @@
         <p id="prestamosVacio" style="text-align:center; color:#64748b; display:none;">No tienes préstamos registrados.</p>
     </div>
 
+    <!-- Sección: compras del cliente -->
+    <div class="card" id="seccionCompras" style="display:none; margin-bottom:24px;">
+        <h2 style="margin:0 0 16px; font-size:1.2rem;"><i class="bi bi-bag-check"></i> Mis Compras</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Libro</th>
+                        <th>Cantidad</th>
+                        <th>Total</th>
+                        <th>Método</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaCompras"></tbody>
+            </table>
+        </div>
+        <p id="comprasVacio" style="text-align:center; color:#64748b; display:none;">Aún no tienes compras registradas.</p>
+    </div>
+
     <!-- Sección: libros recomendados (personalizados si hay login) -->
     <div class="card" id="seccionRecomendaciones" style="margin-bottom:24px;">
         <h2 style="margin:0 0 16px; font-size:1.2rem;"><i class="bi bi-book"></i> Libros Recomendados para Ti</h2>
@@ -297,9 +317,48 @@ window.onload = () => {
     cargarFavoritos();
     cargarPuntos();
     cargarDonaciones();
+    cargarCompras();
     cargarRecomendaciones();
     cargarPrestamosCliente();
 };
+
+// Carga las compras del cliente logueado
+async function cargarCompras() {
+    const cliente = getClienteLogueado();
+    if (!cliente) return;
+
+    const seccion = document.getElementById("seccionCompras");
+    seccion.style.display = "block";
+
+    try {
+        const res = await fetch(`/compras/cliente/${encodeURIComponent(cliente.correo_electronico)}`);
+        const data = await res.json();
+        const tabla = document.getElementById("tablaCompras");
+        const vacio = document.getElementById("comprasVacio");
+        tabla.innerHTML = "";
+
+        if (!data.length) {
+            vacio.style.display = "block";
+            return;
+        }
+
+        vacio.style.display = "none";
+
+        data.forEach(c => {
+            const fecha = c.fecha ? new Date(c.fecha).toLocaleDateString("es-MX") : "—";
+            tabla.innerHTML += `
+                <tr>
+                    <td class="fecha">${fecha}</td>
+                    <td>${c.titulo} <br><small style="color:var(--text-muted);">${c.autor ?? ""}</small></td>
+                    <td>${c.cantidad}</td>
+                    <td>$${Number(c.total_pagado).toFixed(2)}</td>
+                    <td>${c.metodo_de_pago}</td>
+                </tr>`;
+        });
+    } catch (e) {
+        console.error("Error cargando compras:", e);
+    }
+}
 
 // Carga los préstamos del cliente logueado con alertas de vencimiento
 async function cargarPrestamosCliente() {
