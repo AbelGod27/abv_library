@@ -45,6 +45,12 @@ function esCorreoValido(correo) {
     return regex.test(correo);
 }
 
+// Función auxiliar para validar que un nombre solo contenga letras, espacios y acentos
+function esNombreValido(nombre) {
+    const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
+    return regex.test(nombre);
+}
+
 // Inicialización de la aplicación Express
 const app = express();
 
@@ -762,6 +768,17 @@ app.post("/empleados", async (req, res) => {
             return res.status(400).json({
                 error: "El correo electrónico no tiene un formato válido."
             });
+        }
+
+        // Validar que nombres no contengan números
+        if (!esNombreValido(nombre)) {
+            return res.status(400).json({ error: "El nombre solo puede contener letras y espacios." });
+        }
+        if (!esNombreValido(ap_paterno)) {
+            return res.status(400).json({ error: "El apellido paterno solo puede contener letras y espacios." });
+        }
+        if (ap_materno && !esNombreValido(ap_materno)) {
+            return res.status(400).json({ error: "El apellido materno solo puede contener letras y espacios." });
         }
 
         // Verificar que no exista otra persona con ese correo
@@ -1812,6 +1829,17 @@ app.post("/clientes", async (req, res) => {
             });
         }
 
+        // Validar que nombres no contengan números
+        if (!esNombreValido(nombre)) {
+            return res.status(400).json({ error: "El nombre solo puede contener letras y espacios." });
+        }
+        if (!esNombreValido(ap_paterno)) {
+            return res.status(400).json({ error: "El apellido paterno solo puede contener letras y espacios." });
+        }
+        if (ap_materno && !esNombreValido(ap_materno)) {
+            return res.status(400).json({ error: "El apellido materno solo puede contener letras y espacios." });
+        }
+
         // Si se proporciona contraseña, validar longitud mínima
         if (password && password.length < 8) {
             return res.status(400).json({
@@ -2113,6 +2141,17 @@ app.post("/registro-cliente", async (req, res) => {
             return res.status(400).json({
                 error: "El correo electrónico no tiene un formato válido."
             });
+        }
+
+        // Validar que nombres y apellidos no contengan números ni caracteres especiales
+        if (!esNombreValido(nombre)) {
+            return res.status(400).json({ error: "El nombre solo puede contener letras y espacios." });
+        }
+        if (!esNombreValido(ap_paterno)) {
+            return res.status(400).json({ error: "El apellido paterno solo puede contener letras y espacios." });
+        }
+        if (ap_materno && !esNombreValido(ap_materno)) {
+            return res.status(400).json({ error: "El apellido materno solo puede contener letras y espacios." });
         }
 
         // Validar longitud mínima de contraseña por seguridad
