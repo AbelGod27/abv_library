@@ -386,10 +386,11 @@ async function cargarRecomendaciones() {
                 : "https://via.placeholder.com/120x180?text=N/A";
 
             grid.innerHTML += `
-                <div style="background:#fff; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,.06); overflow:hidden; text-align:center;">
+                <div style="background:var(--surface); border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,.06); overflow:hidden; text-align:center; position:relative;">
                     <img src="${portada}" alt="${libro.titulo}"
                         style="width:100%; height:180px; object-fit:cover; background:#f1ebe4;"
                         onerror="this.src='https://via.placeholder.com/120x180?text=N/A'">
+                    ${cliente ? `<button onclick="agregarFavoritoRecomendacion('${libro.isbn}','${(libro.titulo||'').replace(/'/g,"\\'")}','${(libro.autor||'').replace(/'/g,"\\'")}')" style="position:absolute; top:8px; right:8px; width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,.9); border:none; cursor:pointer; font-size:1rem; color:#e74c3c; box-shadow:0 2px 4px rgba(0,0,0,.1); display:flex; align-items:center; justify-content:center; min-width:auto; padding:0;">♥</button>` : ''}
                     <div style="padding:10px 12px;">
                         <p style="font-size:0.85rem; font-weight:600; margin:0 0 4px; line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${libro.titulo}</p>
                         <p style="font-size:0.75rem; color:#64748b; margin:0 0 4px;">${libro.autor ?? ""}</p>
@@ -622,6 +623,23 @@ function formatFecha(fecha) {
 }
 
 // Alterna visibilidad de la contraseña
+async function agregarFavoritoRecomendacion(isbn, titulo, autor) {
+    const cliente = getClienteLogueado();
+    if (!cliente) { mostrarMensaje("Inicia sesión para guardar favoritos.", "error"); return; }
+
+    try {
+        await fetch("/favoritos", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ correo_cliente: cliente.correo_electronico, isbn, titulo, autor })
+        });
+        mostrarMensaje("Libro agregado a favoritos.", "exito");
+        cargarFavoritos();
+    } catch (e) {
+        mostrarMensaje("Error al agregar favorito.", "error");
+    }
+}
+
 function togglePass(id, btn) {
     const input = document.getElementById(id);
     const icon = btn.querySelector('i');

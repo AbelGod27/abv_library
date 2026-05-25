@@ -99,12 +99,12 @@ async function cargarFavoritos() {
 async function toggleFavorito(isbn, titulo, autor, btn) {
     const cliente = getClienteLogueado();
     if (!cliente) {
-        alert("Inicia sesión como cliente para guardar favoritos.");
+        mostrarMensajeCatalogo("Inicia sesión como cliente para guardar favoritos.");
         return;
     }
 
     if (!isbn || isbn === "Sin ISBN") {
-        alert("Este libro no tiene ISBN y no se puede agregar a favoritos.");
+        mostrarMensajeCatalogo("Este libro no tiene ISBN y no se puede agregar a favoritos.");
         return;
     }
 
@@ -241,6 +241,20 @@ async function cargarLibros(busqueda) {
         console.error(error);
         catalogoMensaje.textContent = "Error al cargar los libros.";
     }
+}
+
+// Muestra un mensaje toast en lugar de alert()
+function mostrarMensajeCatalogo(texto) {
+    let toast = document.getElementById("toastMsg");
+    if (!toast) {
+        toast = document.createElement("p");
+        toast.id = "toastMsg";
+        toast.className = "mensaje";
+        document.body.appendChild(toast);
+    }
+    toast.textContent = texto;
+    toast.className = "mensaje mostrar error";
+    setTimeout(() => { toast.className = "mensaje"; toast.textContent = ""; }, 3000);
 }
 </script>
 
