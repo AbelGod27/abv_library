@@ -51,6 +51,11 @@ function esNombreValido(nombre) {
     return regex.test(nombre);
 }
 
+// Función auxiliar para validar que un teléfono tenga exactamente 10 dígitos
+function esTelefonoValido(tel) {
+    return /^\d{10}$/.test(tel);
+}
+
 // Inicialización de la aplicación Express
 const app = express();
 
@@ -319,6 +324,20 @@ app.post("/libros", async (req, res) => {
         if (!isbn || !titulo || !autor) {
             return res.status(400).json({
                 error: "ISBN, título y autor son obligatorios."
+            });
+        }
+
+        // Validar formato de ISBN (debe empezar con 978 o 979 y tener al menos 10 caracteres)
+        if (!/^(978|979)/.test(isbn) || isbn.length < 10) {
+            return res.status(400).json({
+                error: "El ISBN debe comenzar con 978 o 979 y tener al menos 10 caracteres."
+            });
+        }
+
+        // Validar precio (debe ser un número positivo si se proporciona)
+        if (precio !== undefined && precio !== null && precio !== '' && (isNaN(Number(precio)) || Number(precio) < 0)) {
+            return res.status(400).json({
+                error: "El precio debe ser un número positivo."
             });
         }
 
@@ -781,6 +800,23 @@ app.post("/empleados", async (req, res) => {
             return res.status(400).json({ error: "El apellido materno solo puede contener letras y espacios." });
         }
 
+        // Validar teléfono (opcional, pero si se proporciona debe tener 10 dígitos)
+        if (telefono && !esTelefonoValido(telefono)) {
+            return res.status(400).json({ error: "El teléfono debe tener exactamente 10 dígitos numéricos." });
+        }
+
+        // Validar fecha de nacimiento: no puede ser futura y debe tener al menos 10 años
+        const fechaNac = new Date(fecha_de_nacimiento);
+        const hoy = new Date();
+        if (fechaNac > hoy) {
+            return res.status(400).json({ error: "La fecha de nacimiento no puede ser en el futuro." });
+        }
+        const edadMinima = new Date();
+        edadMinima.setFullYear(edadMinima.getFullYear() - 10);
+        if (fechaNac > edadMinima) {
+            return res.status(400).json({ error: "La persona debe tener al menos 10 años de edad." });
+        }
+
         // Verificar que no exista otra persona con ese correo
         const existePersona = await db.query(
             "SELECT correo_electronico FROM persona WHERE correo_electronico = $1",
@@ -843,6 +879,11 @@ app.put("/empleados/:correo", async (req, res) => {
 
         if (!nombre || !ap_paterno || !fecha_de_nacimiento || !rol) {
             return res.status(400).json({ error: "Nombre, apellido paterno, fecha de nacimiento y rol son obligatorios." });
+        }
+
+        // Validar teléfono (opcional, pero si se proporciona debe tener 10 dígitos)
+        if (telefono && !esTelefonoValido(telefono)) {
+            return res.status(400).json({ error: "El teléfono debe tener exactamente 10 dígitos numéricos." });
         }
 
         // Transacción: actualizar datos personales en persona y rol en empleado
@@ -1208,6 +1249,21 @@ app.post("/ventas", async (req, res) => {
             });
         }
 
+        // Validar que la cantidad sea un entero positivo >= 1
+        if (!Number.isInteger(Number(cantidad)) || Number(cantidad) < 1) {
+            return res.status(400).json({
+                error: "La cantidad debe ser un número entero positivo (mínimo 1)."
+            });
+        }
+
+        // Validar método de pago
+        const metodosValidos = ["Efectivo", "Tarjeta", "Transferencia"];
+        if (!metodosValidos.includes(metodo_de_pago)) {
+            return res.status(400).json({
+                error: "El método de pago debe ser: Efectivo, Tarjeta o Transferencia."
+            });
+        }
+
         // Si se asocia un cliente, verificar que exista en la base de datos
         if (correo_cliente) {
             const clienteExiste = await db.query(
@@ -1375,6 +1431,23 @@ app.post("/prestamos", async (req, res) => {
         if (!correo_cliente || !correo_empleado || !isbn || !cantidad || !dia_de_vencimiento) {
             return res.status(400).json({
                 error: "Todos los campos son obligatorios."
+            });
+        }
+
+        // Validar que la cantidad sea un entero positivo >= 1
+        if (!Number.isInteger(Number(cantidad)) || Number(cantidad) < 1) {
+            return res.status(400).json({
+                error: "La cantidad debe ser un número entero positivo (mínimo 1)."
+            });
+        }
+
+        // Validar que la fecha de vencimiento sea en el futuro
+        const fechaVencimiento = new Date(dia_de_vencimiento);
+        const hoyPrestamo = new Date();
+        hoyPrestamo.setHours(0, 0, 0, 0);
+        if (fechaVencimiento <= hoyPrestamo) {
+            return res.status(400).json({
+                error: "La fecha de vencimiento del préstamo debe ser una fecha futura."
             });
         }
 
@@ -1840,6 +1913,23 @@ app.post("/clientes", async (req, res) => {
             return res.status(400).json({ error: "El apellido materno solo puede contener letras y espacios." });
         }
 
+        // Validar teléfono (opcional, pero si se proporciona debe tener 10 dígitos)
+        if (telefono && !esTelefonoValido(telefono)) {
+            return res.status(400).json({ error: "El teléfono debe tener exactamente 10 dígitos numéricos." });
+        }
+
+        // Validar fecha de nacimiento: no puede ser futura y debe tener al menos 10 años
+        const fechaNacCliente = new Date(fecha_de_nacimiento);
+        const hoyCliente = new Date();
+        if (fechaNacCliente > hoyCliente) {
+            return res.status(400).json({ error: "La fecha de nacimiento no puede ser en el futuro." });
+        }
+        const edadMinimaCliente = new Date();
+        edadMinimaCliente.setFullYear(edadMinimaCliente.getFullYear() - 10);
+        if (fechaNacCliente > edadMinimaCliente) {
+            return res.status(400).json({ error: "La persona debe tener al menos 10 años de edad." });
+        }
+
         // Si se proporciona contraseña, validar longitud mínima
         if (password && password.length < 8) {
             return res.status(400).json({
@@ -1937,6 +2027,13 @@ app.put("/libros/:isbn", async (req, res) => {
             });
         }
 
+        // Validar precio (debe ser un número positivo si se proporciona)
+        if (precio !== undefined && precio !== null && precio !== '' && (isNaN(Number(precio)) || Number(precio) < 0)) {
+            return res.status(400).json({
+                error: "El precio debe ser un número positivo."
+            });
+        }
+
         // Actualizar y retornar el libro modificado para confirmar cambios
         const result = await db.query(
             `
@@ -2026,6 +2123,11 @@ app.put("/clientes/:correo", async (req, res) => {
             return res.status(400).json({
                 error: "Nombre, apellido paterno y fecha de nacimiento son obligatorios."
             });
+        }
+
+        // Validar teléfono (opcional, pero si se proporciona debe tener 10 dígitos)
+        if (telefono && !esTelefonoValido(telefono)) {
+            return res.status(400).json({ error: "El teléfono debe tener exactamente 10 dígitos numéricos." });
         }
 
         // Actualizar datos personales en la tabla persona
@@ -2152,6 +2254,23 @@ app.post("/registro-cliente", async (req, res) => {
         }
         if (ap_materno && !esNombreValido(ap_materno)) {
             return res.status(400).json({ error: "El apellido materno solo puede contener letras y espacios." });
+        }
+
+        // Validar teléfono (opcional, pero si se proporciona debe tener 10 dígitos)
+        if (telefono && !esTelefonoValido(telefono)) {
+            return res.status(400).json({ error: "El teléfono debe tener exactamente 10 dígitos numéricos." });
+        }
+
+        // Validar fecha de nacimiento: no puede ser futura y debe tener al menos 10 años
+        const fechaNacRegistro = new Date(fecha_de_nacimiento);
+        const hoyRegistro = new Date();
+        if (fechaNacRegistro > hoyRegistro) {
+            return res.status(400).json({ error: "La fecha de nacimiento no puede ser en el futuro." });
+        }
+        const edadMinimaRegistro = new Date();
+        edadMinimaRegistro.setFullYear(edadMinimaRegistro.getFullYear() - 10);
+        if (fechaNacRegistro > edadMinimaRegistro) {
+            return res.status(400).json({ error: "La persona debe tener al menos 10 años de edad." });
         }
 
         // Validar longitud mínima de contraseña por seguridad
