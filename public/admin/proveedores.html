@@ -120,20 +120,25 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
     </div>
 
     <!-- RELACIONES PROVEEDOR-LIBRO -->
-    <div class="card">
-        <h2>Libros por proveedor</h2>
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Proveedor</th>
-                        <th>ISBN</th>
-                        <th>Titulo</th>
-                        <th>Autor</th>
-                    </tr>
-                </thead>
-                <tbody id="tablaProvLibros"></tbody>
-            </table>
+    <div class="card card-collapsible">
+        <div class="card-header" onclick="toggleCard(this)">
+            <h2>Libros por proveedor</h2>
+            <button class="btn-collapse" type="button"><i class="bi bi-chevron-down"></i></button>
+        </div>
+        <div class="card-body">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Proveedor</th>
+                            <th>ISBN</th>
+                            <th>Titulo</th>
+                            <th>Autor</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaProvLibros"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -254,6 +259,13 @@ function cancelarEdicion() {
     document.getElementById("btnAgregar").style.display = "inline-flex";
     document.getElementById("btnActualizar").style.display = "none";
     document.getElementById("btnCancelar").style.display = "none";
+}
+
+function toggleCard(header) {
+    const body = header.nextElementSibling;
+    const btn = header.querySelector('.btn-collapse');
+    body.classList.toggle('hidden');
+    btn.classList.toggle('collapsed');
 }
 
 function mostrarMensaje(texto, tipo = "error") {

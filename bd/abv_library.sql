@@ -192,3 +192,16 @@ CREATE TABLE IF NOT EXISTS donacion (
         REFERENCES cliente(correo_electronico)
         ON DELETE CASCADE
 );
+
+
+-- =============================================
+-- INDICES para búsquedas rápidas
+-- =============================================
+CREATE INDEX IF NOT EXISTS idx_libro_titulo ON libro USING gin (titulo gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_libro_autor ON libro USING gin (autor gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_lib_venta_isbn_null ON lib_venta (isbn) WHERE id_venta IS NULL;
+CREATE INDEX IF NOT EXISTS idx_lib_pres_isbn_null ON lib_pres (isbn) WHERE id_prestamo IS NULL;
+CREATE INDEX IF NOT EXISTS idx_venta_fecha ON venta (fecha);
+CREATE INDEX IF NOT EXISTS idx_prestamo_cliente ON prestamo (correo_cliente);
+CREATE INDEX IF NOT EXISTS idx_prestamo_fecha ON prestamo (dia_de_inicio);
+CREATE INDEX IF NOT EXISTS idx_favorito_cliente ON libro_favorito (correo_cliente);

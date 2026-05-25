@@ -366,6 +366,68 @@ tbody tr:hover { background: #f8fafc; }
 }
 
 /* =============================================
+   TABLAS: PAGINACIÓN Y COLAPSAR
+   ============================================= */
+
+.tabla-paginacion {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 12px 0;
+    font-size: .85rem;
+}
+
+.tabla-paginacion button {
+    padding: 6px 14px;
+    font-size: .8rem;
+    border-radius: 6px;
+    min-width: auto;
+}
+
+.tabla-paginacion button:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+}
+
+.tabla-paginacion span {
+    color: var(--text-muted);
+}
+
+.card-collapsible .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+}
+
+.card-collapsible .card-header h2 {
+    margin: 0;
+}
+
+.card-collapsible .btn-collapse {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: transform .2s;
+    box-shadow: none;
+    min-width: auto;
+}
+
+.card-collapsible .btn-collapse.collapsed {
+    transform: rotate(-90deg);
+}
+
+.card-collapsible .card-body.hidden {
+    display: none;
+}
+
+/* =============================================
    INDEX — MARKETPLACE LAYOUT
    ============================================= */
 body.marketplace {

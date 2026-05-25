@@ -168,6 +168,7 @@ app.get("/libros", async (req, res) => {
                 OR autor ILIKE $1
                 OR editorial ILIKE $1
             ORDER BY titulo
+            LIMIT 50
         `;
 
         const valor = `%${buscar}%`;
@@ -202,7 +203,8 @@ app.get("/api/libros-externos", async (req, res) => {
                 language: "spa",
                 limit: 20,
                 fields: "title,author_name,first_publish_year,isbn,publisher"
-            }
+            },
+            timeout: 8000
         });
 
         const libros = response.data.docs.map(libro => ({
