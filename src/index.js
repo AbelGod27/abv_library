@@ -1954,6 +1954,33 @@ app.put("/libros/:isbn", async (req, res) => {
     }
 });
 
+// --- Eliminar un libro ---
+app.delete("/libros/:isbn", async (req, res) => {
+    try {
+        const { isbn } = req.params;
+
+        // Verificar que el libro existe
+        const existe = await db.query("SELECT isbn FROM libro WHERE isbn = $1", [isbn]);
+        if (existe.rows.length === 0) {
+            return res.status(404).json({ error: "El libro no existe." });
+        }
+
+        // Eliminar registros relacionados primero
+        await db.query("DELETE FROM lib_venta WHERE isbn = $1", [isbn]);
+        await db.query("DELETE FROM lib_pres WHERE isbn = $1", [isbn]);
+        await db.query("DELETE FROM libro_favorito WHERE isbn = $1", [isbn]);
+        await db.query("DELETE FROM prov_suministra_lib WHERE isbn = $1", [isbn]);
+        await db.query("DELETE FROM donacion WHERE isbn = $1", [isbn]);
+        await db.query("DELETE FROM libro WHERE isbn = $1", [isbn]);
+
+        res.json({ mensaje: "Libro eliminado correctamente." });
+
+    } catch (error) {
+        console.error("Error al eliminar libro:", error);
+        res.status(500).json({ error: "Error al eliminar libro." });
+    }
+});
+
 // --- Actualizar datos de un cliente ---
 app.put("/clientes/:correo", async (req, res) => {
     try {
@@ -2213,7 +2240,7 @@ app.post("/libros/importar-openlibrary", async (req, res) => {
             const editorial = libro.publisher
                 ? libro.publisher[0]
                 : null;
-            const anio = libro.first_publish_year || null;
+            const anio = libro.first_publish_year ? `${libro.first_publish_year}-01-01` : null;
 
             // Verificar si ya existe en la base local para evitar duplicados
             const existe = await db.query(
@@ -2688,12 +2715,12 @@ app.post("/donaciones", async (req, res) => {
 // Muestra libros que han sido donados previamente y tienen stock
 app.get("/donaciones/libros-disponibles", async (req, res) => {
     try {
-        // Agrupa donaciones por libro y muestra el total donado
+        // Muestra libros donados que aún tienen stock disponible para intercambio
         const result = await db.query(`
-            SELECT d.isbn, d.titulo, d.autor, SUM(d.cantidad) AS total_donado
+            SELECT d.isbn, d.titulo, d.autor
             FROM donacion d
+            JOIN lib_venta lv ON lv.isbn = d.isbn AND lv.id_venta IS NULL AND lv.cantidad > 0
             GROUP BY d.isbn, d.titulo, d.autor
-            HAVING SUM(d.cantidad) > 0
             ORDER BY d.titulo
         `);
 

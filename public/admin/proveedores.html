@@ -206,6 +206,7 @@ async function agregarProveedor() {
         document.getElementById("nombreProveedor").value = "";
         cargarProveedores();
         cargarSelectProveedores();
+        cargarSelectProvPaquete();
     } catch (error) {
         console.error(error);
         mostrarMensaje("Error al agregar proveedor.");
