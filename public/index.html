@@ -16,6 +16,11 @@
         <span>ABV Library</span>
     </a>
 
+    <form class="navbar-search" id="formBusqueda" role="search">
+        <input type="text" id="buscarLibro" placeholder="Buscar libros, autores, géneros…" aria-label="Buscar">
+        <button type="submit" class="btn-search" aria-label="Buscar"><i class="bi bi-search"></i></button>
+    </form>
+
     <div class="navbar-links">
         <a href="/login.html" class="nav-link"><i class="bi bi-box-arrow-in-right"></i> Iniciar sesión</a>
     </div>
@@ -34,9 +39,6 @@
     <h2 class="section-title">Catálogo de Libros</h2>
 
     <div class="catalogo-controles">
-        <div class="search-bar">
-            <input type="text" id="buscarLibro" placeholder="Buscar por título, autor, ISBN...">
-        </div>
         <div class="contenedor-switch">
             <span>Local</span>
             <label class="switch">
@@ -139,10 +141,15 @@ window.onload = async () => {
     cargarLibros(inputBusqueda.value);
 };
 
-// Búsqueda desde el input del catálogo
+// Búsqueda en tiempo real desde el navbar
 inputBusqueda.addEventListener("input", () => {
     clearTimeout(temporizador);
     temporizador = setTimeout(() => cargarLibros(inputBusqueda.value), 300);
+});
+
+document.getElementById("formBusqueda").addEventListener("submit", (e) => {
+    e.preventDefault();
+    cargarLibros(inputBusqueda.value);
 });
 
 switchLibros.addEventListener("change", () => {
