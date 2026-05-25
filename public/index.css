@@ -1,5 +1,6 @@
 /* =============================================
-   INDEX.CSS — Estilos específicos del index marketplace
+   INDEX.CSS — Estilos específicos del catálogo público (marketplace)
+   Controla la apariencia del grid de libros, tarjetas, switch y favoritos
    ============================================= */
 
 /* Placeholder — animación sutil en la barra de búsqueda */
@@ -13,7 +14,7 @@
 }
 
 /* =============================================
-   CATÁLOGO DE LIBROS
+   CONTROLES DEL CATÁLOGO (switch local/global)
    ============================================= */
 
 .catalogo-controles {
@@ -49,6 +50,10 @@
     box-shadow: 0 0 0 3px rgba(160, 120, 76, 0.1);
 }
 
+/* =============================================
+   GRID DE TARJETAS DE LIBROS
+   ============================================= */
+
 .catalogo-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -56,6 +61,7 @@
     justify-items: center;
 }
 
+/* Tarjeta individual de libro */
 .libro-card {
     background: #fff;
     border-radius: 12px;
@@ -118,6 +124,7 @@
     margin: 8px 0 0;
 }
 
+/* Mensaje cuando no hay resultados */
 .catalogo-mensaje {
     text-align: center;
     color: #64748b;
@@ -125,7 +132,10 @@
     font-size: 0.95rem;
 }
 
-/* Switch (reutilizado de principal.css si no existe) */
+/* =============================================
+   SWITCH LOCAL/GLOBAL (toggle)
+   ============================================= */
+
 .contenedor-switch {
     display: flex;
     align-items: center;
@@ -176,6 +186,7 @@
     transform: translateX(20px);
 }
 
+/* Responsive: ajustes para pantallas pequeñas */
 @media (max-width: 600px) {
     .catalogo-grid {
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -194,7 +205,7 @@
 
 
 /* =============================================
-   BOTÓN FAVORITO
+   BOTÓN FAVORITO (corazón sobre la portada)
    ============================================= */
 
 .libro-card-img-wrapper {

@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Archivo: admin/login.html — Página de login exclusiva para el administrador -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -17,6 +18,7 @@
 
         <p id="mensaje" class="mensaje"></p>
 
+        <!-- Formulario: solo contraseña para acceso admin -->
         <div class="form-group">
             <label for="passwordAdmin">Contraseña</label>
             <div style="position:relative;">
@@ -34,7 +36,9 @@
     </div>
 </div>
 
+<!-- Lógica de autenticación del administrador -->
 <script>
+// Envía la contraseña al endpoint de login admin
 async function loginAdmin() {
     try {
         const password = document.getElementById("passwordAdmin").value;
@@ -58,10 +62,12 @@ async function loginAdmin() {
     }
 }
 
+// Permite login con Enter
 document.getElementById("passwordAdmin").addEventListener("keydown", e => {
     if (e.key === "Enter") loginAdmin();
 });
 
+// Alterna visibilidad de la contraseña
 function togglePass(id, btn) {
     const input = document.getElementById(id);
     const icon = btn.querySelector('i');
@@ -69,6 +75,7 @@ function togglePass(id, btn) {
     else { input.type = 'password'; icon.className = 'bi bi-eye'; }
 }
 
+// Muestra un mensaje temporal al usuario
 function mostrarMensaje(texto, tipo = "error") {
     const mensaje = document.getElementById("mensaje");
     mensaje.textContent = texto;

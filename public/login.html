@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Archivo: login.html — Página de inicio de sesión unificada para todos los roles -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -17,7 +18,7 @@
 
         <p id="mensaje" class="mensaje"></p>
 
-        <!-- PASO 1: Correo y contraseña -->
+        <!-- Paso 1: Formulario de correo y contraseña -->
         <div id="paso1">
             <div class="form-group">
                 <label for="correo">Correo electrónico</label>
@@ -38,7 +39,7 @@
             <button type="button" class="btn-login" onclick="iniciarSesion()">Ingresar</button>
         </div>
 
-        <!-- PASO 2: Elegir rol (si tiene varios) -->
+        <!-- Paso 2: Selección de rol (si el usuario tiene varios roles) -->
         <div id="paso2" style="display:none;">
             <p style="font-weight:500; margin-bottom:16px;">Hola, <span id="nombreUsuario"></span>. Elige cómo quieres entrar:</p>
             <div id="opcionesRol" style="display:flex; flex-direction:column; gap:12px;"></div>
@@ -55,9 +56,11 @@
     </div>
 </div>
 
+<!-- Lógica de autenticación -->
 <script>
 let datosLogin = null;
 
+// Envía credenciales al servidor y maneja la respuesta
 async function iniciarSesion() {
     const correo = document.getElementById("correo").value.trim();
     const password = document.getElementById("password").value;
@@ -89,7 +92,7 @@ async function iniciarSesion() {
             return;
         }
 
-        // Si tiene varios roles, mostrar opciones
+        // Si tiene varios roles, mostrar opciones para elegir
         document.getElementById("paso1").style.display = "none";
         document.getElementById("paso2").style.display = "block";
         document.getElementById("nombreUsuario").textContent = data.nombre;
@@ -117,6 +120,7 @@ async function iniciarSesion() {
     }
 }
 
+// Redirige al panel correspondiente según el rol seleccionado
 function redirigirPorRol(rol, data) {
     // Si debe cambiar contraseña, redirigir al cambio obligatorio
     if (data.debe_cambiar_contrasena) {
@@ -146,12 +150,14 @@ function redirigirPorRol(rol, data) {
     }
 }
 
+// Vuelve al paso 1 (formulario de credenciales)
 function volverPaso1() {
     document.getElementById("paso1").style.display = "block";
     document.getElementById("paso2").style.display = "none";
     datosLogin = null;
 }
 
+// Alterna visibilidad de la contraseña
 function togglePass(id, btn) {
     const input = document.getElementById(id);
     const icon = btn.querySelector('i');
@@ -159,6 +165,7 @@ function togglePass(id, btn) {
     else { input.type = 'password'; icon.className = 'bi bi-eye'; }
 }
 
+// Muestra un mensaje temporal al usuario
 function mostrarMensaje(texto, tipo = "error") {
     const el = document.getElementById("mensaje");
     el.textContent = texto;

@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Archivo: admin/libros.html — Gestión CRUD de libros e importación desde Open Library -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -8,12 +9,14 @@
 </head>
 <body>
 
+<!-- Verificación de sesión admin -->
 <script>
 if (sessionStorage.getItem("adminActivo") !== "true") {
     window.location.href = "/admin/login.html";
 }
 </script>
 
+<!-- Encabezado de la página -->
 <header class="page-header">
     <h1><i class="bi bi-book"></i> Gestión de Libros</h1>
     <a href="/admin/panel.html"><button class="btn-secondary btn-sm">← Regresar</button></a>
@@ -23,7 +26,7 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
 
     <p id="mensaje" class="mensaje"></p>
 
-    <!-- FORMULARIO -->
+    <!-- Formulario para agregar/editar un libro -->
     <div class="card">
         <h2 id="formTitulo">Agregar Libro</h2>
 
@@ -65,7 +68,7 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
         </div>
     </div>
 
-    <!-- IMPORTAR DESDE OPEN LIBRARY -->
+    <!-- Sección para importar libros desde la API de Open Library -->
     <div class="card">
         <h2><i class="bi bi-cloud-download"></i> Importar desde Open Library</h2>
         <p style="color:#64748b; margin-bottom:16px; font-size:0.9rem;">
@@ -84,7 +87,7 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
         </div>
     </div>
 
-    <!-- LISTA -->
+    <!-- Tabla con la lista de libros y controles de paginación -->
     <div class="card">
         <h2>Lista de Libros</h2>
 
@@ -112,12 +115,14 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
 
 </main>
 
+<!-- Lógica de gestión de libros -->
 <script>
 const inputBusqueda = document.getElementById("buscarLibro");
 let temporizador;
 
 window.onload = () => cargarLibros("");
 
+// Búsqueda con debounce de 500ms
 inputBusqueda.addEventListener("input", () => {
     clearTimeout(temporizador);
     temporizador = setTimeout(() => cargarLibros(inputBusqueda.value), 500);
@@ -127,6 +132,7 @@ let paginaActual = 1;
 const FILAS_POR_PAGINA = 15;
 let datosLibros = [];
 
+// Obtiene todos los libros del stock y filtra localmente
 async function cargarLibros(busqueda) {
     try {
         const response = await fetch(`/stock`);
@@ -148,6 +154,7 @@ async function cargarLibros(busqueda) {
     }
 }
 
+// Renderiza la página actual de la tabla con paginación
 function renderPaginaLibros() {
     const tabla = document.getElementById("tablaLibros");
     tabla.innerHTML = "";
@@ -192,7 +199,7 @@ function renderPaginaLibros() {
             </tr>`;
     });
 
-    // Paginación
+    // Controles de paginación
     document.getElementById("paginacionLibros").innerHTML = `
         <button onclick="cambiarPagina(-1)" ${paginaActual <= 1 ? 'disabled' : ''}>← Anterior</button>
         <span>Página ${paginaActual} de ${totalPaginas} (${datosLibros.length} libros)</span>
@@ -205,6 +212,7 @@ function cambiarPagina(dir) {
     renderPaginaLibros();
 }
 
+// Envía un nuevo libro al servidor
 async function agregarLibro() {
     try {
         const libro = obtenerDatosLibro();
@@ -224,6 +232,7 @@ async function agregarLibro() {
     }
 }
 
+// Elimina un libro por ISBN con confirmación
 async function eliminarLibro(isbn) {
     if (!confirm("¿Seguro que quieres eliminar este libro?")) return;
     try {
@@ -238,6 +247,7 @@ async function eliminarLibro(isbn) {
     }
 }
 
+// Carga los datos de un libro en el formulario para edición
 function cargarDatosEditar(isbn, titulo, autor, editorial, version, anio_publicacion, precio) {
     document.getElementById("isbn").value = isbn;
     document.getElementById("titulo").value = titulo;
@@ -254,6 +264,7 @@ function cargarDatosEditar(isbn, titulo, autor, editorial, version, anio_publica
     window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+// Envía los cambios de un libro editado al servidor
 async function actualizarLibro() {
     try {
         const isbn = document.getElementById("isbn").value;
@@ -276,6 +287,7 @@ async function actualizarLibro() {
 
 function cancelarEdicion() { limpiarFormulario(); }
 
+// Recopila los valores del formulario en un objeto
 function obtenerDatosLibro() {
     return {
         isbn:             document.getElementById("isbn").value,
@@ -288,6 +300,7 @@ function obtenerDatosLibro() {
     };
 }
 
+// Limpia el formulario y restaura el estado de "Agregar"
 function limpiarFormulario() {
     ["isbn","titulo","autor","editorial","version","anio_publicacion","precio"].forEach(id => {
         document.getElementById(id).value = "";
@@ -314,6 +327,7 @@ function mostrarMensaje(texto, tipo = "error") {
     }, 4000);
 }
 
+// Importa libros desde Open Library a la base de datos local
 async function importarOpenLibrary() {
     const buscar = document.getElementById("buscarImportar").value.trim();
     if (!buscar) {

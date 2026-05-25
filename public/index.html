@@ -1,6 +1,8 @@
 <!DOCTYPE html>
+<!-- Archivo: index.html — Página principal del catálogo público de libros (marketplace) -->
 <html lang="es">
 <head>
+    <!-- Metadatos y hojas de estilo -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ABV Library</title>
@@ -9,7 +11,7 @@
 </head>
 <body class="marketplace">
 
-<!-- NAVBAR -->
+<!-- Barra de navegación con logo, búsqueda y enlace a login -->
 <nav class="navbar">
     <a class="navbar-logo" href="/">
         <img src="/img/abv_library.jpeg" alt="ABV Library" class="navbar-logo-img">
@@ -26,7 +28,7 @@
     </div>
 </nav>
 
-<!-- HERO BANNER -->
+<!-- Banner principal (hero) con mensaje de bienvenida -->
 <section class="hero-banner">
     <div class="hero-content">
         <h1>Bienvenido a <span>ABV Library</span></h1>
@@ -34,10 +36,11 @@
     </div>
 </section>
 
-<!-- CATÁLOGO DE LIBROS -->
+<!-- Catálogo de libros: grid dinámico con switch local/global -->
 <main class="marketplace-main">
     <h2 class="section-title">Catálogo de Libros</h2>
 
+    <!-- Controles: switch para alternar entre libros locales y API externa -->
     <div class="catalogo-controles">
         <div class="contenedor-switch">
             <span>Local</span>
@@ -49,19 +52,21 @@
         </div>
     </div>
 
+    <!-- Grid dinámico donde se renderizan las tarjetas de libros -->
     <div class="catalogo-grid" id="catalogoGrid">
-        <!-- Las tarjetas de libros se generan dinámicamente -->
     </div>
 
     <p id="catalogoMensaje" class="catalogo-mensaje"></p>
 </main>
 
-<!-- FOOTER -->
+<!-- Pie de página -->
 <footer class="marketplace-footer">
     <p>© 2025 ABV Library. Todos los derechos reservados.</p>
 </footer>
 
+<!-- Lógica JavaScript del catálogo -->
 <script>
+// Referencias a elementos del DOM
 const inputBusqueda = document.getElementById("buscarLibro");
 const switchLibros = document.getElementById("switchLibros");
 const catalogoGrid = document.getElementById("catalogoGrid");
@@ -70,13 +75,14 @@ let temporizador;
 let fuenteActual = "api";
 let favoritos = new Set(); // ISBNs favoritos del cliente logueado
 
-// Obtener cliente logueado desde localStorage
+// Obtiene los datos del cliente logueado desde localStorage
 function getClienteLogueado() {
     const data = localStorage.getItem("cliente");
     if (!data) return null;
     try { return JSON.parse(data); } catch { return null; }
 }
 
+// Carga la lista de favoritos del cliente desde el servidor
 async function cargarFavoritos() {
     const cliente = getClienteLogueado();
     if (!cliente) return;
@@ -89,6 +95,7 @@ async function cargarFavoritos() {
     }
 }
 
+// Agrega o quita un libro de favoritos (toggle)
 async function toggleFavorito(isbn, titulo, autor, btn) {
     const cliente = getClienteLogueado();
     if (!cliente) {
@@ -105,6 +112,7 @@ async function toggleFavorito(isbn, titulo, autor, btn) {
 
     try {
         if (esFavorito) {
+            // Eliminar de favoritos
             await fetch(`/favoritos/${encodeURIComponent(cliente.correo_electronico)}/${encodeURIComponent(isbn)}`, {
                 method: "DELETE"
             });
@@ -112,6 +120,7 @@ async function toggleFavorito(isbn, titulo, autor, btn) {
             btn.classList.remove("activo");
             btn.title = "Agregar a favoritos";
         } else {
+            // Agregar a favoritos
             await fetch("/favoritos", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -131,6 +140,7 @@ async function toggleFavorito(isbn, titulo, autor, btn) {
     }
 }
 
+// Inicialización al cargar la página
 window.onload = async () => {
     const params = new URLSearchParams(window.location.search);
     const buscarParam = params.get("buscar") || "";
@@ -141,23 +151,26 @@ window.onload = async () => {
     cargarLibros(inputBusqueda.value);
 };
 
-// Búsqueda en tiempo real desde el navbar
+// Búsqueda en tiempo real con debounce de 300ms
 inputBusqueda.addEventListener("input", () => {
     clearTimeout(temporizador);
     temporizador = setTimeout(() => cargarLibros(inputBusqueda.value), 300);
 });
 
+// Prevenir envío del formulario y buscar manualmente
 document.getElementById("formBusqueda").addEventListener("submit", (e) => {
     e.preventDefault();
     cargarLibros(inputBusqueda.value);
 });
 
+// Cambiar entre fuente local (BD) y global (API externa)
 switchLibros.addEventListener("change", () => {
     fuenteActual = switchLibros.checked ? "api" : "db";
     inputBusqueda.value = "";
     cargarLibros("");
 });
 
+// Carga libros desde la fuente seleccionada y renderiza las tarjetas
 async function cargarLibros(busqueda) {
     try {
         const url = fuenteActual === "db"
@@ -180,6 +193,7 @@ async function cargarLibros(busqueda) {
             return;
         }
 
+        // Renderizar cada libro como tarjeta
         data.forEach(libro => {
             const portada = libro.isbn && libro.isbn !== "Sin ISBN"
                 ? `https://covers.openlibrary.org/b/isbn/${libro.isbn}-M.jpg`

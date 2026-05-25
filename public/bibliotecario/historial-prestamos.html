@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Archivo: bibliotecario/historial-prestamos.html — Historial de préstamos con opción de devolución -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -8,12 +9,14 @@
 </head>
 <body>
 
+<!-- Verificación de sesión bibliotecario -->
 <script>
 if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
     window.location.href = "/bibliotecario/login.html";
 }
 </script>
 
+<!-- Encabezado de la página -->
 <header class="page-header">
     <h1><i class="bi bi-box-arrow-in-down-left"></i> Historial de Préstamos</h1>
     <a href="/bibliotecario/panel.html"><button class="btn-secondary btn-sm">← Regresar</button></a>
@@ -23,6 +26,7 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
 
     <p id="mensaje" class="mensaje"></p>
 
+    <!-- Tabla con todos los préstamos y botón de devolución -->
     <div class="card">
         <h2>Préstamos registrados</h2>
         <div class="table-wrapper">
@@ -48,9 +52,11 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
 
 </main>
 
+<!-- Lógica del historial de préstamos -->
 <script>
 window.onload = () => cargarPrestamos();
 
+// Carga todos los préstamos desde el servidor
 async function cargarPrestamos() {
     try {
         const response = await fetch("/prestamos");
@@ -64,6 +70,7 @@ async function cargarPrestamos() {
         }
 
         data.forEach(p => {
+            // Badge de estado con color según situación
             const estadoBadge = p.estado === "Devuelto"
                 ? `<span class="badge badge-returned">Devuelto</span>`
                 : p.estado === "Vencido"
@@ -95,6 +102,7 @@ async function cargarPrestamos() {
     }
 }
 
+// Marca un préstamo como devuelto (calcula multa si aplica)
 async function devolverPrestamo(id_prestamo) {
     if (!confirm("¿Confirmas la devolución de este préstamo?")) return;
     try {

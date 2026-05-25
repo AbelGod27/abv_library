@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Archivo: bibliotecario/login.html — Página de login para empleados (bibliotecarios/vendedores) -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -17,6 +18,7 @@
 
         <p id="mensaje" class="mensaje"></p>
 
+        <!-- Formulario: correo y contraseña del empleado -->
         <div class="form-group">
             <label for="correoBibliotecario">Correo electrónico</label>
             <input type="email" id="correoBibliotecario" placeholder="correo@ejemplo.com" autocomplete="email">
@@ -39,7 +41,9 @@
     </div>
 </div>
 
+<!-- Lógica de autenticación del bibliotecario -->
 <script>
+// Envía credenciales al endpoint de login de vendedor/bibliotecario
 async function loginBibliotecario() {
     try {
         const correo = document.getElementById("correoBibliotecario").value.trim();
@@ -73,10 +77,12 @@ async function loginBibliotecario() {
     }
 }
 
+// Permite login con Enter
 document.getElementById("passwordBibliotecario").addEventListener("keydown", e => {
     if (e.key === "Enter") loginBibliotecario();
 });
 
+// Alterna visibilidad de la contraseña
 function togglePass(id, btn) {
     const input = document.getElementById(id);
     const icon = btn.querySelector('i');

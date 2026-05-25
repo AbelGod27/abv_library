@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Archivo: cliente/registro.html — Formulario de registro de nuevos clientes -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -14,6 +15,7 @@
         <h1>Crear cuenta</h1>
         <p>Regístrate como cliente para consultar el catálogo y más.</p>
 
+        <!-- Formulario de registro con datos personales y contraseña -->
         <div class="form-group">
             <label for="correo">Correo electrónico *</label>
             <input type="email" id="correo" placeholder="tu@correo.com">
@@ -68,7 +70,9 @@
     </div>
 </div>
 
+<!-- Lógica de registro de cliente -->
 <script>
+// Valida los campos y envía el registro al servidor
 async function registrar() {
     const correo = document.getElementById("correo").value.trim();
     const nombre = document.getElementById("nombre").value.trim();
@@ -131,6 +135,7 @@ async function registrar() {
     }
 }
 
+// Muestra un mensaje temporal al usuario
 function mostrarMensaje(texto, tipo) {
     const el = document.getElementById("mensaje");
     el.textContent = texto;

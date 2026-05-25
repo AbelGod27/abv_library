@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Archivo: admin/clientes.html — Gestión CRUD de clientes y asignación de contraseñas -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -8,12 +9,14 @@
 </head>
 <body>
 
+<!-- Verificación de sesión admin -->
 <script>
 if (sessionStorage.getItem("adminActivo") !== "true") {
     window.location.href = "/admin/login.html";
 }
 </script>
 
+<!-- Encabezado de la página -->
 <header class="page-header">
     <h1><i class="bi bi-people"></i> Gestión de Clientes</h1>
     <a href="/admin/panel.html"><button class="btn-secondary btn-sm">← Regresar</button></a>
@@ -23,7 +26,7 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
 
     <p id="mensaje" class="mensaje"></p>
 
-    <!-- FORMULARIO -->
+    <!-- Formulario para agregar/editar cliente -->
     <div class="card">
         <h2 id="formTitulo">Agregar Cliente</h2>
 
@@ -61,7 +64,7 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
         </div>
     </div>
 
-    <!-- LISTA -->
+    <!-- Tabla con la lista de clientes -->
     <div class="card">
         <h2>Lista de Clientes</h2>
         <div class="table-wrapper">
@@ -85,7 +88,7 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
 
 </main>
 
-<!-- MODAL CONTRASEÑA -->
+<!-- Modal para asignar o cambiar contraseña de un cliente -->
 <div class="modal-overlay" id="modalOverlay">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
         <h3 id="modalTitulo">Asignar Contraseña</h3>
@@ -114,9 +117,11 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
     </div>
 </div>
 
+<!-- Lógica de gestión de clientes -->
 <script>
 window.onload = () => cargarClientes();
 
+// Carga la lista de clientes desde el servidor
 async function cargarClientes() {
     try {
         const response = await fetch("/clientes");
@@ -166,6 +171,7 @@ async function cargarClientes() {
     }
 }
 
+// Registra un nuevo cliente
 async function agregarCliente() {
     try {
         const cliente = obtenerDatosCliente();
@@ -185,6 +191,7 @@ async function agregarCliente() {
     }
 }
 
+// Carga datos del cliente en el formulario para edición
 function cargarDatosEditarCliente(correo, nombre, ap_paterno, ap_materno, fecha_de_nacimiento, telefono) {
     document.getElementById("correo_electronico").value = correo;
     document.getElementById("nombre").value = nombre;
@@ -200,6 +207,7 @@ function cargarDatosEditarCliente(correo, nombre, ap_paterno, ap_materno, fecha_
     window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+// Envía los cambios del cliente editado
 async function actualizarCliente() {
     try {
         const correo = document.getElementById("correo_electronico").value;
@@ -220,6 +228,7 @@ async function actualizarCliente() {
     }
 }
 
+// Elimina un cliente con confirmación
 async function eliminarCliente(correo) {
     if (!confirm("¿Seguro que quieres eliminar este cliente?")) return;
     try {
@@ -234,6 +243,7 @@ async function eliminarCliente(correo) {
     }
 }
 
+// Recopila los valores del formulario
 function obtenerDatosCliente() {
     return {
         correo_electronico: document.getElementById("correo_electronico").value,
@@ -245,6 +255,7 @@ function obtenerDatosCliente() {
     };
 }
 
+// Limpia el formulario y restaura el estado de "Agregar"
 function limpiarFormularioCliente() {
     ["correo_electronico","nombre","ap_paterno","ap_materno","fecha_de_nacimiento","telefono"].forEach(id => {
         document.getElementById(id).value = "";
@@ -273,6 +284,7 @@ function mostrarMensaje(texto, tipo = "error") {
 
 // ---- MODAL CONTRASEÑA ----
 
+// Abre el modal para asignar o cambiar contraseña
 function abrirModalPassword(correo, tienePassword) {
     document.getElementById("modalCorreo").value = correo;
     document.getElementById("passNueva").value = "";
@@ -304,6 +316,7 @@ document.getElementById("modalOverlay").addEventListener("click", function(e) {
     if (e.target === this) cerrarModal();
 });
 
+// Valida y guarda la nueva contraseña del cliente
 async function guardarPassword() {
     const correo       = document.getElementById("modalCorreo").value;
     const passActual   = document.getElementById("passActual").value;

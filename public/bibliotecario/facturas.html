@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Archivo: bibliotecario/facturas.html — Generación de reportes financieros por rango de fechas -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -8,12 +9,14 @@
 </head>
 <body>
 
+<!-- Verificación de sesión bibliotecario -->
 <script>
 if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
     window.location.href = "/bibliotecario/login.html";
 }
 </script>
 
+<!-- Encabezado de la página -->
 <header class="page-header">
     <h1><i class="bi bi-receipt"></i> Facturas</h1>
     <a href="/bibliotecario/panel.html"><button class="btn-secondary btn-sm">← Regresar</button></a>
@@ -23,7 +26,7 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
 
     <p id="mensaje" class="mensaje"></p>
 
-    <!-- FILTRO -->
+    <!-- Filtro por rango de fechas -->
     <div class="card">
         <h2>Generar reporte por fechas</h2>
         <div class="form-grid">
@@ -41,13 +44,13 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
         </div>
     </div>
 
-    <!-- RESUMEN -->
+    <!-- Resumen financiero del periodo -->
     <div class="card" id="seccionResumen" style="display:none;">
         <h2>Resumen del periodo</h2>
         <div class="resumen-box" id="resumenFacturas"></div>
     </div>
 
-    <!-- VENTAS -->
+    <!-- Tabla de ventas del periodo -->
     <div class="card" id="seccionVentas" style="display:none;">
         <h2>Ventas realizadas</h2>
         <div class="table-wrapper">
@@ -65,7 +68,7 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
         </div>
     </div>
 
-    <!-- PRÉSTAMOS -->
+    <!-- Tabla de préstamos del periodo -->
     <div class="card" id="seccionPrestamos" style="display:none;">
         <h2>Préstamos registrados</h2>
         <div class="table-wrapper">
@@ -83,7 +86,7 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
         </div>
     </div>
 
-    <!-- RECEPCIONES DE PROVEEDORES -->
+    <!-- Tabla de recepciones de proveedores del periodo -->
     <div class="card" id="seccionRecepciones" style="display:none;">
         <h2>Recepciones de proveedores</h2>
         <div class="table-wrapper">
@@ -105,7 +108,9 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
 
 </main>
 
+<!-- Lógica de generación de reportes -->
 <script>
+// Consulta el reporte financiero por rango de fechas
 async function generarReporte() {
     try {
         const fechaInicio = document.getElementById("fecha_inicio").value;
@@ -136,6 +141,7 @@ async function generarReporte() {
     }
 }
 
+// Renderiza la tabla de ventas
 function mostrarVentas(ventas) {
     const tabla = document.getElementById("tablaVentas");
     tabla.innerHTML = "";
@@ -154,6 +160,7 @@ function mostrarVentas(ventas) {
     });
 }
 
+// Renderiza la tabla de préstamos
 function mostrarPrestamos(prestamos) {
     const tabla = document.getElementById("tablaPrestamos");
     tabla.innerHTML = "";
@@ -175,6 +182,7 @@ function mostrarPrestamos(prestamos) {
     });
 }
 
+// Calcula y muestra el resumen financiero (ingresos, gastos, balance)
 function mostrarResumen(ventas, prestamos, recepciones) {
     const totalVentas = ventas.reduce((t, v) => t + Number(v.monto || 0), 0);
     const totalMultas = prestamos.reduce((t, p) => t + Number(p.monto || 0), 0);
@@ -208,6 +216,7 @@ function mostrarResumen(ventas, prestamos, recepciones) {
     `;
 }
 
+// Renderiza la tabla de recepciones de proveedores
 function mostrarRecepciones(recepciones) {
     const tabla = document.getElementById("tablaRecepciones");
     tabla.innerHTML = "";

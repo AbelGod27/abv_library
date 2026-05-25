@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Archivo: admin/panel.html — Panel principal del administrador con accesos a gestión -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -8,12 +9,14 @@
 </head>
 <body>
 
+<!-- Verificación de sesión: redirige si no hay sesión activa de admin -->
 <script>
 if (sessionStorage.getItem("adminActivo") !== "true") {
     window.location.href = "/admin/login.html";
 }
 </script>
 
+<!-- Encabezado con título y botones de navegación -->
 <header class="page-header">
     <h1><i class="bi bi-shield-lock"></i> Panel de Administrador</h1>
     <div style="display:flex; gap:8px;">
@@ -26,6 +29,7 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
 
     <p id="mensaje" class="mensaje"></p>
 
+    <!-- Grid de tarjetas con accesos directos a cada módulo de gestión -->
     <div class="panel-grid">
 
         <a href="/admin/libros.html" class="panel-card">
@@ -56,12 +60,15 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
 
 </main>
 
+<!-- Lógica del panel de administrador -->
 <script>
+// Cierra la sesión del admin y redirige al inicio
 function cerrarSesion() {
     sessionStorage.removeItem("adminActivo");
     window.location.href = "/index.html";
 }
 
+// Permite al admin cambiar al rol de bibliotecario sin re-login
 function cambiarARol(rol) {
     if (rol === "bibliotecario") {
         sessionStorage.setItem("bibliotecarioActivo", "true");
@@ -74,6 +81,7 @@ function cambiarARol(rol) {
     }
 }
 
+// Muestra un mensaje temporal al usuario
 function mostrarMensaje(texto, tipo = "error") {
     const mensaje = document.getElementById("mensaje");
     mensaje.textContent = texto;

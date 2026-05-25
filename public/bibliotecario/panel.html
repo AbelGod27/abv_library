@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Archivo: bibliotecario/panel.html — Panel principal del bibliotecario con accesos a módulos -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -8,12 +9,14 @@
 </head>
 <body>
 
+<!-- Verificación de sesión: redirige si no hay sesión activa de bibliotecario -->
 <script>
 if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
     window.location.href = "/bibliotecario/login.html";
 }
 </script>
 
+<!-- Encabezado con título y botones de navegación -->
 <header class="page-header">
     <h1><i class="bi bi-journal-bookmark"></i> Panel Bibliotecario</h1>
     <div style="display:flex; gap:8px;">
@@ -26,8 +29,10 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
 
     <p id="mensaje" class="mensaje"></p>
 
+    <!-- Información del bibliotecario logueado -->
     <div id="infoBibliotecario" class="panel-info"></div>
 
+    <!-- Grid de tarjetas con accesos a cada módulo -->
     <div class="panel-grid">
 
         <a href="/bibliotecario/ventas.html" class="panel-card">
@@ -70,11 +75,14 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
 
 </main>
 
+<!-- Lógica del panel de bibliotecario -->
 <script>
+// Mostrar nombre y rol del bibliotecario logueado
 const nombre = sessionStorage.getItem("nombreBibliotecario");
 const rol    = sessionStorage.getItem("rolBibliotecario");
 document.getElementById("infoBibliotecario").textContent = `Bienvenido, ${nombre} (${rol})`;
 
+// Cierra la sesión y limpia datos de sessionStorage
 function cerrarSesion() {
     sessionStorage.removeItem("bibliotecarioActivo");
     sessionStorage.removeItem("correoBibliotecario");
@@ -83,6 +91,7 @@ function cerrarSesion() {
     window.location.href = "/index.html";
 }
 
+// Permite cambiar al panel de admin sin re-login
 function cambiarARol(rol) {
     if (rol === "admin") {
         sessionStorage.setItem("adminActivo", "true");
@@ -90,7 +99,7 @@ function cambiarARol(rol) {
     }
 }
 
-// Mostrar botón "Ir a Admin" solo si el rol es Administrador o Dueno
+// Mostrar botón "Ir a Admin" solo si el rol es Administrador o Dueño
 if (["Administrador", "Dueno"].includes(rol)) {
     document.getElementById("btnIrAdmin").style.display = "inline-flex";
 }

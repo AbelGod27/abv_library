@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Archivo: admin/proveedores.html — Gestión de proveedores, asignación de libros y recepción de paquetes -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -8,12 +9,14 @@
 </head>
 <body>
 
+<!-- Verificación de sesión admin -->
 <script>
 if (sessionStorage.getItem("adminActivo") !== "true") {
     window.location.href = "/admin/login.html";
 }
 </script>
 
+<!-- Encabezado de la página -->
 <header class="page-header">
     <h1><i class="bi bi-building"></i> Gestión de Proveedores</h1>
     <a href="/admin/panel.html"><button class="btn-secondary btn-sm">← Regresar</button></a>
@@ -23,7 +26,7 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
 
     <p id="mensaje" class="mensaje"></p>
 
-    <!-- FORMULARIO -->
+    <!-- Formulario para agregar/editar proveedor -->
     <div class="card">
         <h2 id="formTitulo">Agregar Proveedor</h2>
         <div class="form-grid">
@@ -39,7 +42,7 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
         </div>
     </div>
 
-    <!-- LISTA -->
+    <!-- Tabla con la lista de proveedores -->
     <div class="card">
         <h2>Lista de Proveedores</h2>
         <div class="table-wrapper">
@@ -56,7 +59,7 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
         </div>
     </div>
 
-    <!-- RECIBIR PAQUETE DE PROVEEDOR -->
+    <!-- Formulario para registrar recepción de paquetes de un proveedor -->
     <div class="card">
         <h2>Recibir paquete de libros</h2>
         <p style="color:#64748b; font-size:0.85rem; margin-bottom:16px;">
@@ -97,7 +100,7 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
         </div>
     </div>
 
-    <!-- ASIGNAR LIBRO A PROVEEDOR -->
+    <!-- Formulario para asignar un libro existente a un proveedor -->
     <div class="card">
         <h2>Asignar libro a proveedor</h2>
         <div class="form-grid">
@@ -119,7 +122,7 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
         </div>
     </div>
 
-    <!-- RELACIONES PROVEEDOR-LIBRO -->
+    <!-- Tabla colapsable con las relaciones proveedor-libro -->
     <div class="card card-collapsible">
         <div class="card-header" onclick="toggleCard(this)">
             <h2>Libros por proveedor</h2>
@@ -144,11 +147,13 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
 
 </main>
 
+<!-- Lógica de gestión de proveedores -->
 <script>
 let idEditando = null;
 
 window.onload = () => { cargarProveedores(); cargarSelectProveedores(); cargarSelectProvPaquete(); cargarProveedoresLibros(); };
 
+// Carga la lista de proveedores en la tabla
 async function cargarProveedores() {
     try {
         const response = await fetch("/proveedores");
@@ -184,6 +189,7 @@ async function cargarProveedores() {
     }
 }
 
+// Registra un nuevo proveedor
 async function agregarProveedor() {
     const nombre = document.getElementById("nombreProveedor").value.trim();
     if (!nombre) { mostrarMensaje("El nombre es obligatorio."); return; }
@@ -206,6 +212,7 @@ async function agregarProveedor() {
     }
 }
 
+// Carga datos del proveedor en el formulario para edición
 function editarProveedor(id, nombre) {
     idEditando = id;
     document.getElementById("nombreProveedor").value = nombre;
@@ -216,6 +223,7 @@ function editarProveedor(id, nombre) {
     window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+// Envía los cambios del proveedor editado
 async function actualizarProveedor() {
     const nombre = document.getElementById("nombreProveedor").value.trim();
     if (!nombre) { mostrarMensaje("El nombre es obligatorio."); return; }
@@ -237,6 +245,7 @@ async function actualizarProveedor() {
     }
 }
 
+// Elimina un proveedor con confirmación
 async function eliminarProveedor(id) {
     if (!confirm("¿Seguro que quieres eliminar este proveedor?")) return;
 
@@ -252,6 +261,7 @@ async function eliminarProveedor(id) {
     }
 }
 
+// Cancela la edición y restaura el formulario
 function cancelarEdicion() {
     idEditando = null;
     document.getElementById("nombreProveedor").value = "";
@@ -261,6 +271,7 @@ function cancelarEdicion() {
     document.getElementById("btnCancelar").style.display = "none";
 }
 
+// Alterna visibilidad de una sección colapsable
 function toggleCard(header) {
     const body = header.nextElementSibling;
     const btn = header.querySelector('.btn-collapse');
@@ -280,6 +291,7 @@ function mostrarMensaje(texto, tipo = "error") {
 
 // === ASIGNAR LIBROS A PROVEEDORES ===
 
+// Carga los proveedores en el select de asignación
 async function cargarSelectProveedores() {
     try {
         const res = await fetch("/proveedores");
@@ -296,6 +308,7 @@ async function cargarSelectProveedores() {
 
 let tempBusquedaLibroProv;
 
+// Búsqueda de libros con autocompletado para asignar a proveedor
 function buscarLibrosProv() {
     clearTimeout(tempBusquedaLibroProv);
     tempBusquedaLibroProv = setTimeout(async () => {
@@ -339,12 +352,14 @@ function buscarLibrosProv() {
     }, 300);
 }
 
+// Cierra el dropdown de resultados al hacer clic fuera
 document.addEventListener("click", (e) => {
     if (!e.target.closest("#buscarLibroProv") && !e.target.closest("#resultadosLibroProv")) {
         document.getElementById("resultadosLibroProv").style.display = "none";
     }
 });
 
+// Asigna un libro a un proveedor (crea la relación)
 async function asignarLibroProveedor() {
     const id_proveedor = document.getElementById("selectProveedor").value;
     const isbn = document.getElementById("isbnSeleccionado").value;
@@ -373,6 +388,7 @@ async function asignarLibroProveedor() {
     }
 }
 
+// Carga la tabla de relaciones proveedor-libro
 async function cargarProveedoresLibros() {
     try {
         const res = await fetch("/proveedores-libros");
@@ -401,6 +417,7 @@ async function cargarProveedoresLibros() {
 
 // === RECIBIR PAQUETE ===
 
+// Carga los proveedores en el select de recepción de paquetes
 async function cargarSelectProvPaquete() {
     try {
         const res = await fetch("/proveedores");
@@ -415,6 +432,7 @@ async function cargarSelectProvPaquete() {
     }
 }
 
+// Carga los libros asignados a un proveedor específico
 async function cargarLibrosProveedor() {
     const idProv = document.getElementById("selectProvPaquete").value;
     const select = document.getElementById("selectLibroPaquete");
@@ -443,6 +461,7 @@ async function cargarLibrosProveedor() {
     }
 }
 
+// Registra la recepción de un paquete y actualiza el stock
 async function recibirPaquete() {
     const id_proveedor = document.getElementById("selectProvPaquete").value;
     const isbn = document.getElementById("selectLibroPaquete").value;

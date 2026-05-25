@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Archivo: bibliotecario/ventas.html — Registro de ventas con carrito, puntos y métodos de pago -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -8,12 +9,14 @@
 </head>
 <body>
 
+<!-- Verificación de sesión bibliotecario -->
 <script>
 if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
     window.location.href = "/bibliotecario/login.html";
 }
 </script>
 
+<!-- Encabezado de la página -->
 <header class="page-header">
     <h1><i class="bi bi-cart3"></i> Registrar Venta</h1>
     <a href="/bibliotecario/panel.html"><button class="btn-secondary btn-sm">← Regresar</button></a>
@@ -25,6 +28,7 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
 
     <div id="infoBibliotecario" class="panel-info"></div>
 
+    <!-- Sección: búsqueda y agregado de libros al carrito -->
     <div class="card">
         <h2>Agregar libros a la venta</h2>
 
@@ -44,7 +48,7 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
             <button type="button" onclick="agregarAlCarrito()" style="height:40px;">+ Agregar</button>
         </div>
 
-        <!-- Carrito -->
+        <!-- Tabla del carrito de compras -->
         <div id="carritoVacio" style="text-align:center; color:#64748b; padding:20px; font-size:0.9rem;">
             No hay libros agregados aún.
         </div>
@@ -71,7 +75,7 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
         </div>
     </div>
 
-    <!-- Datos de pago -->
+    <!-- Sección: datos de pago y canje de puntos -->
     <div class="card" id="seccionPago" style="display:none;">
         <h2>Datos de pago</h2>
 
@@ -91,7 +95,7 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
             </div>
         </div>
 
-        <!-- Sección de canje de puntos -->
+        <!-- Sección de canje de puntos del cliente -->
         <div id="seccionCanje" class="form-group" style="display:none; margin-top:16px; padding:16px; background:#fef9f3; border-radius:8px; border:1px solid #e8d5c0;">
             <p style="margin:0 0 8px; font-weight:600; color:#a0784c;"><i class="bi bi-star-fill"></i> Puntos disponibles: <span id="puntosDisponibles">0</span></p>
             <p style="margin:0 0 12px; font-size:0.85rem; color:#64748b;">10 puntos = $1 de descuento</p>
@@ -109,6 +113,7 @@ if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
 
 </main>
 
+<!-- Lógica de ventas -->
 <script>
 const correoBibliotecario = sessionStorage.getItem("correoBibliotecario");
 const nombreBibliotecario = sessionStorage.getItem("nombreBibliotecario");
@@ -120,6 +125,7 @@ document.getElementById("infoBibliotecario").textContent =
 // === CARRITO ===
 let carrito = []; // { isbn, titulo, autor, precio, cantidad }
 
+// Renderiza la tabla del carrito y calcula el total
 function renderCarrito() {
     const tabla = document.getElementById("tablaCarrito");
     const vacio = document.getElementById("carritoVacio");
@@ -157,6 +163,7 @@ function renderCarrito() {
     document.getElementById("totalCarrito").textContent = `$${total.toFixed(2)}`;
 }
 
+// Agrega un libro al carrito (o suma cantidad si ya existe)
 function agregarAlCarrito() {
     const isbn = document.getElementById("isbnSeleccionado").value;
     const titulo = document.getElementById("tituloSeleccionado").value;
@@ -168,7 +175,6 @@ function agregarAlCarrito() {
         return;
     }
 
-    // Si ya está en el carrito, sumar cantidad
     const existente = carrito.find(item => item.isbn === isbn);
     if (existente) {
         existente.cantidad += cantidad;
@@ -176,7 +182,7 @@ function agregarAlCarrito() {
         carrito.push({ isbn, titulo, precio, cantidad });
     }
 
-    // Limpiar búsqueda
+    // Limpiar campos de búsqueda
     document.getElementById("buscarLibro").value = "";
     document.getElementById("isbnSeleccionado").value = "";
     document.getElementById("precioSeleccionado").value = "";
@@ -191,7 +197,7 @@ function quitarDelCarrito(index) {
     renderCarrito();
 }
 
-// === BÚSQUEDA DE LIBROS ===
+// === BÚSQUEDA DE LIBROS CON AUTOCOMPLETADO ===
 let tempBusquedaLibro;
 
 function buscarLibrosVenta() {
@@ -240,15 +246,17 @@ function buscarLibrosVenta() {
     }, 300);
 }
 
+// Cierra el dropdown al hacer clic fuera
 document.addEventListener("click", (e) => {
     if (!e.target.closest("#buscarLibro") && !e.target.closest("#resultadosLibro")) {
         document.getElementById("resultadosLibro").style.display = "none";
     }
 });
 
-// === PUNTOS ===
+// === SISTEMA DE PUNTOS ===
 let puntosClienteActual = 0;
 
+// Consulta los puntos disponibles del cliente
 async function consultarPuntosCliente() {
     const correo = document.getElementById("correo_cliente").value.trim();
     const seccion = document.getElementById("seccionCanje");
@@ -281,6 +289,7 @@ async function consultarPuntosCliente() {
     }
 }
 
+// Calcula el descuento en base a los puntos a canjear (10 pts = $1)
 function calcularDescuento() {
     let puntos = parseInt(document.getElementById("puntos_canjear").value) || 0;
     if (puntos > puntosClienteActual) {
@@ -296,6 +305,7 @@ function calcularDescuento() {
 }
 
 // === REGISTRAR VENTA ===
+// Procesa el carrito completo: canjea puntos, registra cada libro y muestra resumen
 async function registrarVenta() {
     if (carrito.length === 0) {
         mostrarMensaje("Agrega al menos un libro al carrito.");
@@ -336,9 +346,7 @@ async function registrarVenta() {
 
     const totalFinal = Math.max(0, totalCarrito - descuentoAplicado);
 
-    // Registrar venta por cada libro del carrito
-    // Usamos el primer libro como principal para el endpoint actual
-    // (el endpoint maneja un libro por venta)
+    // Registrar venta por cada libro del carrito (proporcional al total)
     let ventasExitosas = 0;
     let puntosGanadosTotal = 0;
 
@@ -382,7 +390,7 @@ async function registrarVenta() {
 
     mostrarMensaje(msg, "success");
 
-    // Limpiar todo
+    // Limpiar carrito y formulario
     carrito = [];
     renderCarrito();
     document.getElementById("metodo_de_pago").value = "";

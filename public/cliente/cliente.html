@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Archivo: cliente/cliente.html — Portal del cliente: consulta de libros, puntos, préstamos, favoritos y donaciones -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -8,6 +9,7 @@
 </head>
 <body>
 
+<!-- Encabezado con info del cliente y botones -->
 <header class="page-header">
     <h1><i class="bi bi-search"></i> Consulta de Libros</h1>
     <div style="display:flex; gap:8px; align-items:center;">
@@ -21,7 +23,7 @@
 
     <p id="mensaje" class="mensaje"></p>
 
-    <!-- LOGIN CLIENTE (opcional) -->
+    <!-- Sección de login opcional para clientes -->
     <div class="card" id="seccionLogin" style="margin-bottom:24px;">
         <h2 style="margin:0 0 12px; font-size:1.1rem;">Iniciar sesión (opcional)</h2>
         <p style="color:#64748b; font-size:0.85rem; margin:0 0 16px;">Inicia sesión para ver tus puntos, favoritos, préstamos y recomendaciones personalizadas.</p>
@@ -47,7 +49,7 @@
         </p>
     </div>
 
-    <!-- SECCIÓN PUNTOS -->
+    <!-- Sección: puntos acumulados y historial -->
     <div class="card" id="seccionPuntos" style="display:none; margin-bottom:24px;">
         <h2 style="margin:0 0 16px; font-size:1.2rem;"><i class="bi bi-star-fill"></i> Mis Puntos</h2>
         <p style="font-size:1.5rem; font-weight:700; color:#a0784c; margin:0 0 4px;">
@@ -77,7 +79,7 @@
         </details>
     </div>
 
-    <!-- SECCIÓN PRÉSTAMOS -->
+    <!-- Sección: préstamos activos del cliente -->
     <div class="card" id="seccionPrestamos" style="display:none; margin-bottom:24px;">
         <h2 style="margin:0 0 16px; font-size:1.2rem;"><i class="bi bi-send-fill"></i> Mis Préstamos</h2>
         <div id="alertaPrestamo" style="display:none; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:12px 16px; margin-bottom:16px;">
@@ -101,14 +103,14 @@
         <p id="prestamosVacio" style="text-align:center; color:#64748b; display:none;">No tienes préstamos registrados.</p>
     </div>
 
-    <!-- SECCIÓN RECOMENDACIONES -->
+    <!-- Sección: libros recomendados (personalizados si hay login) -->
     <div class="card" id="seccionRecomendaciones" style="margin-bottom:24px;">
         <h2 style="margin:0 0 16px; font-size:1.2rem;"><i class="bi bi-book"></i> Libros Recomendados para Ti</h2>
         <div id="gridRecomendaciones" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:16px;"></div>
         <p id="recomendacionesVacio" style="text-align:center; color:#64748b; display:none;">No hay recomendaciones disponibles.</p>
     </div>
 
-    <!-- SECCIÓN DONACIONES -->
+    <!-- Sección: historial de donaciones del cliente -->
     <div class="card" id="seccionDonaciones" style="display:none; margin-bottom:24px;">
         <h2 style="margin:0 0 16px; font-size:1.2rem;"><i class="bi bi-gift"></i> Mis Donaciones</h2>
         <p style="font-size:0.85rem; color:#64748b; margin:0 0 12px;">Ganas 20 puntos por cada libro que dones. ¡Gracias por contribuir!</p>
@@ -129,7 +131,7 @@
         <p id="donacionesVacio" style="text-align:center; color:#64748b; display:none;">Aún no has donado libros.</p>
     </div>
 
-    <!-- SECCIÓN FAVORITOS -->
+    <!-- Sección: libros favoritos del cliente -->
     <div class="card" id="seccionFavoritos" style="display:none; margin-bottom:24px;">
         <h2 style="margin:0 0 16px; font-size:1.2rem;"><i class="bi bi-heart-fill"></i> Mis Libros Favoritos</h2>
         <div class="table-wrapper">
@@ -150,6 +152,7 @@
         <p id="favoritosVacio" style="text-align:center; color:#64748b; display:none;">No tienes libros favoritos aún.</p>
     </div>
 
+    <!-- Sección: búsqueda y tabla de libros (local/global) -->
     <div class="card">
 
         <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; margin-bottom:20px;">
@@ -190,18 +193,21 @@
 
 </main>
 
+<!-- Lógica del portal del cliente -->
 <script>
 const inputBusqueda = document.getElementById("buscarLibro");
 const switchLibros  = document.getElementById("switchLibros");
 let temporizador;
 let fuenteActual = "db";
 
+// Obtiene datos del cliente logueado desde localStorage
 function getClienteLogueado() {
     const data = localStorage.getItem("cliente");
     if (!data) return null;
     try { return JSON.parse(data); } catch { return null; }
 }
 
+// Actualiza la interfaz según si hay sesión activa o no
 function actualizarUILogin() {
     const cliente = getClienteLogueado();
     const seccionLogin = document.getElementById("seccionLogin");
@@ -219,6 +225,7 @@ function actualizarUILogin() {
     }
 }
 
+// Autentica al cliente y carga sus datos personalizados
 async function loginCliente() {
     const correo = document.getElementById("loginCorreo").value.trim();
     const password = document.getElementById("loginPassword").value;
@@ -246,7 +253,7 @@ async function loginCliente() {
         mostrarMensaje(`Bienvenido, ${data.cliente.nombre}`, "exito");
         actualizarUILogin();
 
-        // Recargar secciones que dependen del login
+        // Recargar secciones personalizadas
         cargarPuntos();
         cargarFavoritos();
         cargarDonaciones();
@@ -257,10 +264,10 @@ async function loginCliente() {
     }
 }
 
+// Cierra la sesión del cliente
 function cerrarSesionCliente() {
     localStorage.removeItem("cliente");
     actualizarUILogin();
-    // Ocultar secciones de usuario logueado
     document.getElementById("seccionPuntos").style.display = "none";
     document.getElementById("seccionFavoritos").style.display = "none";
     document.getElementById("seccionDonaciones").style.display = "none";
@@ -268,6 +275,7 @@ function cerrarSesionCliente() {
     mostrarMensaje("Sesión cerrada.", "exito");
 }
 
+// Inicialización al cargar la página
 window.onload = () => {
     actualizarUILogin();
     const params = new URLSearchParams(window.location.search);
@@ -283,6 +291,7 @@ window.onload = () => {
     cargarPrestamosCliente();
 };
 
+// Carga los préstamos del cliente logueado con alertas de vencimiento
 async function cargarPrestamosCliente() {
     const cliente = getClienteLogueado();
     if (!cliente) return;
@@ -306,7 +315,7 @@ async function cargarPrestamosCliente() {
 
         vacio.style.display = "none";
 
-        // Verificar si hay préstamos por vencer (1 día o menos)
+        // Verificar préstamos por vencer o vencidos para mostrar alerta
         const porVencer = data.filter(p => p.estado === "Por vencer");
         const vencidos = data.filter(p => p.estado === "Vencido");
 
@@ -348,6 +357,7 @@ async function cargarPrestamosCliente() {
     }
 }
 
+// Carga recomendaciones personalizadas (o generales si no hay login)
 async function cargarRecomendaciones() {
     const cliente = getClienteLogueado();
     const grid = document.getElementById("gridRecomendaciones");
@@ -392,6 +402,7 @@ async function cargarRecomendaciones() {
     }
 }
 
+// Carga los puntos acumulados y el historial de puntos del cliente
 async function cargarPuntos() {
     const cliente = getClienteLogueado();
     if (!cliente) return;
@@ -400,14 +411,13 @@ async function cargarPuntos() {
     seccion.style.display = "block";
 
     try {
-        // Cargar puntos totales
         const resPuntos = await fetch(`/puntos/${encodeURIComponent(cliente.correo_electronico)}`);
         const dataPuntos = await resPuntos.json();
         const puntos = dataPuntos.puntos || 0;
         document.getElementById("totalPuntos").textContent = puntos;
         document.getElementById("descuentoDisponible").textContent = (puntos / 10).toFixed(2);
 
-        // Cargar historial
+        // Historial de puntos ganados
         const resHistorial = await fetch(`/puntos/${encodeURIComponent(cliente.correo_electronico)}/historial`);
         const historial = await resHistorial.json();
         const tabla = document.getElementById("tablaHistorialPuntos");
@@ -432,6 +442,7 @@ async function cargarPuntos() {
     }
 }
 
+// Carga el historial de donaciones del cliente
 async function cargarDonaciones() {
     const cliente = getClienteLogueado();
     if (!cliente) return;
@@ -469,6 +480,7 @@ async function cargarDonaciones() {
     }
 }
 
+// Carga los libros favoritos del cliente
 async function cargarFavoritos() {
     const cliente = getClienteLogueado();
     if (!cliente) return;
@@ -524,6 +536,7 @@ async function cargarFavoritos() {
     }
 }
 
+// Elimina un libro de la lista de favoritos
 async function quitarFavorito(isbn) {
     const cliente = getClienteLogueado();
     if (!cliente) return;
@@ -540,17 +553,20 @@ async function quitarFavorito(isbn) {
     }
 }
 
+// Búsqueda con debounce de 500ms
 inputBusqueda.addEventListener("input", () => {
     clearTimeout(temporizador);
     temporizador = setTimeout(() => cargarLibros(inputBusqueda.value), 500);
 });
 
+// Cambiar entre fuente local y global
 switchLibros.addEventListener("change", () => {
     fuenteActual = switchLibros.checked ? "api" : "db";
     inputBusqueda.value = "";
     cargarLibros("");
 });
 
+// Carga libros desde la fuente seleccionada y renderiza la tabla
 async function cargarLibros(busqueda) {
     try {
         const url = fuenteActual === "db"
@@ -605,6 +621,7 @@ function formatFecha(fecha) {
     return str.includes("T") ? str.split("T")[0] : str;
 }
 
+// Alterna visibilidad de la contraseña
 function togglePass(id, btn) {
     const input = document.getElementById(id);
     const icon = btn.querySelector('i');
