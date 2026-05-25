@@ -20,7 +20,7 @@ Sistema web de gestion para una libreria/biblioteca, desarrollado como proyecto 
 - **Login unificado** — un solo formulario de login que detecta los roles del usuario y permite elegir como entrar.
 - **CRUD completo** en todas las entidades del admin (libros, empleados, clientes, proveedores).
 - **Busqueda inteligente** de libros en ventas, prestamos y asignacion de proveedores (autocompletado).
-- **Autenticacion segura** con bcrypt (hash de contrasenas).
+- **Autenticacion segura** con bcrypt (hash de contraseñas).
 - **Validacion de correo electronico** en todos los formularios.
 - **Iconos Bootstrap Icons** en toda la interfaz.
 - **Tres roles de acceso:**
@@ -30,24 +30,24 @@ Sistema web de gestion para una libreria/biblioteca, desarrollado como proyecto 
 
 ---
 
-## Seguridad: Hasheo de contrasenas con bcrypt
+## Seguridad: Hasheo de contraseñas con bcrypt
 
-El sistema nunca almacena contrasenas en texto plano. Se utiliza **bcrypt** para generar un hash seguro antes de guardar en la base de datos.
+El sistema nunca almacena contraseñas en texto plano. Se utiliza **bcrypt** para generar un hash seguro antes de guardar en la base de datos.
 
 ### Como funciona
 
-1. **Registro/creacion de usuario:** cuando se crea un empleado o cliente con contrasena, el servidor ejecuta `bcrypt.hash(password, 10)` que genera un hash unico e irreversible. El numero 10 es el "salt rounds" (factor de costo) que determina cuantas iteraciones de cifrado se aplican.
+1. **Registro/creacion de usuario:** cuando se crea un empleado o cliente con contraseña, el servidor ejecuta `bcrypt.hash(password, 10)` que genera un hash unico e irreversible. El numero 10 es el "salt rounds" (factor de costo) que determina cuantas iteraciones de cifrado se aplican.
 
-2. **Login:** cuando el usuario ingresa su contrasena, el servidor ejecuta `bcrypt.compare(password, hash)` que compara la contrasena ingresada contra el hash almacenado sin necesidad de descifrar.
+2. **Login:** cuando el usuario ingresa su contraseña, el servidor ejecuta `bcrypt.compare(password, hash)` que compara la contraseña ingresada contra el hash almacenado sin necesidad de descifrar.
 
-3. **Salt automatico:** bcrypt genera un salt aleatorio por cada hash, lo que significa que dos usuarios con la misma contrasena tendran hashes diferentes. Esto protege contra ataques de tablas rainbow.
+3. **Salt automatico:** bcrypt genera un salt aleatorio por cada hash, lo que significa que dos usuarios con la misma contraseña tendran hashes diferentes. Esto protege contra ataques de tablas rainbow.
 
-4. **Admin:** la contrasena del administrador se almacena como hash en la variable de entorno `ADMIN_PASSWORD_HASH`.
+4. **Admin:** la contraseña del administrador se almacena como hash en la variable de entorno `ADMIN_PASSWORD_HASH`.
 
 ### Ejemplo practico
 
 ```bash
-# Generar un hash para una contrasena:
+# Generar un hash para una contraseña:
 node -e "require('bcrypt').hash('MiContrasena123', 10).then(console.log)"
 # Resultado: $2b$10$ID8ndfLLHbTeTr8PzDew0u50U4MY7Psdb6Yi8aYVwzfbPHWkuKpnG
 
@@ -61,7 +61,7 @@ node -e "require('bcrypt').hash('MiContrasena123', 10).then(console.log)"
 
 - bcrypt es **deliberadamente lento** (configurable con salt rounds), lo que dificulta ataques de fuerza bruta.
 - Incluye salt automatico, no necesitas generarlo manualmente.
-- Es el estandar de la industria para almacenar contrasenas en aplicaciones web.
+- Es el estandar de la industria para almacenar contraseñas en aplicaciones web.
 
 ---
 
@@ -190,7 +190,7 @@ El servidor se levanta en `http://localhost:3000`.
 | POST | `/login-vendedor` | Login de bibliotecario/empleado |
 | POST | `/login-cliente` | Login de cliente |
 | POST | `/registro-cliente` | Registro publico de cliente |
-| PUT | `/usuarios/:correo/password` | Cambiar contrasena |
+| PUT | `/usuarios/:correo/password` | Cambiar contraseña |
 
 ### Libros
 
@@ -291,7 +291,7 @@ El servidor se levanta en `http://localhost:3000`.
 
 Tablas (ver `bd/abv_library.sql` para el esquema completo):
 
-- **persona** — datos personales + contrasena hash (bcrypt)
+- **persona** — datos personales + contraseña hash (bcrypt)
 - **empleado** — rol (Vendedor, Bibliotecario, Administrador, Dueno)
 - **cliente** — fecha de registro + puntos acumulados
 - **libro** — catalogo con precio
@@ -313,7 +313,7 @@ Tablas (ver `bd/abv_library.sql` para el esquema completo):
 |---------|-----|
 | express | Servidor web y API REST |
 | pg | Cliente PostgreSQL |
-| bcrypt | Hash de contrasenas (10 salt rounds) |
+| bcrypt | Hash de contraseñas (10 salt rounds) |
 | dotenv | Variables de entorno |
 | cors | Cross-Origin Resource Sharing |
 | axios | Consultas a Open Library API |
