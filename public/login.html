@@ -144,7 +144,8 @@ function redirigirPorRol(rol, data) {
         localStorage.setItem("cliente", JSON.stringify({
             correo_electronico: data.correo_electronico,
             nombre: data.nombre,
-            ap_paterno: data.ap_paterno
+            ap_paterno: data.ap_paterno,
+            login_timestamp: Date.now()
         }));
         window.location.href = "/cliente/cliente.html";
     }

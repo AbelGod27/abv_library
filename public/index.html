@@ -33,11 +33,19 @@
 <script>
 // Mostrar/ocultar botones según sesión del cliente
 (function() {
-    const cliente = localStorage.getItem("cliente");
-    if (cliente) {
-        document.getElementById("btnLogin").style.display = "none";
-        document.getElementById("btnMiCuenta").style.display = "inline-flex";
-        document.getElementById("btnLogout").style.display = "inline-flex";
+    const raw = localStorage.getItem("cliente");
+    if (raw) {
+        try {
+            const cliente = JSON.parse(raw);
+            // Expirar sesión después de 7 días
+            if (cliente.login_timestamp && (Date.now() - cliente.login_timestamp) > 7 * 24 * 60 * 60 * 1000) {
+                localStorage.removeItem("cliente");
+                return;
+            }
+            document.getElementById("btnLogin").style.display = "none";
+            document.getElementById("btnMiCuenta").style.display = "inline-flex";
+            document.getElementById("btnLogout").style.display = "inline-flex";
+        } catch {}
     }
 })();
 

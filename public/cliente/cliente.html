@@ -202,10 +202,19 @@ let temporizador;
 let fuenteActual = "db";
 
 // Obtiene datos del cliente logueado desde localStorage
+// Si la sesión tiene más de 7 días, se cierra automáticamente
 function getClienteLogueado() {
     const data = localStorage.getItem("cliente");
     if (!data) return null;
-    try { return JSON.parse(data); } catch { return null; }
+    try {
+        const cliente = JSON.parse(data);
+        // Verificar expiración: 7 días en milisegundos
+        if (cliente.login_timestamp && (Date.now() - cliente.login_timestamp) > 7 * 24 * 60 * 60 * 1000) {
+            localStorage.removeItem("cliente");
+            return null;
+        }
+        return cliente;
+    } catch { return null; }
 }
 
 // Actualiza la interfaz según si hay sesión activa o no
@@ -250,7 +259,7 @@ async function loginCliente() {
             return;
         }
 
-        localStorage.setItem("cliente", JSON.stringify(data.cliente));
+        localStorage.setItem("cliente", JSON.stringify({ ...data.cliente, login_timestamp: Date.now() }));
         mostrarMensaje(`Bienvenido, ${data.cliente.nombre}`, "exito");
         actualizarUILogin();
 
