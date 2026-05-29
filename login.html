@@ -1,11 +1,12 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <!-- Archivo: login.html — Página de inicio de sesión unificada para todos los roles -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar sesión — ABV Library</title>
-    <link rel="stylesheet" href="/principal.css">
+    <script src="./config.js"></script>
+    <link rel="stylesheet" href="./principal.css">
 </head>
 <body>
 
@@ -47,10 +48,10 @@
         </div>
 
         <div class="back-link" style="margin-top:20px;">
-            ¿No tienes cuenta? <a href="/cliente/registro.html">Regístrate como cliente</a>
+            ¿No tienes cuenta? <a href="./cliente/registro.html">Regístrate como cliente</a>
         </div>
         <div class="back-link">
-            <a href="/">← Volver al inicio</a>
+            <a href="./index.html">← Volver al inicio</a>
         </div>
 
     </div>
@@ -134,7 +135,7 @@ function redirigirPorRol(rol, data) {
     // Si debe cambiar contraseña, redirigir al cambio obligatorio
     if (data.debe_cambiar_contrasena) {
         sessionStorage.setItem("correo_cambio_password", data.correo_electronico);
-        window.location.href = "/cambiar-password.html";
+        window.location.href = "./cambiar-password.html";
         return;
     }
 
@@ -143,14 +144,14 @@ function redirigirPorRol(rol, data) {
         sessionStorage.setItem("correoAdmin", data.correo_electronico);
         sessionStorage.setItem("nombreAdmin", data.nombre);
         sessionStorage.setItem("soloLectura", rol.rol === "Vendedor" ? "true" : "false");
-        window.location.href = "/admin/panel.html";
+        window.location.href = "./admin/panel.html";
 
     } else if (rol.tipo === "bibliotecario") {
         sessionStorage.setItem("bibliotecarioActivo", "true");
         sessionStorage.setItem("correoBibliotecario", data.correo_electronico);
         sessionStorage.setItem("nombreBibliotecario", data.nombre);
         sessionStorage.setItem("rolBibliotecario", rol.rol);
-        window.location.href = "/bibliotecario/panel.html";
+        window.location.href = "./bibliotecario/panel.html";
 
     } else if (rol.tipo === "cliente") {
         localStorage.setItem("cliente", JSON.stringify({
@@ -159,7 +160,7 @@ function redirigirPorRol(rol, data) {
             ap_paterno: data.ap_paterno,
             login_timestamp: Date.now()
         }));
-        window.location.href = "/cliente/cliente.html";
+        window.location.href = "./cliente/cliente.html";
     }
 }
 
@@ -190,5 +191,5 @@ function mostrarMensaje(texto, tipo = "error") {
 }
 </script>
 
-<script src="/confirmar.js"></script><script src="/theme.js"></script></body>
+<script src="./confirmar.js"></script><script src="./theme.js"></script></body>
 </html>

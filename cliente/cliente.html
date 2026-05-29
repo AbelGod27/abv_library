@@ -1,11 +1,12 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <!-- Archivo: cliente/cliente.html — Portal del cliente: consulta de libros, puntos, préstamos, favoritos y donaciones -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consulta de Libros — Abv Library</title>
-    <link rel="stylesheet" href="/principal.css">
+    <script src="../config.js"></script>
+    <link rel="stylesheet" href="../principal.css">
 </head>
 <body>
 
@@ -15,7 +16,7 @@
     <div style="display:flex; gap:8px; align-items:center;">
         <span id="infoCliente" style="font-size:0.85rem; color:#64748b;"></span>
         <button id="btnLogout" class="btn-secondary btn-sm" onclick="cerrarSesionCliente()" style="display:none;">Cerrar sesión</button>
-        <a href="/index.html"><button class="btn-secondary btn-sm">← Inicio</button></a>
+        <a href="../index.html"><button class="btn-secondary btn-sm">← Inicio</button></a>
     </div>
 </header>
 
@@ -45,7 +46,7 @@
             <button onclick="loginCliente()" style="height:40px;">Entrar</button>
         </div>
         <p style="margin:12px 0 0; font-size:0.85rem; color:#64748b;">
-            ¿No tienes cuenta? <a href="/cliente/registro.html">Regístrate aquí</a>
+            ¿No tienes cuenta? <a href="./registro.html">Regístrate aquí</a>
         </p>
     </div>
 
@@ -734,5 +735,5 @@ function mostrarMensaje(texto, tipo = "error") {
 }
 </script>
 
-<script src="/confirmar.js"></script><script src="/theme.js"></script></body>
+<script src="../confirmar.js"></script><script src="../theme.js"></script></body>
 </html>

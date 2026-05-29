@@ -5,21 +5,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Libros — Abv Library</title>
-    <link rel="stylesheet" href="/principal.css">
+    <script src="../config.js"></script>
+    <link rel="stylesheet" href="../principal.css">
 </head>
 <body>
 
 <!-- Verificación de sesión admin -->
 <script>
 if (sessionStorage.getItem("adminActivo") !== "true") {
-    window.location.href = "/admin/login.html";
+    window.location.href = "./login.html";
 }
 </script>
 
 <!-- Encabezado de la página -->
 <header class="page-header">
     <h1><i class="bi bi-book"></i> Gestión de Libros</h1>
-    <a href="/admin/panel.html"><button class="btn-secondary btn-sm">← Regresar</button></a>
+    <a href="./panel.html"><button class="btn-secondary btn-sm">← Regresar</button></a>
 </header>
 
 <main class="page-content">
@@ -358,5 +359,5 @@ async function importarOpenLibrary() {
 }
 </script>
 
-<script src="/confirmar.js"></script><script src="/readonly.js"></script><script src="/theme.js"></script></body>
+<script src="../confirmar.js"></script><script src="../readonly.js"></script><script src="../theme.js"></script></body>
 </html>

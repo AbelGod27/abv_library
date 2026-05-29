@@ -5,14 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Administrador — Abv Library</title>
-    <link rel="stylesheet" href="/principal.css">
+    <script src="../config.js"></script>
+    <link rel="stylesheet" href="../principal.css">
 </head>
 <body>
 
 <!-- Verificación de sesión: redirige si no hay sesión activa de admin -->
 <script>
 if (sessionStorage.getItem("adminActivo") !== "true") {
-    window.location.href = "/admin/login.html";
+    window.location.href = "./login.html";
 }
 </script>
 
@@ -32,25 +33,25 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
     <!-- Grid de tarjetas con accesos directos a cada módulo de gestión -->
     <div class="panel-grid">
 
-        <a href="/admin/libros.html" class="panel-card">
+        <a href="./libros.html" class="panel-card">
             <div class="icon"><i class="bi bi-book"></i></div>
             <span>Gestionar Libros</span>
             <button>Abrir</button>
         </a>
 
-        <a href="/admin/proveedores.html" class="panel-card">
+        <a href="./proveedores.html" class="panel-card">
             <div class="icon"><i class="bi bi-building"></i></div>
             <span>Gestionar Proveedores</span>
             <button>Abrir</button>
         </a>
 
-        <a href="/admin/empleados.html" class="panel-card">
+        <a href="./empleados.html" class="panel-card">
             <div class="icon"><i class="bi bi-person-badge"></i></div>
             <span>Gestionar Empleados</span>
             <button>Abrir</button>
         </a>
 
-        <a href="/admin/clientes.html" class="panel-card">
+        <a href="./clientes.html" class="panel-card">
             <div class="icon"><i class="bi bi-people"></i></div>
             <span>Gestionar Clientes</span>
             <button>Abrir</button>
@@ -65,7 +66,7 @@ if (sessionStorage.getItem("adminActivo") !== "true") {
 // Cierra la sesión del admin y redirige al inicio
 function cerrarSesion() {
     sessionStorage.removeItem("adminActivo");
-    window.location.href = "/index.html";
+    window.location.href = "../index.html";
 }
 
 // Permite al admin cambiar al rol de bibliotecario sin re-login
@@ -77,7 +78,7 @@ function cambiarARol(rol) {
         sessionStorage.setItem("correoBibliotecario", correo);
         sessionStorage.setItem("nombreBibliotecario", nombre);
         sessionStorage.setItem("rolBibliotecario", "Administrador");
-        window.location.href = "/bibliotecario/panel.html";
+        window.location.href = "../bibliotecario/panel.html";
     }
 }
 
@@ -93,5 +94,5 @@ function mostrarMensaje(texto, tipo = "error") {
 }
 </script>
 
-<script src="/confirmar.js"></script><script src="/readonly.js"></script><script src="/theme.js"></script></body>
+<script src="../confirmar.js"></script><script src="../readonly.js"></script><script src="../theme.js"></script></body>
 </html>

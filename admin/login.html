@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Administrador — Abv Library</title>
-    <link rel="stylesheet" href="/principal.css">
+    <script src="../config.js"></script>
+    <link rel="stylesheet" href="../principal.css">
 </head>
 <body>
 
@@ -31,7 +32,7 @@
 
         <button type="button" class="btn-login" onclick="loginAdmin()">Ingresar</button>
 
-        <p class="back-link">¿No eres admin? <a href="/index.html">Volver al inicio</a></p>
+        <p class="back-link">¿No eres admin? <a href="../index.html">Volver al inicio</a></p>
 
     </div>
 </div>
@@ -52,7 +53,7 @@ async function loginAdmin() {
 
         if (data.acceso) {
             sessionStorage.setItem("adminActivo", "true");
-            window.location.href = "/admin/panel.html";
+            window.location.href = "./panel.html";
         } else {
             mostrarMensaje(data.error);
         }
@@ -87,5 +88,5 @@ function mostrarMensaje(texto, tipo = "error") {
 }
 </script>
 
-<script src="/confirmar.js"></script><script src="/readonly.js"></script><script src="/theme.js"></script></body>
+<script src="../confirmar.js"></script><script src="../readonly.js"></script><script src="../theme.js"></script></body>
 </html>

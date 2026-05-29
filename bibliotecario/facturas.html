@@ -5,21 +5,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Facturas — Abv Library</title>
-    <link rel="stylesheet" href="/principal.css">
+    <script src="../config.js"></script>
+    <link rel="stylesheet" href="../principal.css">
 </head>
 <body>
 
 <!-- Verificación de sesión bibliotecario -->
 <script>
 if (sessionStorage.getItem("bibliotecarioActivo") !== "true") {
-    window.location.href = "/bibliotecario/login.html";
+    window.location.href = "./login.html";
 }
 </script>
 
 <!-- Encabezado de la página -->
 <header class="page-header">
     <h1><i class="bi bi-receipt"></i> Facturas</h1>
-    <a href="/bibliotecario/panel.html"><button class="btn-secondary btn-sm">← Regresar</button></a>
+    <a href="./panel.html"><button class="btn-secondary btn-sm">← Regresar</button></a>
 </header>
 
 <main class="page-content">
@@ -253,5 +254,5 @@ function mostrarMensaje(texto, tipo = "error") {
 }
 </script>
 
-<script src="/confirmar.js"></script><script src="/readonly.js"></script><script src="/theme.js"></script></body>
+<script src="../confirmar.js"></script><script src="../readonly.js"></script><script src="../theme.js"></script></body>
 </html>

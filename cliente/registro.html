@@ -1,11 +1,12 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <!-- Archivo: cliente/registro.html — Formulario de registro de nuevos clientes -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crear cuenta — ABV Library</title>
-    <link rel="stylesheet" href="/principal.css">
+    <script src="../config.js"></script>
+    <link rel="stylesheet" href="../principal.css">
 </head>
 <body>
 
@@ -72,10 +73,10 @@
         <p id="mensaje" class="mensaje"></p>
 
         <div class="back-link">
-            ¿Ya tienes cuenta? <a href="/cliente/cliente.html">Inicia sesión</a>
+            ¿Ya tienes cuenta? <a href="./cliente.html">Inicia sesión</a>
         </div>
         <div class="back-link">
-            <a href="/">← Volver al inicio</a>
+            <a href="../index.html">← Volver al inicio</a>
         </div>
     </div>
 </div>
@@ -135,7 +136,7 @@ async function registrar() {
         if (res.ok) {
             mostrarMensaje(data.mensaje || "Cuenta creada. Redirigiendo…", "success");
             setTimeout(() => {
-                window.location.href = "/cliente/cliente.html";
+                window.location.href = "./cliente.html";
             }, 1500);
         } else {
             mostrarMensaje(data.error || "Error al crear la cuenta.", "error");
@@ -164,5 +165,5 @@ function mostrarMensaje(texto, tipo) {
 }
 </script>
 
-<script src="/confirmar.js"></script><script src="/theme.js"></script></body>
+<script src="../confirmar.js"></script><script src="../theme.js"></script></body>
 </html>

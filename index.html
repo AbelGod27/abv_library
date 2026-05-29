@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <!-- Archivo: index.html — Página principal del catálogo público de libros (marketplace) -->
 <html lang="es">
 <head>
@@ -6,15 +6,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ABV Library</title>
-    <link rel="stylesheet" href="/principal.css">
-    <link rel="stylesheet" href="/index.css">
+    <script src="./config.js"></script>
+    <link rel="stylesheet" href="./principal.css">
+    <link rel="stylesheet" href="./index.css">
 </head>
 <body class="marketplace">
 
 <!-- Barra de navegación con logo, búsqueda y enlace a login -->
 <nav class="navbar">
-    <a class="navbar-logo" href="/">
-        <img src="/img/abv_library.jpeg" alt="ABV Library" class="navbar-logo-img">
+    <a class="navbar-logo" href="./index.html">
+        <img src="./img/abv_library.jpeg" alt="ABV Library" class="navbar-logo-img">
         <span>ABV Library</span>
     </a>
 
@@ -24,8 +25,8 @@
     </form>
 
     <div class="navbar-links" id="navLinks">
-        <a href="/login.html" class="nav-link" id="btnLogin"><i class="bi bi-box-arrow-in-right"></i> Iniciar sesión</a>
-        <a href="/cliente/cliente.html" class="nav-link" id="btnMiCuenta" style="display:none;"><i class="bi bi-person"></i> Mi cuenta</a>
+        <a href="./login.html" class="nav-link" id="btnLogin"><i class="bi bi-box-arrow-in-right"></i> Iniciar sesión</a>
+        <a href="./cliente/cliente.html" class="nav-link" id="btnMiCuenta" style="display:none;"><i class="bi bi-person"></i> Mi cuenta</a>
         <a href="#" class="nav-link" id="btnLogout" style="display:none;" onclick="cerrarSesionIndex()"><i class="bi bi-box-arrow-right"></i> Cerrar sesión</a>
     </div>
 </nav>
@@ -285,5 +286,5 @@ function mostrarMensajeCatalogo(texto) {
 }
 </script>
 
-<script src="/confirmar.js"></script><script src="/theme.js"></script></body>
+<script src="./confirmar.js"></script><script src="./theme.js"></script></body>
 </html>
