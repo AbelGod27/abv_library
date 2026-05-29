@@ -36,7 +36,7 @@
                 </div>
             </div>
 
-            <button type="button" class="btn-login" onclick="iniciarSesion()">Ingresar</button>
+            <button type="button" class="btn-login" id="btnLogin" onclick="iniciarSesion()">Ingresar</button>
         </div>
 
         <!-- Paso 2: Selección de rol (si el usuario tiene varios roles) -->
@@ -70,6 +70,11 @@ async function iniciarSesion() {
         return;
     }
 
+    // Mostrar estado de carga
+    const btn = document.getElementById("btnLogin");
+    btn.disabled = true;
+    btn.textContent = "Cargando...";
+
     try {
         const res = await fetch("/login", {
             method: "POST",
@@ -81,6 +86,8 @@ async function iniciarSesion() {
 
         if (data.error) {
             mostrarMensaje(data.error);
+            btn.disabled = false;
+            btn.textContent = "Ingresar";
             return;
         }
 
@@ -116,7 +123,9 @@ async function iniciarSesion() {
         });
 
     } catch (e) {
-        mostrarMensaje("Error de conexión con el servidor.");
+        mostrarMensaje("Error de conexión con el servidor. Intenta de nuevo en unos segundos.");
+        btn.disabled = false;
+        btn.textContent = "Ingresar";
     }
 }
 
