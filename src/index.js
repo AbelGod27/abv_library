@@ -1286,10 +1286,10 @@ app.post("/ventas", async (req, res) => {
         await db.query("BEGIN");
 
         // Verificar que hay suficiente stock disponible para venta
-        // (registros en lib_venta con id_venta NULL = stock no vendido)
+        // Usa SUM para considerar todas las filas de stock del mismo ISBN
         const stockVenta = await db.query(
     `
-    SELECT cantidad
+    SELECT COALESCE(SUM(cantidad), 0) as cantidad
     FROM lib_venta
     WHERE isbn = $1
     AND id_venta IS NULL
@@ -1297,10 +1297,7 @@ app.post("/ventas", async (req, res) => {
     [isbn]
 );
 
-if (
-    stockVenta.rows.length === 0 ||
-    stockVenta.rows[0].cantidad < cantidad
-) {
+if (Number(stockVenta.rows[0].cantidad) < Number(cantidad)) {
 
     await db.query("ROLLBACK");
 
@@ -1361,13 +1358,16 @@ if (
             ]
         );
 
-        // Descontar del stock disponible (restar de la fila con id_venta NULL)
+        // Descontar del stock disponible (actualizar la primera fila con stock)
         await db.query(
     `
     UPDATE lib_venta
     SET cantidad = cantidad - $1
-    WHERE isbn = $2
-    AND id_venta IS NULL
+    WHERE id_lib_venta = (
+        SELECT id_lib_venta FROM lib_venta
+        WHERE isbn = $2 AND id_venta IS NULL AND cantidad >= $1
+        LIMIT 1
+    )
     `,
     [cantidad, isbn]
 );
@@ -1459,10 +1459,10 @@ app.post("/prestamos", async (req, res) => {
 
         await db.query("BEGIN");
 
-        // Verificar stock disponible para préstamo (lib_pres con id_prestamo NULL)
+        // Verificar stock disponible para préstamo (usa SUM para múltiples filas)
         const stockPrestamo = await db.query(
             `
-            SELECT cantidad
+            SELECT COALESCE(SUM(cantidad), 0) as cantidad
             FROM lib_pres
             WHERE isbn = $1
             AND id_prestamo IS NULL
@@ -1470,7 +1470,7 @@ app.post("/prestamos", async (req, res) => {
             [isbn]
         );
 
-        if (stockPrestamo.rows.length === 0 || stockPrestamo.rows[0].cantidad < cantidad) {
+        if (Number(stockPrestamo.rows[0].cantidad) < Number(cantidad)) {
             await db.query("ROLLBACK");
 
             return res.status(400).json({
@@ -1523,13 +1523,16 @@ app.post("/prestamos", async (req, res) => {
             isbn
         ]);
 
-        // Descontar del stock disponible para préstamo
+        // Descontar del stock disponible para préstamo (primera fila con stock suficiente)
         await db.query(
             `
             UPDATE lib_pres
             SET cantidad = cantidad - $1
-            WHERE isbn = $2
-            AND id_prestamo IS NULL
+            WHERE id_lib_pres = (
+                SELECT id_lib_pres FROM lib_pres
+                WHERE isbn = $2 AND id_prestamo IS NULL AND cantidad >= $1
+                LIMIT 1
+            )
             `,
             [cantidad, isbn]
         );
