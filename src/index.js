@@ -137,6 +137,10 @@ app.post("/login", async (req, res) => {
             if (["Vendedor", "Bibliotecario", "Administrador", "Dueno"].includes(rol)) {
                 roles.push({ tipo: "bibliotecario", label: "Bibliotecario", rol });
             }
+            // Vendedor también puede ver el panel de admin en modo lectura
+            if (rol === "Vendedor") {
+                roles.push({ tipo: "admin", label: "Administrador (solo lectura)", rol: "Vendedor" });
+            }
         }
 
         // Verificar si es cliente registrado
